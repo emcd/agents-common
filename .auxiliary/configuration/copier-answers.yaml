@@ -1,0 +1,26 @@
+# Changes here will be overwritten by Copier
+_commit: v1.39
+_src_path: gh:emcd/python-project-common
+author_email: emcd@users.noreply.github.com
+author_name: Eric McDonald
+description: Common collection of AI agents configuration and data.
+development_status: 3 - Alpha
+distribution_name: emcd-agents-common
+enable_cli: false
+enable_property_tests: false
+enable_publication: false
+enable_rust_extension: false
+gh_owner: emcd
+include_data_resources: false
+inject_foundations: false
+package_name: agentsmgr
+project_name: agents-common
+pypy_versions:
+- '3.10'
+python_version_min: '3.10'
+python_versions:
+- '3.10'
+- '3.11'
+- '3.12'
+- '3.13'
+year_of_origin: 2025
