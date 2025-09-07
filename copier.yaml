@@ -1,0 +1,33 @@
+_min_copier_version: "9.0"
+_answers_file: .auxiliary/configuration/copier-answers--agents.yaml
+_subdirectory: template
+
+project_name:
+    type: str
+    help: Project directory or Git repository name
+    validator: >-
+        {% if not (project_name | regex_search("^[a-z][a-z0-9-]*$")) %}
+        Project name must contain only lowercase letters, numbers, and hyphens
+        {% endif %}
+
+languages:
+    type: str
+    help: Programming languages used in this project
+    multiselect: true
+    choices:
+        - python
+        - rust
+    default:
+        - python
+
+coders:
+    type: str
+    help: AI coding tools to configure
+    multiselect: true
+    choices:
+        - claude
+        - gemini
+        - opencode
+    default:
+        - claude
+        - opencode

@@ -35,28 +35,43 @@ Key forces driving this decision include:
 Decision
 ===============================================================================
 
-Adopt a product-focused organizational structure using ``products/`` as the 
-top-level directory, with each AI tool maintaining its own dedicated subdirectory 
-structure containing tool-specific resource types.
+Adopt a product-focused organizational structure with tool-specific resource 
+organization in both source data and generated template output.
 
 The implemented structure:
 
 .. code-block::
 
-    products/
-    ├── claude/
-    │   ├── agents/          # Subagent definitions
-    │   ├── commands/        # Slash commands  
-    │   ├── miscellany/      # Templates, snippets
-    │   ├── scripts/         # Hook executables
-    │   └── configuration/   # Settings templates
-    └── gemini/
-        ├── commands/        # Command definitions
-        └── configuration/   # Settings templates
+    data/                    # Source data organized by resource type
+    ├── commands/           # TOML command definitions 
+    ├── agents/             # Agent definitions
+    ├── scripts/            # Hook executables
+    └── miscellany/         # Templates, snippets
+    
+    template/               # Generated Copier template output
+    └── .auxiliary/
+        └── configuration/
+            ├── claude/     # Generated Claude configurations
+            │   ├── agents/
+            │   ├── commands/
+            │   ├── scripts/
+            │   └── settings.json.jinja
+            ├── opencode/   # Generated Opencode configurations  
+            │   └── commands/
+            └── gemini/     # Generated Gemini configurations
+                ├── commands/
+                └── settings.json.jinja
 
-Directory naming follows consistent Latin-derived terminology to maintain 
-linguistic consistency across the project (``configuration/`` instead of 
-``settings/`` to match ``agents``, ``commands``, ``miscellany``, ``scripts``).
+**Data Organization**: Source data in ``data/`` is organized by resource type 
+to enable generation of multiple tool configurations from common sources, 
+eliminating format-specific maintenance overhead.
+
+**Template Organization**: Generated output in ``template/`` maintains product-focused 
+structure with each AI tool receiving dedicated directories containing tool-specific 
+configurations generated from the common data sources.
+
+Directory naming follows consistent Latin-derived terminology (``configuration/`` 
+instead of ``settings/`` to match ``agents``, ``commands``, ``miscellany``, ``scripts``).
 
 Alternatives
 ===============================================================================
@@ -84,26 +99,27 @@ Consequences
 
 **Positive Consequences:**
 
-* **Clear Resource Ownership**: Each AI tool owns its complete set of configurations 
-  in one location
-* **Natural Scalability**: New AI tools can be added without restructuring existing 
-  content
-* **User-Friendly Navigation**: Users working with specific AI tools find all 
-  relevant resources in one place
-* **Tool Independence**: Each tool can evolve its resource structure independently
-* **Naming Clarity**: Avoids confusing directory names like ``agents/claude/agents``
-* **Consistent Taxonomy**: Latin-derived naming provides linguistic consistency
+* **Single Source Maintenance**: Common data sources eliminate duplication while 
+  maintaining tool-specific output organization
+* **Clear Tool Boundaries**: Generated template output provides clear ownership 
+  and organization for each AI tool's configurations
+* **Natural Scalability**: New AI tools can be added by extending generation 
+  logic without restructuring existing content
+* **User-Friendly Navigation**: Projects applying the template find all relevant 
+  resources for specific AI tools in dedicated directories
+* **Elimination of Format Duplication**: Tool format variations (like Opencode 
+  command filtering) handled at generation time rather than maintained separately
 
 **Negative Consequences:**
 
-* **Cross-Tool Comparison**: Comparing similar resources across tools requires 
-  navigating multiple directories
-* **Resource Duplication**: Shared resources may be duplicated across tool 
-  directories (mitigated by future shared resources strategy)
+* **Build Step Dependency**: Requires generation step to transform data into 
+  tool-specific formats
+* **Two-Level Organization**: Repository contains both source data organization 
+  and output template organization patterns
 
 **Neutral Consequences:**
 
-* **Directory Depth**: Creates additional directory level but maintains reasonable 
-  navigation depth
-* **Template Complexity**: Template generation must handle product-specific paths 
-  but this aligns with the tool-specific nature of configurations
+* **Directory Depth**: Template output creates additional directory levels but 
+  maintains reasonable navigation depth for downstream projects
+* **Generation Complexity**: Build process must handle data-to-template transformation 
+  but this aligns with the goal of eliminating format-specific maintenance

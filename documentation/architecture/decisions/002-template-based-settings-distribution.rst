@@ -30,38 +30,38 @@ Several approaches were considered:
 **Configuration Merging**: Use git diff-based algorithms similar to Copier for 
 merging base and project-specific settings.
 
-**Template-Based Generation**: Use Jinja2 templates for base settings with local 
-override mechanism.
+**Custom CLI Renderer**: Use Jinja2 templates with custom CLI tooling for 
+settings generation and local override support.
 
-**Copier Integration**: Handle all settings generation through Copier templates 
-in project templates.
+**Copier Template Integration**: Transform agents-common into a Copier template 
+that generates tool configurations from structured data sources.
 
 Decision
 ===============================================================================
 
-Implement template-based settings distribution using Jinja2 templates 
-(``settings.json.jinja``) for base configurations with local TOML override 
-support for project-specific extensions.
+Transform agents-common into a Copier template that generates AI tool 
+configurations from structured data sources, leveraging Copier's proven 
+distribution and update mechanisms.
 
 The approach includes:
 
-**Base Templates** (``products/[tool]/configuration/settings.json.jinja``):
-- Handle tool-specific hook configurations with parameterized script paths
-- Use template variables for path resolution (``{{ script_path_prefix }}``)
-- Provide extension points for local additions (``{{ env_additions }}``, 
-  ``{{ permissions_additions }}``)
+**Data-Driven Source Structure**:
+- ``data/`` directory contains structured sources (TOML command definitions, 
+  agent configurations, hook scripts)
+- ``agentsmgr populate-template`` transforms data into Copier template format
+- Single source of truth maintained in structured, tool-agnostic format
 
-**Local Override Mechanism**:
-- Projects can provide ``local.toml`` files for additional environment variables, 
-  hooks, and permissions
-- CLI tooling merges base template with local overrides during rendering
-- Supports incremental customization without full template replacement
+**Generated Copier Template** (``template/.auxiliary/configuration/``):
+- Tool-specific configurations generated from common data sources
+- Different output formats for different tools (Claude full format, Opencode filtered)
+- Jinja2 templates for settings with parameterized script paths
+- Standard Copier template structure for distribution
 
-**CLI Integration**:
-- ``agentsmgr`` CLI tool renders final ``settings.json`` from base template + 
-  local overrides
-- Path resolution occurs at render time based on target environment
-- Generated configurations work with existing AI tool expectations
+**Multi-Template Distribution**:
+- Projects apply agents-common as secondary Copier template after base project template
+- Leverages Copier's native multi-template support with separate answers files
+- Independent versioning and update cycles for agent configurations
+- Standard ``copier update`` workflow for configuration updates
 
 Alternatives
 ===============================================================================
@@ -78,38 +78,40 @@ Alternatives
 - More complex than the coordination problem warrants
 - Increases maintenance overhead for merge conflict resolution
 
-**Copier Integration** was rejected because:
-- Would duplicate template logic between agents-common and project templates
-- Makes it difficult to update base settings independently of project templates
-- Does not solve the core coordination problem between hook paths and script distribution
-- Couples agent configuration updates to project template releases
+**Custom CLI Renderer** was rejected because:
+- Requires custom tooling when proven solutions (Copier) already exist
+- Creates additional dependency on CLI installation for basic project setup
+- Does not leverage existing multi-template capabilities
+- Introduces custom conflict resolution when Copier already handles this
 
 Consequences
 ===============================================================================
 
 **Positive Consequences:**
 
-* **Path Coordination**: Solves script path coordination through parameterized 
-  template variables
-* **Project Customization**: Local override mechanism enables project-specific 
-  extensions without template modification
-* **Tool Compatibility**: Generated settings work with existing AI tool expectations
-* **Update Velocity**: Base settings can be updated independently of project-specific 
-  customizations
-* **Familiar Patterns**: Uses established Jinja2 templating familiar to developers
-* **Incremental Adoption**: Projects can adopt template-based settings gradually
+* **Proven Distribution**: Leverages Copier's mature update and conflict resolution mechanisms
+* **Data-Driven Generation**: Tool configurations generated from structured data sources 
+  eliminating format-specific maintenance overhead
+* **Multi-Tool Scaling**: Single data source generates configurations for multiple 
+  AI tools with tool-specific formatting
+* **Standard Workflow**: Projects use familiar ``copier update`` commands for 
+  configuration updates
+* **Independent Versioning**: Agent configurations version independently from 
+  project templates through multi-template support
+* **Path Coordination**: Template generation resolves script paths for target deployment structure
 
 **Negative Consequences:**
 
-* **CLI Dependency**: Requires CLI tooling for settings generation rather than 
-  simple file distribution
-* **Template Complexity**: Adds template syntax learning curve for settings 
-  customization
-* **Rendering Step**: Introduces additional step in project setup workflow
+* **Build Step Dependency**: Requires ``agentsmgr populate-template`` step to 
+  transform data into template format
+* **Template Generation Complexity**: Additional tooling needed to transform 
+  data sources into multiple output formats
+* **Multi-Template Coordination**: Projects must manage multiple Copier answers 
+  files for different template sources
 
 **Neutral Consequences:**
 
-* **Two-File Pattern**: Projects manage both template and local override files 
-  rather than single settings file
-* **Version Coordination**: Template updates must coordinate with CLI tooling 
-  but this aligns with existing version coordination requirements
+* **Repository Structure Change**: Requires migration from ``products/`` to 
+  ``data/`` + ``template/`` organization
+* **Copier Dependency**: Projects must use Copier for agent configuration 
+  distribution, though most already do for base project generation
