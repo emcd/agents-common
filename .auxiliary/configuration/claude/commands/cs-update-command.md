@@ -1,5 +1,5 @@
 ---
-allowed-tools: [Read, Write, Edit, MultiEdit, LS, Glob, Grep]
+allowed-tools: Read, Write, Edit, MultiEdit, LS, Glob, Grep
 description: Update existing slash command with missing instructions or reinforced guidance
 ---
 
@@ -75,8 +75,8 @@ Consider organizational improvements:
 ### 4. Tool and Permission Updates
 Review and adjust technical aspects:
 - Verify allowed-tools are appropriate for updated functionality
-- Check that @-references and !-expansions are current
-- Ensure any `!` context commands have proper tool permissions to run (e.g., `Bash(ls:*)` for `ls` commands)
+- Check that `@`-references and shell command expansions are current
+- Ensure any context commands have proper tool permissions to run (e.g., `Bash(ls:*)` for `ls` commands)
 - Ensure context section provides relevant dynamic information
 - Validate that command can execute with given permissions
 

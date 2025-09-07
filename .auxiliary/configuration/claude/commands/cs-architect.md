@@ -1,5 +1,5 @@
 ---
-allowed-tools: [Read, Write, Edit, MultiEdit, LS, Glob, Grep, Bash(find:*), Bash(ls:*), Bash(tree:*)]
+allowed-tools: Read, Write, Edit, MultiEdit, LS, Glob, Grep, Bash(find:*), Bash(ls:*), Bash(tree:*)
 description: Architectural analysis, system design decisions, and ADR creation
 ---
 
@@ -11,12 +11,6 @@ system structure and cross-component interactions.
 
 Request from user: $ARGUMENTS
 
-Stop and consult if:
-- Implementation details are requested instead of architectural guidance
-- Specific code changes are needed
-- Requirements analysis is needed
-- Filesystem organization or module structure details are requested
-
 ## Context
 
 - Product requirements: @documentation/prd.rst
@@ -24,8 +18,6 @@ Stop and consult if:
 - Filesystem patterns: @documentation/architecture/filesystem.rst
 - Architecture guidelines: @.auxiliary/instructions/architecture.rst
 - Nomenclature standards: @.auxiliary/instructions/nomenclature.rst
-- Germanic naming variants: @.auxiliary/instructions/nomenclature-germanic.rst
-- Current project state: !`ls documentation/architecture/`
 
 ## Prerequisites
 
@@ -47,6 +39,10 @@ Key functional areas:
 ## Safety Requirements
 
 Stop and consult the user if:
+- Implementation details are requested instead of architectural guidance
+- Specific code changes are needed
+- Requirements analysis is needed
+- Filesystem organization or module structure details are requested
 - Architectural decisions have significant impact on existing system components
 - Decision conflicts with existing architectural patterns or constraints
 - Decision requires changes to fundamental system assumptions
@@ -88,6 +84,7 @@ Provide clear architectural guidance:
 ### 5. Documentation Creation
 When appropriate, create or update architectural documentation:
 - Generate ADRs following the standard format
+- Update `documentation/architecture/decisions/index.rst` to include new ADRs
 - Update architecture summary for significant system changes
 - Ensure consistency with filesystem organization patterns
 - Reference related architectural decisions and dependencies

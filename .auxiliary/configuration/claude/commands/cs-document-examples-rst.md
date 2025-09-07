@@ -1,5 +1,4 @@
 ---
-allowed-tools: [Read, Write, Edit, MultiEdit, Glob, Grep, LS, Bash(ls:*), Bash(find:*), Bash(hatch --env develop run:*), mcp__pyright__definition, mcp__pyright__references]
 description: Creates practical, testable examples documentation
 ---
 
@@ -81,9 +80,12 @@ Write examples following these requirements:
 - Use doctest format for Python API examples where testable
 - Use code-block format for CLI examples with explicit command annotation
 - Keep code blocks comment-free; put explanatory text between blocks
-- Follow @.auxiliary/instructions/practices.rst for code organization
+- Follow @.auxiliary/instructions/practices.rst for general code organization
 - Follow @.auxiliary/instructions/style.rst for formatting
 - Follow @.auxiliary/instructions/nomenclature.rst for naming
+- When documenting Python code, also follow .auxiliary/instructions/practices-python.rst for comprehensive Python standards
+- When documenting Rust code, also follow .auxiliary/instructions/practices-rust.rst for comprehensive Rust standards
+- When documenting TOML configuration, also follow .auxiliary/instructions/practices-toml.rst for comprehensive TOML standards
 
 ### 5. Ensure Practical Relevance
 

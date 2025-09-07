@@ -1,32 +1,22 @@
 ---
-allowed-tools: Bash(hatch --env develop run:*), Bash(git status), Bash(git log:*), Bash(echo:*), Bash(ls:*), Bash(find:*), LS, Read, Glob, Grep, Write, Edit, MultiEdit, WebFetch
-description: Implement comprehensive tests following an existing test plan and project guidelines
+description: Implement comprehensive Python tests following an existing test plan and project guidelines
 ---
 
-# Implement Tests
-
-**NOTE: This is an experimental workflow! If anything seems unclear or missing,
-please stop for consultation with the user.**
+# Implement Python Tests
 
 For systematic test implementation following a pre-created test plan and project testing guidelines.
 
-Test plan path: `$ARGUMENTS`
+Test plan path or special test-writing instructions: $ARGUMENTS
 
 Implement tests according to the provided test plan only.
-
-Stop and consult if:
-- No test plan path is provided
-- Test plan cannot be read or is invalid
-- Plan conflicts with project testing principles
-- Implementation deviates from plan without justification
 
 ## Context
 
 - Current git status: !`git status --porcelain`
 - Current branch: !`git branch --show-current`
-- Test plan to implement: !`ls "$ARGUMENTS" 2>/dev/null && echo "Present" || echo "Missing"`
 - Existing test structure: !`find tests -name "*.py" | head -20`
-- Test README: !`ls tests/README.md 2>/dev/null && echo "Present" || echo "Missing"`
+- Test organization: @documentation/architecture/testplans/summary.rst
+- Test plans index: @documentation/architecture/testplans/index.rst
 
 ## Prerequisites
 
@@ -60,17 +50,22 @@ Ensure that you:
 
 ## Safety Requirements
 
-Stop and consult the user if any of the following occur:
-
-- **Plan Deviation**: If implementation cannot follow the test plan as specified
-- **Anti-Pattern Detection**: If plan requires tests that violate project principles
-- **Architecture Conflicts**: If tests require monkey-patching internal code
-- **Numbering Conflicts**: If planned test numbering clashes with existing conventions
-- **Missing Dependencies**: If required test fixtures or dependencies are unavailable
-- **Plan Inconsistencies**: If the test plan contains contradictions or unclear instructions
+Stop and consult the user if:
+- No test plan path is provided
+- Test plan cannot be read or is invalid
+- Plan conflicts with project testing principles
+- Implementation deviates from plan without justification
+- Implementation cannot follow the test plan as specified
+- Plan requires tests that violate project principles
+- Tests require monkey-patching internal code
+- Planned test numbering clashes with existing conventions
+- Required test fixtures or dependencies are unavailable
+- Test plan contains contradictions or unclear instructions
 
 **Your responsibilities:**
 - Follow the test plan precisely while adhering to project conventions
+- Focus only on uncovered areas specified in the plan
+- Avoid redundant testing of functionality already covered by doctests
 - Use dependency injection patterns as specified in the plan
 - Implement tests exactly as planned without adding extras
 - Maintain systematic test numbering as outlined in the plan
@@ -79,25 +74,19 @@ Stop and consult the user if any of the following occur:
 
 ## Test Implementation Process
 
-Execute the following steps for test plan: `$ARGUMENTS`
-
 ### 0. Pre-Flight Verification
 Verify access to project guidelines:
 
 Read and confirm you can access the complete project guidelines:
 - Testing: @.auxiliary/instructions/tests.rst
-- Practices: @.auxiliary/instructions/practices.rst
+- Python Practices: @.auxiliary/instructions/practices-python.rst
+- General Practices: @.auxiliary/instructions/practices.rst
 - Style: @.auxiliary/instructions/style.rst
 
-You must successfully access and read all three guides before proceeding. If any guide cannot be accessed, stop and inform the user.
+You must successfully access and read all four guides before proceeding. If any guide cannot be accessed, stop and inform the user.
 
 ### 1. Test Plan Reading and Validation
 Read and validate the provided test plan:
-
-Read the test plan document at the provided path:
-```
-Read the test plan file at: $ARGUMENTS
-```
 
 **Validate plan completeness:**
 - Verify plan contains coverage analysis summary
@@ -123,7 +112,25 @@ Stop if the plan is incomplete, unclear, or missing critical sections.
 - Ensure no duplication of existing test coverage
 
 ### 3. Test Data and Fixture Setup
-**Prepare test data as specified in the plan:**
+**Prepare test data and dependencies as specified in the plan:**
+
+**Ensure required test dependencies are available:**
+If the test plan requires dependencies not in the current environment, add them to `pyproject.toml`:
+
+```toml
+[tool.hatch.envs.develop]
+dependencies = [
+    # ... existing dependencies
+    "pyfakefs",       # For filesystem mocking
+    "pytest-asyncio", # For async test support
+    # ... other test-specific dependencies in alphabetical order
+]
+```
+
+After adding dependencies, rebuild the environment to ensure consistency:
+```bash
+hatch env prune
+```
 
 **Create required test data under tests/data/:**
 - Set up fake packages for extension mechanisms (if planned)
@@ -179,6 +186,18 @@ hatch --env develop run linters
 - Implementation follows all conventions specified in the plan
 
 ## Test Pattern Examples
+
+**Import Patterns:**
+
+*Direct imports (preferred for most cases):*
+```python
+from mypackage import mymodule
+
+def test_100_basic_functionality( ):
+    ''' Module function works correctly with valid input. '''
+    result = mymodule.process_data( 'test' )
+    assert result == 'processed: test'
+```
 
 **Dependency Injection Pattern:**
 ```python

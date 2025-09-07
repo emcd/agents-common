@@ -1,6 +1,7 @@
 ---
 allowed-tools: Bash(git status), Bash(git pull:*), Bash(git add:*), Bash(git commit:*), Bash(git tag:*), Bash(git push:*), Bash(gh run list:*), Bash(gh run watch:*), Bash(hatch version:*), Bash(hatch --env develop run:*), Bash(echo:*), Bash(ls:*), Bash(grep:*), Bash(date:*), LS, Read
 description: Execute automated alpha checkpoint release with QA monitoring
+argument-hint: "[alpha]"
 ---
 
 # Release Checkpoint
@@ -13,7 +14,8 @@ For execution of an automated alpha checkpoint release on master branch.
 Below is a validated process to create an alpha checkpoint release with automated
 monitoring and version increment.
 
-Target alpha increment: `$ARGUMENTS` (optional - defaults to next alpha)
+Target alpha increment: $ARGUMENTS
+(optional - defaults to next alpha)
 
 Verify current version is alpha format if no arguments provided.
 

@@ -1,5 +1,7 @@
 {
   "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": 1800000,
+    "BASH_MAX_TIMEOUT_MS": 1800000,
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": 1,
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": 1,
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": 1
@@ -13,13 +15,18 @@
             "type": "command",
             "command": ".auxiliary/scripts/claude/pre-bash-python-check",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": ".auxiliary/scripts/claude/pre-bash-git-commit-check",
+            "timeout": 300
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|MultiEdit|Write|mcp__text-editor__edit_text_file_contents",
+        "matcher": "Edit|MultiEdit|Write",
         "hooks": [
           {
             "type": "command",
@@ -62,9 +69,7 @@
       "Bash(git status)",
       "Bash(grep *)",
       "Bash(hatch run python *)",
-      "Bash(hatch --env develop run docsgen)",
-      "Bash(hatch --env develop run linters)",
-      "Bash(hatch --env develop run testers)",
+      "Bash(hatch --env develop run *)",
       "Bash(head *)",
       "Bash(ls *)",
       "Bash(ps *)",
@@ -80,13 +85,10 @@
       "mcp__context7__resolve-library-id",
       "mcp__pyright__definition",
       "mcp__pyright__diagnostics",
+      "mcp__pyright__edit_file",
       "mcp__pyright__hover",
       "mcp__pyright__references",
-      "mcp__ruff__definition",
-      "mcp__ruff__diagnostics",
-      "mcp__ruff__hover",
-      "mcp__ruff__references",
-      "mcp__text-editor__get_text_file_contents"
+      "mcp__pyright__rename_symbol"
     ]
   }
 }

@@ -1,6 +1,7 @@
 ---
 allowed-tools: Bash(git status), Bash(git pull:*), Bash(git checkout:*), Bash(git add:*), Bash(git commit:*), Bash(git tag:*), Bash(git rm:*), Bash(git cherry-pick:*), Bash(git log:*), Bash(git branch:*), Bash(gh run list:*), Bash(gh run watch:*), Bash(hatch version:*), Bash(hatch --env develop run:*), Bash(echo:*), Bash(ls:*), Bash(grep:*), LS, Read
 description: Execute automated final release with QA monitoring and development cycle setup
+argument-hint: "major.minor"
 ---
 
 # Release Final
@@ -13,7 +14,7 @@ For execution of a fully-automated final release.
 Below is a validated process to create a final release with automated
 monitoring and next development cycle setup.
 
-Target release version: `$ARGUMENTS`
+Target release version: $ARGUMENTS
 
 Verify exactly one target release version provided.
 
@@ -71,7 +72,7 @@ Stop and consult the user if any of the following occur:
 
 ## Release Process
 
-Execute the following steps for target version `$ARGUMENTS`:
+Execute the following steps:
 
 ### 1. Pre-Release Quality Check
 Run local quality assurance to catch issues early:

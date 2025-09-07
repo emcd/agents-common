@@ -1,5 +1,4 @@
 ---
-allowed-tools: [Read, Write, Edit, MultiEdit, LS, Glob, Grep, Bash, TodoWrite, mcp__text-editor__get_text_file_contents, mcp__text-editor__edit_text_file_contents, mcp__ruff__diagnostics, mcp__ruff__edit_file, mcp__ruff__hover, mcp__ruff__references, mcp__ruff__rename_symbol, mcp__ruff__definition, mcp__pyright__diagnostics, mcp__pyright__edit_file, mcp__pyright__hover, mcp__pyright__references, mcp__pyright__rename_symbol, mcp__pyright__definition, mcp__context7__resolve-library-id, mcp__context7__get-library-docs]
 description: Python implementation following established patterns and practices
 ---
 
@@ -11,48 +10,60 @@ and style guidelines.
 
 Request from user: $ARGUMENTS
 
-Stop and consult if:
-- Design specifications are needed instead of implementation
-- Architectural decisions are required before implementation
-- Requirements are unclear or insufficient for implementation
-- Multiple implementation approaches have significant trade-offs requiring user input
-
 ## Context
 
 - Architecture overview: @documentation/architecture/summary.rst
 - Filesystem patterns: @documentation/architecture/filesystem.rst
-- Python practices: @.auxiliary/instructions/practices.rst
+- General practices: @.auxiliary/instructions/practices.rst
+- Python development guide: @.auxiliary/instructions/practices-python.rst
 - Code style: @.auxiliary/instructions/style.rst
 - Nomenclature: @.auxiliary/instructions/nomenclature.rst
-- Germanic variants: @.auxiliary/instructions/nomenclature-germanic.rst
-- Design documents: !`ls documentation/architecture/designs/`
-- Current package structure: !`ls sources/`
+- Design documents: @documentation/architecture/designs/
 
 ## Prerequisites
 
 Before implementing Python code, ensure:
 - Understanding of implementation requirements and expected behavior
-- Familiarity with project practices, style, and nomenclature guidelines
 - Knowledge of existing codebase structure and patterns
 - Clear design specifications or existing design documents if referenced
+
+### Guide Consultation Requirements
+
+Before implementing Python code, you MUST:
+1. Read @.auxiliary/instructions/practices.rst for general development principles
+2. Read @.auxiliary/instructions/practices-python.rst for Python-specific patterns
+3. In a step on your TODO list, please attest that you have read the general and Python-specific practices guides and demonstrate your knowledge by writing one-sentence summaries on any three of the following topics:
+
+- the comprehensive examples showing multiple principles cohesively
+- proper module organization content order
+- import organization and centralized import patterns
+- wide parameter, narrow return type patterns for robust interfaces
+- immutability preferences for data structures and containers
+- exception handling with narrow try blocks and proper chaining
+- documentation formatting requirements including narrative mood
+- quality assurance principles including linter compliance
 
 ## Process Summary
 
 Key functional areas:
-1. **Requirements Analysis**: Understand implementation requirements and context
-2. **Design Conformance**: Ensure alignment with established patterns and practices
+1. **Requirements Analysis**: Understand implementation requirements and create persistent tracking
+2. **Session Continuity**: Check for existing work and preserve context across sessions
 3. **Implementation**: Write Python code following style guidelines and best practices
-4. **Quality Assurance**: Run linters, type checkers, and tests to validate code
-5. **Documentation**: Provide implementation summary and any necessary documentation
+4. **Progress Tracking**: Maintain session and cross-session implementation progress
+5. **Quality Assurance**: Run linters, type checkers, and tests to validate code
+6. **Documentation**: Update persistent tracking and provide implementation summary
 
 ## Safety Requirements
 
 Stop and consult the user if:
+- Design specifications are needed instead of implementation
+- Architectural decisions are required before implementation
+- Requirements are unclear or insufficient for implementation
 - Implementation conflicts with established architectural patterns
 - Code changes would break existing API contracts or interfaces
 - Quality checks reveal significant issues that require design decisions
-- Requirements are ambiguous or incomplete for proper implementation
-- Multiple valid implementation approaches exist with different trade-offs
+- Type checker errors are encountered that cannot be resolved through standard remediation
+- Multiple implementation approaches have significant trade-offs requiring user input
 
 ## Execution
 
@@ -66,56 +77,152 @@ Analyze implementation requirements and gather context:
 - Understand expected behavior and edge cases
 - Document implementation scope and constraints
 
-### 2. Design Conformance Checklist
-Ensure implementation aligns with project standards:
-- [ ] Module organization follows practices guidelines (imports → type aliases → defaults → public API → private functions)
+#### 1.1 Create Implementation Tracking File
+Before beginning implementation, create a persistent tracking file with descriptive naming:
+- Format: `.auxiliary/notes/<short-implementation-title>--progress.md`
+- Example: `.auxiliary/notes/user-metrics-export--progress.md`
+
+Choose a concise but descriptive title that captures the main implementation goal.
+
+Structure the tracking file with these sections:
+
+### Context and References
+- **Implementation Title**: [Brief description of what is being implemented]
+- **Start Date**: [YYYY-MM-DD]
+- **Reference Files**: [List all files explicitly provided as context/references at start]
+  - `path/to/reference1.py` - [Brief description of relevance]
+  - `path/to/reference2.rst` - [Brief description of relevance]
+- **Design Documents**: [Any architecture or design docs referenced]
+- **Session Notes**: [Link to current session TodoWrite items]
+
+### Design and Style Conformance Checklist
+- [ ] Module organization follows practices guidelines
 - [ ] Function signatures use wide parameter, narrow return patterns
-- [ ] Type annotations are comprehensive and use proper TypeAlias patterns
+- [ ] Type annotations comprehensive with TypeAlias patterns
 - [ ] Exception handling follows Omniexception → Omnierror hierarchy
-- [ ] Naming follows nomenclature conventions with appropriate linguistic consistency
-- [ ] Immutability preferences are applied where appropriate
-- [ ] Code style follows spacing, vertical compactness, and formatting guidelines
+- [ ] Naming follows nomenclature conventions
+- [ ] Immutability preferences applied
+- [ ] Code style follows formatting guidelines
+
+### Implementation Progress Checklist
+- [ ] [Specific function/class/module 1]
+- [ ] [Specific function/class/module 2]
+- [ ] [Integration point 1] tested
+- [ ] [Integration point 2] tested
+
+### Quality Gates Checklist
+- [ ] Linters pass (`hatch --env develop run linters`)
+- [ ] Type checker passes
+- [ ] Tests pass (`hatch --env develop run testers`)
+- [ ] Code review ready
+
+### Decision Log
+Document significant decisions made during implementation:
+- [Date] [Decision made] - [Rationale]
+- [Date] [Trade-off chosen] - [Why this approach over alternatives]
+
+### Handoff Notes
+For future sessions or other developers:
+- **Current State**: [What's implemented and what's not]
+- **Next Steps**: [Immediate next actions needed]
+- **Known Issues**: [Any problems or concerns to address]
+- **Context Dependencies**: [Critical knowledge for continuing work]
+
+### 2. Session Continuity and Context Preservation
+Before proceeding with implementation:
+
+#### Check for Existing Implementation
+```bash
+ls .auxiliary/notes/*--progress.md
+```
+
+If continuing previous work:
+- Read existing tracking file completely to understand context
+- Review reference files listed in context section
+- Check decision log for previous design choices
+- Update "Current State" in handoff notes as you resume work
+
+#### Context Preservation Requirements
+Before beginning implementation:
+- [ ] Create descriptive tracking file (`.auxiliary/notes/<title>--progress.md`)
+- [ ] Record all reference files provided at session start
+- [ ] Document initial understanding of requirements
+- [ ] Note any existing related implementations or patterns found
+
+During implementation:
+- [ ] Update decision log when making design choices
+- [ ] Record integration points and dependencies discovered
+- [ ] Document deviations from original plan with rationale
+
+Before session end:
+- [ ] Update current state in handoff notes
+- [ ] Ensure TodoWrite completions are reflected in persistent tracking where granularity aligns
+- [ ] Record next steps for continuation
 
 ### 3. Implementation
-Write Python code following established patterns:
-- Implement functions, classes, or modules as specified
-- Apply centralized import patterns via `__` subpackage
-- Use proper type annotations with `__.typx.TypeAlias` for complex types
-- Follow style guidelines for spacing, formatting, and structure
-- Implement proper exception handling with narrow try blocks
-- Apply nomenclature patterns for consistent naming
-- Ensure functions are ≤30 lines and modules are ≤600 lines
 
-### 4. Implementation Tracking Checklist
-Track progress against requirements:
-- [ ] All specified functions/classes have been implemented
-- [ ] Required functionality is complete and tested
-- [ ] Integration points with existing code are working
-- [ ] Edge cases and error conditions are handled
-- [ ] Documentation requirements are satisfied
+**Write Python code following established patterns**:
+- Apply comprehensive guide patterns for module organization, imports, annotations, immutability, exception handling, and documentation
+- Consult the comprehensive guides when you need specific implementation details
+- For complex annotation work or systematic annotation issues, consider using the `python-annotator` agent
+
+### 4. Progress Tracking Requirements
+Maintain dual tracking systems:
+- **Session Level**: Use TodoWrite tool for immediate task management within current session
+- **Cross-Session**: Update `.auxiliary/notes/<implementation-title>--progress.md` for persistent tracking
+- **Synchronization**: When TodoWrite items align with persistent checklist granularity, update corresponding persistent checklist items (TodoWrite may be more fine-grained)
+- **Context Preservation**: Record all reference files and design decisions in persistent file for future session continuity
 
 ### 5. Quality Assurance
-Validate code quality and conformance:
+
+Before proceeding, add this quality verification checklist to your TODO list:
+- [ ] Code follows proper module organization patterns
+- [ ] Imports follow organization rules with centralized patterns
+- [ ] Type annotations use wide parameter, narrow return patterns
+- [ ] Functions ≤30 lines, modules ≤600 lines
+- [ ] Immutability preferences applied to data structures
+- [ ] Exception handling uses narrow try blocks with proper chaining
+- [ ] Documentation follows narrative mood requirements
+- [ ] Quality assurance principles applied
+
+#### Validation Commands
+**Linting Validation** (zero-tolerance policy):
 ```bash
 hatch --env develop run linters
 ```
-Address any linting issues that arise.
+All issues must be addressed per comprehensive guide principles. Do not use `noqa` without explicit approval.
 
+**Type Checking** (systematic resolution):
+```bash
+hatch --env develop run linters  # Includes Pyright
+```
+
+**Type Error Resolution Process**:
+1. **Code Issues**: Fix immediately using comprehensive guide type annotation patterns
+2. **Third-party Stubs**: Follow guidance in Python-specific practices guide (ensure dependency in `pyproject.toml`, prune Hatch environment, Pyright `createstub`, manage stubs)
+3. **Complex Issues**: Use `python-annotator` agent for systematic resolution
+
+Stop and consult user if type errors cannot be categorized or require architectural decisions.
+
+**Test Validation**:
 ```bash
 hatch --env develop run testers
 ```
-Ensure all tests pass, including any new tests created.
+All tests must pass, including new implementations.
 
 ### 6. Documentation and Summary
-Provide implementation documentation:
-- Document any non-obvious design decisions or trade-offs
-- Create or update relevant docstrings following narrative mood guidelines
-- Note any TODO items for future enhancements
-- Verify alignment with filesystem organization patterns
+
+**Provide implementation documentation**:
+- Update persistent tracking file with implementation state
+- Document design decisions and trade-offs in decision log
+- Complete handoff notes for session continuity
+- Note TODO items for future work
 
 ### 7. Summarize Implementation
 Provide concise summary of what was implemented, including:
 - Functions, classes, or modules created or modified
 - Key design decisions and rationale
 - Integration points and dependencies
+- Quality assurance status: Confirm all linters, type checkers, and tests pass
+- Checklist of principles and patterns applied during implementation
 - Any remaining tasks or follow-up items
