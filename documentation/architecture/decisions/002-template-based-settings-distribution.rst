@@ -39,29 +39,29 @@ that generates tool configurations from structured data sources.
 Decision
 ===============================================================================
 
-Transform agents-common into a Copier template that generates AI tool 
-configurations from structured data sources, leveraging Copier's proven 
-distribution and update mechanisms.
+Implement a hybrid approach combining Copier template distribution for base 
+configuration templates with ``agentsmgr`` tool for dynamic content generation 
+directly in downstream projects from structured data sources.
 
 The approach includes:
 
 **Data-Driven Source Structure**:
 - ``data/`` directory contains structured sources (TOML command definitions, 
-  agent configurations, hook scripts)
-- ``agentsmgr populate-template`` transforms data into Copier template format
+  agent configurations, hook scripts, tool-specific Jinja2 templates)
+- ``agentsmgr populate`` generates content directly in downstream projects
 - Single source of truth maintained in structured, tool-agnostic format
 
-**Generated Copier Template** (``template/.auxiliary/configuration/``):
-- Tool-specific configurations generated from common data sources
-- Different output formats for different tools (Claude full format, Opencode filtered)
-- Jinja2 templates for settings with parameterized script paths
-- Standard Copier template structure for distribution
+**Minimal Copier Template** (``template/.auxiliary/configuration/``):
+- Contains base configuration templates (settings.json.jinja, mcp-servers.json.jinja)
+- Provides directory structure with .gitignore files for generated content
+- README files indicating dynamic generation via agentsmgr
+- Standard Copier template structure for base distribution
 
-**Multi-Template Distribution**:
-- Projects apply agents-common as secondary Copier template after base project template
-- Leverages Copier's native multi-template support with separate answers files
-- Independent versioning and update cycles for agent configurations
-- Standard ``copier update`` workflow for configuration updates
+**Dynamic Content Generation**:
+- ``agentsmgr populate --source=agents-common@tag`` generates commands, agents, scripts
+- Content generated directly in downstream projects, not committed to version control
+- Tool-specific formats handled at generation time from common data sources
+- Configuration detected from Copier answers files or defaults
 
 Alternatives
 ===============================================================================
@@ -78,40 +78,38 @@ Alternatives
 - More complex than the coordination problem warrants
 - Increases maintenance overhead for merge conflict resolution
 
-**Custom CLI Renderer** was rejected because:
-- Requires custom tooling when proven solutions (Copier) already exist
-- Creates additional dependency on CLI installation for basic project setup
-- Does not leverage existing multi-template capabilities
-- Introduces custom conflict resolution when Copier already handles this
+**Pure Copier Template** was rejected because:
+- Generated artifacts committed to version control create repository noise
+- Command changes require template generation, commit, tag, and update cycle
+- Slower iteration velocity for dynamic content like commands and agents
+- Template repository grows with generated content rather than source data
+
+**Custom CLI Renderer Only** was rejected because:
+- Base configuration templates benefit from Copier's proven distribution mechanisms
+- Projects lose standard multi-template workflow patterns
+- Does not leverage existing Copier infrastructure for settings and structure
 
 Consequences
 ===============================================================================
 
 **Positive Consequences:**
 
-* **Proven Distribution**: Leverages Copier's mature update and conflict resolution mechanisms
-* **Data-Driven Generation**: Tool configurations generated from structured data sources 
-  eliminating format-specific maintenance overhead
-* **Multi-Tool Scaling**: Single data source generates configurations for multiple 
-  AI tools with tool-specific formatting
-* **Standard Workflow**: Projects use familiar ``copier update`` commands for 
-  configuration updates
-* **Independent Versioning**: Agent configurations version independently from 
-  project templates through multi-template support
-* **Path Coordination**: Template generation resolves script paths for target deployment structure
+* **Faster Iteration Cycle**: Command changes don't require template commits, tags, or releases
+* **Repository Efficiency**: No generated artifacts committed, cleaner git history
+* **Proven Base Distribution**: Settings templates use Copier's mature mechanisms
+* **True Tool Portability**: ``agentsmgr`` works with any data source, not repository-specific
+* **Minimal Commit Noise**: Generated content ignored via .gitignore in downstream projects
+* **Clean Separation**: Static base templates vs. dynamic generated content
+* **Multi-Tool Scaling**: Single data source generates configurations for multiple AI tools
 
 **Negative Consequences:**
 
-* **Build Step Dependency**: Requires ``agentsmgr populate-template`` step to 
-  transform data into template format
-* **Template Generation Complexity**: Additional tooling needed to transform 
-  data sources into multiple output formats
-* **Multi-Template Coordination**: Projects must manage multiple Copier answers 
-  files for different template sources
+* **Tool Installation Requirement**: Projects need ``agentsmgr`` available for setup
+* **Network Dependency**: Requires access to agents-common repository for content generation
+* **Configuration Detection**: Additional logic needed to detect project configuration from Copier answers
 
 **Neutral Consequences:**
 
-* **Repository Structure Change**: Requires migration from ``products/`` to 
-  ``data/`` + ``template/`` organization
-* **Copier Dependency**: Projects must use Copier for agent configuration 
-  distribution, though most already do for base project generation
+* **Hybrid Workflow**: Projects use both Copier updates and agentsmgr commands for different content types
+* **Repository Structure Change**: Requires migration from ``products/`` to ``data/`` + minimal ``template/``
+* **Generated Content Management**: Downstream projects manage generated vs. custom content boundaries
