@@ -233,19 +233,38 @@ def generate_tool_commands(tool_name: str, commands_data: List[Dict]):
 - ✅ Hook executables distributed via Copier template
 - ✅ Template output validation and testing
 
-### Phase 2: Source Data and Templates
-- Design TOML structure for commands and agents based on existing YAML frontmatter
-- Create structured data files in data/configurations/commands/ and data/configurations/agents/
-- Create coder-specific content files in data/contents/
-- Build generic, reusable Jinja2 templates for markdown and TOML formats
-- Template validation and format compatibility testing
+### Phase 2: Source Data and Templates ✅ COMPLETED
+- ✅ Design TOML structure for commands and agents based on existing YAML frontmatter
+- ✅ Create structured data files in data/configurations/commands/ and data/configurations/agents/
+- ✅ Create coder-specific content files in data/contents/
+- ✅ Build generic, reusable Jinja2 templates for markdown and TOML formats
+- ✅ Template validation and format compatibility testing
 
 ### Phase 3: agentsmgr Command Implementation  
 - Core `agentsmgr populate` command for dynamic content generation
+  - **Structure**: `PopulateCommand` in `agentsmgr.cli` module calling `agentsmgr.population` functions
+  - **Integration**: Populate CLI framework in agentsmgr package (currently stub)
 - Configuration detection from Copier answers
-- Git source fetching with local cache management
+  - **Validation**: Require at least one coder and one language; fail if copier-answers file missing
+  - **Schema**: Hardcoded validation logic initially (reassess post-MVP)
+- Data source management
+  - **POC/MVP scope**: Local `data/` directory in current project initially
+  - **Release 1.0**: Git URL support required (`gh:owner/repo`, HTTPS, SSH) for downstream usage
+  - **Git library**: GitPython (fallback to dulwich, better UX/errors than pure dulwich, subprocess overhead minimal)
+  - **Cache strategy**: `tempfile.TemporaryDirectory` for command lifetime
 - Template rendering pipeline with language filtering
+  - **Variable normalization**: Hyphen→underscore for top-level keys and within `coders` tables
+  - **Coder objects**: Use `types.SimpleNamespace` with normalized coder table keys
+  - **Content fallback**: Debug logging (not warnings); configurable logic (hardcode Claude↔Opencode for MVP)
+  - **Error handling**: Continue past individual rendering failures
 - Multi-coder content generation with format-specific handling
+  - **POC/MVP scope**: Claude coder first (semantic tool mapping is main coder-specific complexity)
+  - **Release 1.0**: Must include Opencode and Gemini support for downstream repository usage
+  - **Tool mapping**: Hardcoded semantic→coder-specific mappings initially (defer DSL post-MVP)
+- Command interface
+  - **POC/MVP**: Assume `--simulate` mode during development, local `data/` discovery
+  - **Release 1.0**: Required source argument with Git URL support, `--target-directory`/`validate` for testing
+  - **Rationale**: Need output inspection capabilities to validate implementation before release
 
 ### Phase 4: Copier Integration
 - Create Copier hook integration for automatic `agentsmgr populate` calls
@@ -256,7 +275,14 @@ def generate_tool_commands(tool_name: str, commands_data: List[Dict]):
 ### Phase 5: Implementation and Testing
 - Replace `prepare-agents` script with `agentsmgr populate` calls
 - End-to-end testing across data → agentsmgr → project pipeline
-- Validation and testing similar to emcdproj template validate pattern
+
+**Template Debugging and Validation:**
+Following the established pattern from python-project-common:
+- **Template validator**: Based on `../python-project-common/sources/emcdproj/template.py` (ValidateCommand, copy_template)
+- **CI validation**: Following `../python-project-common/.github/workflows/validate-template.yaml` with matrix variants
+- **Configuration variants**: Answer files in `../python-project-common/data/copier/` (answers-default.yaml, answers-maximum.yaml)
+- **agentsmgr validate command**: `agentsmgr validate --variant=maximum --preserve` generates content in temp directory for inspection
+
 - Documentation and adoption guides
 
 This approach implements a hybrid system where static base templates use proven Copier distribution while dynamic content generation provides fast iteration cycles.
