@@ -1,0 +1,20 @@
+# Agent: Python Conformer
+# Review Python code for compliance with project practices and systematically fix violations
+
+[frontmatter]
+name = 'python-conformer'
+description = '''
+Use this agent ONLY when changes include Python code (.py and .pyi files) and you need to review them for
+compliance with project practices, style guidelines, and nomenclature standards, then systematically fix violations.
+Do NOT use this agent for non-Python changes such as documentation, configuration files, or other file types.'''
+color = 'blue'
+permissions = ['read', 'write', 'execute']
+
+[[coders]]
+name = 'claude'
+model = 'sonnet'
+
+[[coders]]
+name = 'opencode'
+mode = 'subagent'
+model = 'anthropic/claude-sonnet-4-20250514'

@@ -1,0 +1,14 @@
+# Command: Release Final
+# Execute automated final release with QA monitoring and development cycle setup
+
+[frontmatter]
+name = 'cs-release-final'
+description = 'Execute automated final release with QA monitoring and development cycle setup'
+argument-hint = 'major.minor'
+
+# Standard allowed-tools for git/release operations
+allowed-tools = 'git-release-standard'
+
+# Additional frontmatter fields
+color = 'red'
+permissions = ['read', 'write', 'execute']

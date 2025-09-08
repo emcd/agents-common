@@ -1,0 +1,10 @@
+# Command: Python Code Conformance  
+# Systematically conform Python code to project style and practice standards
+
+[frontmatter]
+name = 'cs-conform-python'
+description = 'Systematically conform Python code to project style and practice standards'
+
+# Additional frontmatter fields
+color = 'green'
+permissions = ['read', 'write']

@@ -1,0 +1,10 @@
+description = "{{ description }}"
+{%- if coder.mode is defined %}
+mode = "{{ coder.mode }}"
+{%- endif %}
+{%- if coder.model is defined %}
+model = "{{ coder.model }}"
+{%- endif %}
+prompt = """
+{{ content }}
+"""

@@ -49,9 +49,9 @@ def populate(source: str, target: Path):
 ```
 agents-common/
 ├── data/                           # Source data
-│   ├── commands/                  # TOML command definitions
-│   ├── agents/                    # Agent definitions
-│   └── templates/                 # Tool-specific Jinja2 templates
+│   ├── configurations/            # Tool-agnostic TOML configurations
+│   ├── contents/                  # Coder-specific content bodies
+│   └── templates/                 # Generic, reusable Jinja2 templates
 ├── template/                      # Base Copier template (minimal)
 │   └── .auxiliary/configuration/
 │       ├── claude/
@@ -117,7 +117,31 @@ template/
 ```
 
 
-### Phase 2: agentsmgr Implementation
+### Phase 2: Source Data and Templates
+
+**Data Structure Creation:**
+```
+data/
+├── configurations/     # Tool-agnostic TOML configurations
+│   ├── commands/      # Command metadata
+│   └── agents/        # Agent metadata
+├── contents/          # Coder-specific content bodies
+│   ├── commands/
+│   │   ├── claude/    # Falls back to/from opencode/
+│   │   ├── opencode/  # Falls back to/from claude/
+│   │   └── gemini/    # No fallback - different syntax
+│   └── agents/
+│       ├── claude/    # Falls back to/from opencode/
+│       ├── opencode/  # Falls back to/from claude/
+│       └── gemini/    # No fallback - different syntax
+└── templates/         # Generic, reusable templates
+    ├── command.md.jinja    # For Claude/Opencode
+    ├── command.toml.jinja  # For Gemini
+    ├── agent.md.jinja      # For Claude/Opencode
+    └── agent.toml.jinja    # For Gemini
+```
+
+### Phase 3: agentsmgr Command Implementation
 
 **Dynamic Content Generation:**
 ```python
@@ -144,12 +168,14 @@ class PopulateCommand:
         return {"languages": ["python"], "coders": ["claude"]}
 ```
 
+### Phase 4: Copier Integration
+
 **Integration with Copier Workflows:**
 - **New projects**: python-project-common hooks call `agentsmgr populate` if agents enabled
 - **Agent updates**: `copier update` on agents-common triggers repopulation via hooks
 - **Manual updates**: Direct `agentsmgr populate --source=agents-common@agents-N` calls
 
-### Phase 3: Implementation and Testing
+### Phase 5: Implementation and Testing
 
 
 **Eliminate prepare-agents Complexity:**
@@ -201,25 +227,33 @@ def generate_tool_commands(tool_name: str, commands_data: List[Dict]):
 
 ## Implementation Phases
 
-### Phase 1: Base Template Structure
-- Create minimal template structure with .gitignore files for generated content
-- Base settings templates (settings.json.jinja, mcp-servers.json.jinja)
-- Hook executables distributed via Copier template
-- Template output validation and testing
+### Phase 1: Base Template Structure ✅ COMPLETED
+- ✅ Create minimal template structure with .gitignore files for generated content
+- ✅ Base settings templates (settings.json.jinja, mcp-servers.json.jinja)
+- ✅ Hook executables distributed via Copier template
+- ✅ Template output validation and testing
 
-### Phase 2: Copier Integration
+### Phase 2: Source Data and Templates
+- Design TOML structure for commands and agents based on existing YAML frontmatter
+- Create structured data files in data/configurations/commands/ and data/configurations/agents/
+- Create coder-specific content files in data/contents/
+- Build generic, reusable Jinja2 templates for markdown and TOML formats
+- Template validation and format compatibility testing
+
+### Phase 3: agentsmgr Command Implementation  
+- Core `agentsmgr populate` command for dynamic content generation
+- Configuration detection from Copier answers
+- Git source fetching with local cache management
+- Template rendering pipeline with language filtering
+- Multi-coder content generation with format-specific handling
+
+### Phase 4: Copier Integration
 - Create Copier hook integration for automatic `agentsmgr populate` calls
 - Integration with python-project-common hooks for new projects
 - Multi-template workflow testing with dummy projects
 - Documentation for multi-template usage patterns
 
-### Phase 3: agentsmgr Implementation
-- Core `agentsmgr populate` command for dynamic content generation
-- Configuration detection from Copier answers or defaults
-- Multi-tool command generation with format-specific handling
-- Tool-specific format generation logic for different AI coders
-
-### Phase 4: Implementation and Testing
+### Phase 5: Implementation and Testing
 - Replace `prepare-agents` script with `agentsmgr populate` calls
 - End-to-end testing across data → agentsmgr → project pipeline
 - Validation and testing similar to emcdproj template validate pattern
