@@ -240,7 +240,8 @@ def generate_tool_commands(tool_name: str, commands_data: List[Dict]):
 - ✅ Build generic, reusable Jinja2 templates for markdown and TOML formats
 - ✅ Template validation and format compatibility testing
 
-### Phase 3: agentsmgr Command Implementation  
+### Phase 3: agentsmgr Command Implementation ⏳ **IN PROGRESS**
+- ✅ **Architecture planned**: CLI structure following appcore.introspection pattern documented in `.auxiliary/notes/cli-plan.md`
 - Core `agentsmgr populate` command for dynamic content generation
   - **Structure**: `PopulateCommand` in `agentsmgr.cli` module calling `agentsmgr.population` functions
   - **Integration**: Populate CLI framework in agentsmgr package (currently stub)
