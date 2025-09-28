@@ -15,7 +15,9 @@ license = 'Apache-2.0'
 readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
+  'absence~=1.1',
   'emcd-appcore[cli]~=1.6',
+  'frigid~=4.2',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
   'tyro',

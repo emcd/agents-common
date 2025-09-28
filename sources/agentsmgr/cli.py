@@ -22,20 +22,27 @@
 
 
 from . import __
+from . import commands as _commands
+
+
+class Application( __.appcore_cli.Application ):
+    ''' Agent configuration management CLI. '''
+
+    command: __.typx.Annotated[
+        _commands.DetectCommand,
+        __.tyro.conf.subcommand( 'detect', prefix_name = False ),
+    ] = __.dcls.field( default_factory = _commands.DetectCommand )
+
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:
+        ''' Executes the specified command. '''
+        await self.command( auxdata )
 
 
 def execute( ) -> None:
     ''' Entrypoint for CLI execution. '''
-    from asyncio import run
-    config = (
-        __.tyro.conf.HelptextFromCommentsOff,
-    )
-    try: run( __.tyro.cli( _main, config = config )( ) ) # pyright: ignore
+    config = ( __.tyro.conf.HelptextFromCommentsOff, )
+    try: __.asyncio.run( __.tyro.cli( Application, config = config )( ) )
     except SystemExit: raise
     except BaseException:
         # TODO: Log exception.
         raise SystemExit( 1 ) from None
-
-
-async def _main( ) -> None:
-    print( "Hello from agentsmgr CLI!" )

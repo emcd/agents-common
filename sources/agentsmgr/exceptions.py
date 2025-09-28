@@ -34,3 +34,16 @@ class Omniexception( BaseException ):
 
 class Omnierror( Omniexception, Exception ):
     ''' Base for error exceptions raised by package API. '''
+
+
+class ConfigurationAbsence( Omnierror, FileNotFoundError ):
+    ''' Configuration file absence. '''
+
+    def __init__( self, target: __.Absential[ __.Path ] = __.absent ):
+        if __.is_absent( target ): message = "No agents configuration found."
+        else: message = f"No agents configuration found in {target}."
+        super( ).__init__( message )
+
+
+class ConfigurationInvalidity( Omnierror, ValueError ):
+    ''' Configuration data invalidity. '''

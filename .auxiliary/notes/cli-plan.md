@@ -257,29 +257,63 @@ def _determine_output_extension(self, template_name: str) -> str:
 
 ## Implementation Roadmap
 
-### MVP Implementation (Immediate)
+### Implementation Order (Revised)
+
+**Phase 3.1: Configuration Detection (Immediate)**
+1. `DetectCommand` - Display current Copier configuration
+   - Establishes basic CLI framework with appcore integration
+   - Tests configuration detection logic in isolation
+   - Provides debugging utility for troubleshooting
+   - Foundation for all other commands
+
+**Phase 3.2: Template Pipeline Foundation**
+2. `PopulateCommand` (simulation mode only) - Test template discovery and rendering
+   - Template discovery and selection logic
+   - Content generation pipeline without actual file writing
+   - Error handling for missing templates/content
+
+**Phase 3.3: Full Population Implementation**
+3. `PopulateCommand` (complete) - Full content generation
+   - Local data source support (`source="."`)
+   - Claude coder support (most complex due to semantic tool mappings)
+   - Actual file writing with proper error handling
+
+**Phase 3.4: Validation Infrastructure**
+4. `ValidateCommand` - Template testing in temporary directories
+   - Configuration variant testing
+   - Temporary directory generation for safe testing
+
+### MVP Implementation (Immediate - Phase 3.1)
 
 **Core Features**:
-1. `PopulateCommand` with local data source support (`source="."`)
-2. Claude coder support (most complex due to semantic tool mappings)
-3. Simulation mode for safe development (`--simulate`)
-4. Basic error handling and configuration validation
+1. `DetectCommand` with basic configuration display
+2. CLI framework establishment with appcore/tyro integration
+3. Configuration file discovery and parsing
+4. Basic error handling for missing/invalid configuration
 
-**Key Files to Implement**:
-- `agentsmgr/cli.py` - Main application structure
-- `agentsmgr/commands.py` - PopulateCommand implementation
-- `agentsmgr/population.py` - Core generation logic
-- `agentsmgr/exceptions.py` - Custom exception classes
+**Key Files to Implement (Phase 3.1)**:
+- `agentsmgr/cli.py` - Main application structure with DetectCommand
+- `agentsmgr/commands.py` - DetectCommand implementation
+- `agentsmgr/exceptions.py` - Custom exception classes for configuration errors
 
-**MVP Command Interface**:
+**Phase 3.1 Command Interface**:
 ```bash
-# Generate content from local data directory
+# Display current Copier configuration for agents
+agentsmgr detect
+
+# Detect configuration in specific directory
+agentsmgr detect --target=/path/to/project
+```
+
+**Future Phases Command Interface**:
+```bash
+# Generate content from local data directory (Phase 3.2+)
 agentsmgr populate
 
-# Dry run to see what would be generated
+# Dry run to see what would be generated (Phase 3.2)
 agentsmgr populate --simulate
 
-# Generate in specific directory
+# Generate in specific directory (Phase 3.3)
 agentsmgr populate --target=/path/to/project
 ```
 
