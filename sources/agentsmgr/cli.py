@@ -18,15 +18,24 @@
 #============================================================================#
 
 
-''' Common imports used throughout the package. '''
-
-# ruff: noqa: F401
+''' Command-line interface. '''
 
 
-import collections.abc as cabc
-import types
+from . import __
 
-import typing_extensions as typx
-# --- BEGIN: Injected by Copier ---
-import tyro
-# --- END: Injected by Copier ---
+
+def execute( ) -> None:
+    ''' Entrypoint for CLI execution. '''
+    from asyncio import run
+    config = (
+        __.tyro.conf.HelptextFromCommentsOff,
+    )
+    try: run( __.tyro.cli( _main, config = config )( ) ) # pyright: ignore
+    except SystemExit: raise
+    except BaseException:
+        # TODO: Log exception.
+        raise SystemExit( 1 ) from None
+
+
+async def _main( ) -> None:
+    print( "Hello from agentsmgr CLI!" )

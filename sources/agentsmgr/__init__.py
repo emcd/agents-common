@@ -23,10 +23,17 @@
 
 from . import __
 # --- BEGIN: Injected by Copier ---
+from . import exceptions
 # --- END: Injected by Copier ---
 
 
 __version__ = '1.0a0'
+
+
+def main( ):
+    ''' Entrypoint. '''
+    from .cli import execute
+    execute( )
 
 
 # TODO: Reclassify package modules as immutable and concealed.

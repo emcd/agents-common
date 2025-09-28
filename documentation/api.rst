@@ -31,4 +31,7 @@ Package ``agentsmgr``
 .. automodule:: agentsmgr
 
 
+Module ``agentsmgr.exceptions``
+-------------------------------------------------------------------------------
 
+.. automodule:: agentsmgr.exceptions

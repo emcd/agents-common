@@ -18,15 +18,19 @@
 #============================================================================#
 
 
-''' Common imports used throughout the package. '''
-
-# ruff: noqa: F401
+''' Family of exceptions for package API. '''
 
 
-import collections.abc as cabc
-import types
+from . import __
 
-import typing_extensions as typx
-# --- BEGIN: Injected by Copier ---
-import tyro
-# --- END: Injected by Copier ---
+
+class Omniexception( BaseException ):
+    ''' Base for all exceptions raised by package API. '''
+    # TODO: Class and instance attribute concealment and immutability.
+
+    _attribute_visibility_includes_: __.cabc.Collection[ str ] = (
+        frozenset( ( '__cause__', '__context__', ) ) )
+
+
+class Omnierror( Omniexception, Exception ):
+    ''' Base for error exceptions raised by package API. '''

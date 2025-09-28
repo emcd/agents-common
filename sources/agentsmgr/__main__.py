@@ -18,15 +18,11 @@
 #============================================================================#
 
 
-''' Common imports used throughout the package. '''
-
-# ruff: noqa: F401
+''' Entrypoint. '''
 
 
-import collections.abc as cabc
-import types
+# Note: Use absolute import for PyInstaller happiness.
+from agentsmgr.cli import execute
 
-import typing_extensions as typx
-# --- BEGIN: Injected by Copier ---
-import tyro
-# --- END: Injected by Copier ---
+
+if '__main__' == __name__: execute( )

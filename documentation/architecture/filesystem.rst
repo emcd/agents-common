@@ -44,6 +44,7 @@ The project implements the standard filesystem organization:
     ├── documentation/           # Sphinx documentation source
     ├── sources/                 # All source code
     ├── tests/                   # Test suites
+    ├── pyinstaller.spec         # Executable packaging configuration
     └── .auxiliary/              # Development workspace
 
 Source Code Organization
@@ -64,8 +65,11 @@ The main Python package follows the standard ``sources/`` directory pattern:
     │   │   └── nomina.py            # agents-common-specific naming constants
     │   ├── __init__.py              # Package entry point
     │   ├── py.typed                 # Type checking marker
+    │   ├── __main__.py              # CLI entry point for `python -m agentsmgr`
+    │   ├── cli.py                   # Command-line interface implementation
+    │   ├── exceptions.py            # Package exception hierarchy
     │   └── [modules].py             # Feature-specific modules
-    
+
 
 All package modules use the standard ``__`` import pattern as documented
 in the common architecture guide.
@@ -76,7 +80,7 @@ AI Agent Configuration Structure
 Data-Driven Organization
 -------------------------------------------------------------------------------
 
-The primary content of this repository is organized under the ``data/`` 
+The primary content of this repository is organized under the ``data/``
 directory, implementing a 3-tier separation for structured agent configurations:
 
 .. code-block::
@@ -140,12 +144,12 @@ The system uses dual-channel distribution combining Copier templates and dynamic
 .. code-block::
 
     # Base Template Distribution (Copier)
-    agents-common/template/ 
+    agents-common/template/
     ↓ (copier copy)
     target-project/.auxiliary/configuration/
-    
+
     # Dynamic Content Generation (agentsmgr)
-    agents-common/data/ 
+    agents-common/data/
     ↓ (agentsmgr populate --source=agents-common@agents-N)
     target-project/.auxiliary/configuration/[tool]/commands/
     target-project/.auxiliary/configuration/[tool]/agents/
@@ -172,7 +176,7 @@ Variable transformation for template access:
     # TOML Source (hyphenated keys)
     argument-hint = 'major.minor'
     allowed-tools = 'git-release-standard'
-    
+
     # Template Variables (underscore keys)
     {{ argument_hint }}  # 'major.minor'
     {{ allowed_tools }}  # ['Edit', 'Bash(git:*)', ...]
@@ -182,10 +186,10 @@ Variable transformation for template access:
 
 .. code-block::
 
-    agents-common (data/ + template/) 
+    agents-common (data/ + template/)
     ↓ (tag: agents-N)
     agentsmgr populate --source=agents-common@agents-N
-    ↓ (git fetch + template rendering) 
+    ↓ (git fetch + template rendering)
     target-project (.auxiliary/configuration/)
 
 Component Integration
@@ -200,7 +204,7 @@ The ``agentsmgr`` package provides CLI tooling for dynamic content generation:
 
     sources/agentsmgr/
     ├── __/                         # Import hub following standard pattern
-    │   ├── __init__.py            # Re-exports core utilities  
+    │   ├── __init__.py            # Re-exports core utilities
     │   ├── imports.py             # External library imports
     │   └── nomina.py              # Project-specific naming constants
     ├── __init__.py                # Package entry point

@@ -15,8 +15,10 @@ license = 'Apache-2.0'
 readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
+  'emcd-appcore[cli]~=1.6',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
+  'tyro',
   # --- END: Injected by Copier ---
 ]
 classifiers = [ # https://pypi.org/classifiers
@@ -39,6 +41,8 @@ keywords = [ ] # TODO: Add keywords.
 [[project.authors]]
 name = 'Eric McDonald'
 email = 'emcd@users.noreply.github.com'
+[project.scripts]
+agentsmgr = 'agentsmgr:main'
 [project.urls]
 'Homepage' = 'https://github.com/emcd/agents-common'
 'Source Code' = 'https://github.com/emcd/agents-common'
@@ -86,7 +90,7 @@ strict-naming = false
 [tool.hatch.build.targets.wheel.sources]
 'sources/agentsmgr' = 'agentsmgr'
 # --- BEGIN: Injected by Copier ---
-# --- END: Injected by Copier --- 
+# --- END: Injected by Copier ---
 [tool.hatch.envs.default]
 python = '3.10'
 [tool.hatch.envs.develop]
@@ -107,6 +111,7 @@ dependencies = [
   'towncrier',
   'vulture',
   # --- BEGIN: Injected by Copier ---
+  'pyinstaller',
   # --- END: Injected by Copier ---
 ]
 post-install-commands = [
@@ -135,6 +140,10 @@ linters = [
 packagers = [
   """hatch build""",
   # --- BEGIN: Injected by Copier ---
+  """pyinstaller \
+      --clean \
+      --distpath=.auxiliary/artifacts/pyinstaller \
+      pyinstaller.spec""",
   # --- END: Injected by Copier ---
 ]
 testers-documentation = [

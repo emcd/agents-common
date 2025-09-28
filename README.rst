@@ -39,6 +39,36 @@
 Installation 📦
 ===============================================================================
 
+Method: Download Standalone Executable
+-------------------------------------------------------------------------------
+
+Download the latest standalone executable for your platform from `GitHub
+Releases <https://github.com/emcd/agents-common/releases>`_. These
+executables have no dependencies and work out of the box.
+
+Method: Install Executable Script
+-------------------------------------------------------------------------------
+
+Install via the `uv <https://github.com/astral-sh/uv/blob/main/README.md>`_
+``tool`` command:
+
+::
+
+    uv tool install emcd-agents-common
+
+or, run directly with `uvx
+<https://github.com/astral-sh/uv/blob/main/README.md>`_:
+
+::
+
+    uvx --from emcd-agents-common agentsmgr
+
+Or, install via `pipx <https://pipx.pypa.io/stable/installation/>`_:
+
+::
+
+    pipx install emcd-agents-common
+
 Method: Install Python Package
 -------------------------------------------------------------------------------
 
