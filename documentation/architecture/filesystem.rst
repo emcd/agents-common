@@ -73,76 +73,119 @@ in the common architecture guide.
 AI Agent Configuration Structure
 ===============================================================================
 
-Product-Focused Organization
+Data-Driven Organization
 -------------------------------------------------------------------------------
 
-The primary content of this repository is organized under the ``products/`` 
-directory, implementing a product-focused structure for AI agent configurations:
+The primary content of this repository is organized under the ``data/`` 
+directory, implementing a 3-tier separation for structured agent configurations:
 
 .. code-block::
 
-    products/
-    ├── claude/                     # Claude Code configurations
-    │   ├── agents/                 # Subagent definitions
-    │   │   └── python-conformer.md
-    │   ├── commands/               # Slash commands
-    │   │   ├── cs-annotate-release.md
-    │   │   ├── cs-architect.md
-    │   │   ├── cs-code-python.md
-    │   │   └── [15+ additional commands]
-    │   ├── configuration/          # Settings templates  
-    │   │   └── settings.json.jinja
-    │   ├── miscellany/             # Templates and snippets
-    │   │   └── command-template.md
-    │   └── scripts/                # Hook executables
-    │       ├── post-edit-linter
-    │       └── pre-bash-python-check
-    └── gemini/                     # Gemini CLI configurations
-        ├── commands/               # Command definitions
-        │   └── settings.json
-        └── configuration/          # Settings templates
-            └── settings.json.jinja
+    data/
+    ├── configurations/            # Tool-agnostic TOML configurations
+    │   ├── commands/              # Command metadata
+    │   │   ├── cs-conform-python.toml
+    │   │   └── cs-release-final.toml
+    │   └── agents/                # Agent metadata
+    │       └── python-conformer.toml
+    ├── contents/                  # Coder-specific content bodies
+    │   ├── commands/
+    │   │   ├── claude/            # Claude-specific content
+    │   │   │   ├── cs-conform-python.md
+    │   │   │   └── cs-release-final.md
+    │   │   ├── opencode/          # Falls back to/from claude/
+    │   │   └── gemini/            # No fallback - different syntax
+    │   └── agents/
+    │       ├── claude/
+    │       │   └── python-conformer.md
+    │       ├── opencode/          # Falls back to/from claude/
+    │       └── gemini/            # No fallback - different syntax
+    └── templates/                 # Generic, reusable templates
+        ├── command.md.jinja       # For Claude/Opencode commands
+        ├── command.toml.jinja     # For Gemini commands
+        ├── agent.md.jinja         # For Claude/Opencode agents
+        └── agent.toml.jinja       # For Gemini agents
+
+    template/                      # Minimal Copier template for base configuration
+    └── .auxiliary/configuration/
+        ├── claude/
+        │   ├── commands/.gitignore    # Ignore generated content
+        │   ├── agents/.gitignore
+        │   ├── scripts/              # Hook executables
+        │   └── settings.json.jinja   # Base template
+        ├── opencode/
+        │   ├── commands/.gitignore
+        │   └── agents/.gitignore
+        ├── gemini/
+        │   ├── commands/.gitignore
+        │   └── agents/.gitignore
+        └── mcp-servers.json.jinja     # Base MCP configuration
 
 **Design Principles:**
 
-* **Product Organization**: Each AI tool maintains dedicated directory structure
-* **Resource Consolidation**: All tool-specific resources centralized per product  
-* **Consistent Taxonomy**: Latin-derived directory naming maintains linguistic consistency
-* **Extensible Structure**: New AI tools integrate without restructuring existing content
+* **Data-Driven Generation**: Structured TOML configurations drive content generation
+* **Clean Separation**: Source data, content bodies, and templates are distinctly organized
+* **Tool-Agnostic Sources**: Configurations work across multiple AI coding tools
+* **Content Fallback Strategy**: Claude ↔ Opencode compatibility, Gemini isolation
+* **Semantic Tool Mapping**: allowed-tools specifications map to tool-specific syntax
+* **Minimal Base Distribution**: Copier provides only essential templates and structure
 
 Distribution and Integration Patterns
 -------------------------------------------------------------------------------
 
-**Template-Based Settings Distribution:**
+**Hybrid Distribution Architecture:**
 
-The system uses Jinja2 templates for flexible configuration generation:
-
-.. code-block::
-
-    products/[tool]/configuration/settings.json.jinja
-    ↓ (CLI rendering with local overrides)
-    target-project/.auxiliary/configuration/[tool]/settings.json
-
-**Path Coordination Strategy:**
-
-Commands and templates reference downstream deployment paths:
+The system uses dual-channel distribution combining Copier templates and dynamic generation:
 
 .. code-block::
 
-    # In distributed commands
-    @.auxiliary/configuration/claude/miscellany/command-template.md
+    # Base Template Distribution (Copier)
+    agents-common/template/ 
+    ↓ (copier copy)
+    target-project/.auxiliary/configuration/
     
-    # In settings templates  
-    "command": "{{ script_path_prefix }}/claude/post-edit-linter"
+    # Dynamic Content Generation (agentsmgr)
+    agents-common/data/ 
+    ↓ (agentsmgr populate --source=agents-common@agents-N)
+    target-project/.auxiliary/configuration/[tool]/commands/
+    target-project/.auxiliary/configuration/[tool]/agents/
 
-**Tag-Based Release Distribution:**
+**Template-of-Templates Generation:**
+
+Content generation combines structured sources with generic templates:
 
 .. code-block::
 
-    agents-common (products/) 
+    # Source Data Structure
+    data/configurations/commands/cs-release-final.toml  (metadata)
+    + data/contents/commands/claude/cs-release-final.md  (content body)
+    + data/templates/command.md.jinja                    (format template)
+    ↓ (agentsmgr populate)
+    target/.auxiliary/configuration/claude/commands/cs-release-final.md
+
+**Configuration Normalization:**
+
+Variable transformation for template access:
+
+.. code-block::
+
+    # TOML Source (hyphenated keys)
+    argument-hint = 'major.minor'
+    allowed-tools = 'git-release-standard'
+    
+    # Template Variables (underscore keys)
+    {{ argument_hint }}  # 'major.minor'
+    {{ allowed_tools }}  # ['Edit', 'Bash(git:*)', ...]
+    {{ coder.name }}     # 'claude'
+
+**Tag-Based Source Distribution:**
+
+.. code-block::
+
+    agents-common (data/ + template/) 
     ↓ (tag: agents-N)
-    python-project-common (template references)
-    ↓ (copier instantiation) 
+    agentsmgr populate --source=agents-common@agents-N
+    ↓ (git fetch + template rendering) 
     target-project (.auxiliary/configuration/)
 
 Component Integration
@@ -151,7 +194,7 @@ Component Integration
 CLI Integration Patterns
 -------------------------------------------------------------------------------
 
-The ``agentsmgr`` package provides CLI tooling for configuration management:
+The ``agentsmgr`` package provides CLI tooling for dynamic content generation:
 
 .. code-block::
 
@@ -166,9 +209,17 @@ The ``agentsmgr`` package provides CLI tooling for configuration management:
 
 **Primary Integration Points:**
 
-* ``prepare-llm-agents``: Environment setup from tagged releases
-* Template rendering: Base templates + local overrides → final settings
-* Path resolution: Parameterized paths → environment-specific references
+* ``agentsmgr populate``: Dynamic content generation from git sources
+* Configuration detection: Copier answers file or default fallback
+* Template rendering: TOML metadata + content bodies + Jinja2 templates → tool-specific files
+* Content fallback: Claude ↔ Opencode compatibility, Gemini isolation
+* Semantic tool mapping: allowed-tools specifications → coder-specific syntax
+
+**Integration Workflows:**
+
+* **New Projects**: Copier template + automatic agentsmgr populate via hooks
+* **Agent Updates**: ``copier update`` + ``agentsmgr populate --source=agents-N``
+* **Manual Population**: ``agentsmgr populate`` (works in any project structure)
 
 Development Workspace Integration
 -------------------------------------------------------------------------------
@@ -178,14 +229,14 @@ Development-specific organization follows standard ``.auxiliary/`` patterns:
 .. code-block::
 
     .auxiliary/
-    ├── configuration/              # Legacy structure (will be deprecated) 
+    ├── configuration/              # Current structure for downstream projects
     ├── instructions/               # Development practices and architecture guides
     ├── notes/                      # Development notes and planning documents
     └── scribbles/                  # Temporary development files
 
-The legacy ``.auxiliary/configuration/`` structure is maintained during transition 
-but will be deprecated as the ``products/`` structure becomes the authoritative 
-source.
+The ``.auxiliary/configuration/`` structure remains the standard deployment target
+for downstream projects. The change is that agentic coder configurations will now
+be generated by agentsmgr rather than distributed from python-project-common.
 
 Architecture Evolution
 ===============================================================================

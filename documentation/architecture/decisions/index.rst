@@ -23,9 +23,10 @@ Architectural Decision Records
 
 .. toctree::
    :maxdepth: 2
-
-
-.. todo:: Add architectural decision records to toctree.
+   
+   001-product-focused-organization
+   002-template-based-settings-distribution
+   003-tag-based-release-workflow
 
 For ADR format and guidance, see the `architecture documentation guide
 <https://emcd.github.io/python-project-common/stable/sphinx-html/common/architecture.html>`_.

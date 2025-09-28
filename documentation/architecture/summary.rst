@@ -48,109 +48,133 @@ Major Components
 Configuration Repository Structure
 -------------------------------------------------------------------------------
 
-The system uses a product-focused organizational structure:
-
-.. code-block::
-
-    products/
-    ├── claude/                 # Claude Code configurations
-    │   ├── agents/            # Subagent definitions  
-    │   ├── commands/          # Slash commands
-    │   ├── miscellany/        # Templates and snippets
-    │   ├── scripts/           # Hook executables
-    │   └── configuration/     # Settings templates
-    └── gemini/                # Gemini CLI configurations
-        ├── commands/          # Command definitions
-        └── configuration/     # Settings templates
+The system uses a hybrid Copier + agentsmgr approach with clean data separation.
+For detailed directory organization and file structure, see :doc:`filesystem`.
 
 **Key Design Principles:**
 
-* **Product Organization**: Each AI tool has dedicated directory structure
-* **Resource Consolidation**: All tool-specific resources centralized per product
-* **Consistent Taxonomy**: Latin-derived directory naming maintains linguistic consistency
-* **Extensible Structure**: New AI tools integrate without restructuring existing content
+* **Data-Driven Generation**: Structured TOML configurations drive content generation
+* **Clean Separation**: Source data, content bodies, and templates are distinctly organized
+* **Tool-Agnostic Sources**: Configurations work across multiple AI coding tools
+* **Semantic Tool Mapping**: allowed-tools specifications map to tool-specific syntax
+* **Content Fallback Strategy**: Claude ↔ Opencode compatibility, Gemini isolation
+* **Minimal Base Distribution**: Copier provides only essential templates and structure
 
-Template-Based Configuration System
+Template-Based Content Generation System
 -------------------------------------------------------------------------------
 
-The system implements a Jinja2-based template architecture for settings distribution:
+The system implements a template-of-templates architecture for dynamic content generation:
 
-**Configuration Templates** (``*.json.jinja``):
-- Base templates handle tool-specific hook configurations
-- Reference hook script paths that coordinate with distributed executables
-- Support parameterized customization through template variables
+**Source Data Structure** (``data/configurations/``):
+- TOML files contain tool-agnostic metadata following project standards
+- Semantic allowed-tools specifications map to coder-specific syntax
+- Frontmatter fields support multiple AI tool format requirements
 
-**Local Override Mechanism**:
-- Projects can provide ``local.toml`` files for project-specific extensions
-- CLI tooling merges base templates with local overrides
-- Avoids duplicating Copier's templating functionality
+**Content Bodies** (``data/contents/``):
+- Coder-specific content without frontmatter for maximum reusability
+- Claude ↔ Opencode bidirectional fallback (compatible syntax)
+- Gemini isolation (incompatible syntax: {{args}} vs $ARGUMENTS)
 
-**Path Coordination Strategy**:
-- Commands reference ``.auxiliary/configuration/`` paths for downstream compatibility
-- Hook scripts function correctly when deployed to target project structure
-- Template references remain valid after distribution
+**Generic Templates** (``data/templates/``):
+- Jinja2 templates combine metadata + content for each tool format
+- Variable normalization: hyphen→underscore for template access
+- Coder objects provide dot-notation access (coder.name, coder.model)
 
-Distribution and Release Management
+**Base Configuration Templates** (``template/``):
+- Minimal Copier template for settings.json.jinja and directory structure
+- .gitignore files prevent committing generated content
+- Hook scripts distributed via proven Copier mechanisms
+
+Hybrid Distribution Architecture
 -------------------------------------------------------------------------------
 
-The system uses a tag-based release workflow for lightweight configuration updates:
+The system uses a hybrid approach combining Copier templates and dynamic generation:
 
-**Tag-Based Versioning**:
+**Tag-Based Source Versioning**:
 - Repository uses ``agents-N`` tag versioning scheme (agents-1, agents-2, etc.)
-- Enables atomic, consistent configuration deployment
-- Provides rollback capability through tag references
+- Enables atomic, consistent data source distribution
+- Source data tagged independently from project templates
 
-**CLI Integration**:  
-- ``agentsmgr prepare-llm-agents`` command handles environment setup
-- CLI tooling can pull from specific tagged versions
-- Downstream projects can pin to known-good configuration versions
+**Copier Template Integration**:
+- Minimal template provides base configuration and directory structure
+- Standard Copier workflows for multi-template projects
+- Base settings templates distributed via proven mechanisms
+
+**Dynamic Content Generation**:
+- ``agentsmgr populate --source=agents-common@agents-N`` generates tool-specific content
+- Content generated directly in downstream projects from git source
+- Configuration detection from Copier answers or defaults
+- Generated content ignored via .gitignore (not committed)
 
 **GitHub Actions Workflow**:
-- Publishing workflow automatically deploys tagged releases
-- Configuration distribution completes within minutes of tag creation
+- Publishing workflow automatically validates and deploys tagged releases
+- Fast iteration: content changes don't require template commits
 - Supports standard git workflow practices and CI/CD pipelines
 
 Component Relationships
 ===============================================================================
 
-Configuration Flow Architecture
+Hybrid Distribution Flow Architecture
 -------------------------------------------------------------------------------
 
-The system implements a hub-and-spoke distribution model:
+The system implements a dual-channel distribution model:
 
-1. **Central Repository** (agents-common): 
-   - Maintains authoritative configurations for all AI tools
-   - Consolidates hook scripts, commands, templates, and settings
-   - Tags releases for atomic distribution
+1. **Source Data Repository** (agents-common): 
+   - Maintains structured data sources in ``data/`` directory
+   - Provides minimal Copier template for base configuration
+   - Tags releases for atomic data source distribution
 
-2. **Template Integration** (python-project-common):
-   - References tagged releases from agents-common repository
-   - Copier templates generate project-specific MCP configurations
-   - Handles conditional logic and project-specific customization
+2. **Base Template Distribution** (Copier):
+   - ``template/`` provides base settings templates and directory structure
+   - Standard Copier multi-template workflow integration
+   - Handles MCP server configurations and hook script distribution
 
-3. **Target Projects**:
-   - Receive distributed configurations in ``.auxiliary/configuration/`` structure
-   - CLI tooling renders final settings from base templates + local overrides
-   - Hook scripts execute with correct path references
+3. **Dynamic Content Generation** (agentsmgr):
+   - Fetches tagged data sources from git repositories
+   - Generates tool-specific commands and agents in target projects
+   - Content fallback strategy handles tool compatibility
+
+4. **Target Projects**:
+   - Base configuration from Copier template distribution
+   - Dynamic content generated by agentsmgr populate command
+   - Generated content ignored via .gitignore patterns
+   - Final settings rendered from base templates with parameterized paths
 
 Data Flow Patterns
 -------------------------------------------------------------------------------
 
-**Configuration Distribution Flow**:
+**Source Data Distribution Flow**:
 
 .. code-block::
 
-    agents-common (products/) → Tag Release → 
-    python-project-common (references) → 
+    agents-common (data/) → Tag Release (agents-N) → 
+    agentsmgr populate → 
     Target Projects (.auxiliary/configuration/)
+
+**Base Template Distribution Flow**:
+
+.. code-block::
+
+    agents-common (template/) → Copier Distribution → 
+    Target Projects (.auxiliary/configuration/)
+
+**Content Generation Flow**:
+
+.. code-block::
+
+    TOML Configuration (metadata) + 
+    Coder Content (body) + 
+    Generic Template (format) → 
+    agentsmgr populate → 
+    Tool-Specific Files
 
 **Settings Generation Flow**:
 
 .. code-block::
 
     Base Template (settings.json.jinja) + 
-    Local Overrides (local.toml) → 
-    CLI Rendering → 
+    Copier Variables (project-specific) → 
+    Copier Rendering → 
     Final Settings (settings.json)
 
 **Command Execution Flow**:
@@ -158,8 +182,8 @@ Data Flow Patterns
 .. code-block::
 
     Slash Command → 
-    Reference (.auxiliary/configuration/) → 
-    Template/Hook Script → 
+    Generated File (.auxiliary/configuration/) → 
+    Hook Script (from Copier template) → 
     Execution
 
 Key Architectural Patterns

@@ -99,36 +99,41 @@ configurations and need rapid feedback cycles for testing and deployment.
 Functional Requirements
 ===============================================================================
 
-**REQ-001: Product-Organized Repository Structure** (Priority: Critical)
-As a project maintainer, I want AI tool configurations organized by product 
-so that I can easily locate and manage tool-specific resources.
+**REQ-001: Data-Driven Repository Structure** (Priority: Critical)
+As a project maintainer, I want AI tool configurations organized as structured 
+data sources so that I can maintain tool-agnostic sources while generating 
+tool-specific outputs.
 
 Acceptance Criteria:
-- Repository uses ``products/`` top-level directory structure
-- Each AI tool has dedicated subdirectory (claude/, gemini/, etc.)
-- Tool subdirectories contain agents/, commands/, scripts/, configuration/ as appropriate
+- Repository uses ``data/`` directory with 3-tier separation (configurations/, contents/, templates/)
+- TOML configurations provide tool-agnostic metadata with semantic allowed-tools specifications
+- Coder-specific content bodies support fallback strategies (Claude ↔ Opencode, Gemini isolated)
+- Generic Jinja2 templates handle format differences across AI coding tools
 - Directory naming follows consistent terminology conventions
 
-**REQ-002: Consolidated Resource Management** (Priority: Critical)
-As a project maintainer, I want all tool-specific resources consolidated 
-so that I have a single source of truth for each AI development environment.
+**REQ-002: Structured Source Data Management** (Priority: Critical)
+As a project maintainer, I want structured source data that generates 
+content for multiple AI tools so that I maintain single sources while 
+supporting diverse tool formats.
 
 Acceptance Criteria:
-- Claude hook scripts consolidated from python-project-common template
-- All slash commands centralized in products/claude/commands/
-- Subagent definitions centralized in products/claude/agents/
-- No duplication of configuration resources across repositories
+- Command and agent metadata stored in tool-agnostic TOML configurations
+- Content bodies separated by coder with appropriate fallback strategies
+- Generic templates handle format differences across AI coding tools
+- Hook scripts distributed via minimal Copier template (not generated)
+- Single source of truth drives generation for all supported AI tools
 
-**REQ-003: Template-Based Settings Distribution** (Priority: High)
-As a project maintainer, I want base configuration templates that can be 
-customized so that I can maintain consistent hook configurations while 
-allowing project-specific extensions.
+**REQ-003: Hybrid Distribution Architecture** (Priority: High)
+As a project maintainer, I want base configuration templates combined with 
+dynamic content generation so that I can maintain proven distribution for 
+static templates while enabling fast iteration for dynamic content.
 
 Acceptance Criteria:
-- settings.json.jinja templates provided for each AI tool
-- Templates handle hook path references correctly
-- Support for local.toml override mechanism
-- Generated configurations work with existing AI tool expectations
+- Minimal Copier template provides base settings templates and directory structure
+- agentsmgr populate command generates tool-specific content from structured sources
+- Base templates handle hook path references and MCP server configurations
+- Generated content ignored via .gitignore patterns (not committed)
+- Configuration detection from Copier answers files or defaults
 
 **REQ-004: Tag-Based Release Distribution** (Priority: High)
 As a project maintainer, I want lightweight tag-based releases so that 
@@ -141,25 +146,25 @@ Acceptance Criteria:
 - Downstream projects can pin to known-good configuration versions
 - Publishing workflow automatically deploys tagged releases
 
-**REQ-005: Backward Compatible Path References** (Priority: Critical)
-As a project maintainer, I want existing command references preserved 
+**REQ-005: Generated Content Path Compatibility** (Priority: Critical)
+As a project maintainer, I want generated content to reference correct paths 
 so that distributed configurations work correctly in downstream projects.
 
 Acceptance Criteria:
-- Commands reference .auxiliary/configuration/ paths for downstream compatibility
-- Hook scripts function correctly when deployed to target project structure
-- No breaking changes to existing project deployment workflows
-- Template references remain valid after distribution
+- Generated commands and agents reference .auxiliary/configuration/ paths for compatibility
+- Hook scripts distributed via Copier template function correctly when deployed
+- Generated content follows established project deployment patterns
+- Template references remain valid after agentsmgr populate generation
 
-**REQ-006: Multi-Tool Extensibility** (Priority: Medium)
-As a project maintainer, I want clean extensibility for future AI tools 
-so that new tools can be added without restructuring existing content.
+**REQ-006: Multi-Tool Content Generation** (Priority: Medium)
+As a project maintainer, I want extensible content generation for future AI tools 
+so that new tools can be added without restructuring existing data sources.
 
 Acceptance Criteria:
-- New AI tools can be added with products/[tool]/ directory structure
-- Existing tool configurations unaffected by new tool additions
-- Shared resources (MCP servers, etc.) available across tools
-- Consistent patterns for tool-specific vs shared resources
+- New AI tools supported by adding coder directories and format templates
+- Existing source data (configurations/, contents/) unaffected by new tool additions
+- Shared resources (MCP servers, base settings) available via Copier template
+- Consistent template patterns for tool-specific format generation
 
 Non-Functional Requirements
 ===============================================================================
