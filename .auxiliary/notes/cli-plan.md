@@ -278,8 +278,15 @@ def _determine_output_extension(self, template_name: str) -> str:
    - Claude coder support (most complex due to semantic tool mappings)
    - Actual file writing with proper error handling
 
-**Phase 3.4: Validation Infrastructure**
-4. `ValidateCommand` - Template testing in temporary directories
+**Phase 3.4: Output Formatting Enhancement**
+4. Result objects with Markdown rendering - Professional output formatting
+   - Implement `ResultBase` protocol and result objects for structured output
+   - Add `intercept_errors` decorator for consistent error handling
+   - Enhance exception classes with `render_as_markdown()` methods
+   - **Reference**: See `.auxiliary/notes/cli-rendering.md` for complete strategy
+
+**Phase 3.5: Validation Infrastructure**
+5. `ValidateCommand` - Template testing in temporary directories
    - Configuration variant testing
    - Temporary directory generation for safe testing
 

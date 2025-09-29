@@ -47,3 +47,36 @@ class ConfigurationAbsence( Omnierror, FileNotFoundError ):
 
 class ConfigurationInvalidity( Omnierror, ValueError ):
     ''' Configuration data invalidity. '''
+
+
+class ContentAbsence( Omnierror, FileNotFoundError ):
+    ''' Content file absence. '''
+
+    def __init__( self, content_type: str, content_name: str, coder: str ):
+        message = (
+            f"No {content_type} content found for {coder}: {content_name}" )
+        super( ).__init__( message )
+
+
+class TemplateAbsence( Omnierror, FileNotFoundError ):
+    ''' Template file absence. '''
+
+    def __init__( self, template_type: str, coder: str ):
+        message = f"No template found for {coder} {template_type}"
+        super( ).__init__( message )
+
+
+class UnsupportedCoderError( Omnierror, ValueError ):
+    ''' Unsupported coder error. '''
+
+    def __init__( self, coder: str ):
+        message = f"Unsupported coder: {coder}"
+        super( ).__init__( message )
+
+
+class UnsupportedSourceError( Omnierror, ValueError ):
+    ''' Unsupported data source format error. '''
+
+    def __init__( self, source_spec: str ):
+        message = f"Unsupported source format: {source_spec}"
+        super( ).__init__( message )

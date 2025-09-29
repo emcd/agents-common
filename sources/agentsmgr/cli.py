@@ -28,9 +28,15 @@ from . import commands as _commands
 class Application( __.appcore_cli.Application ):
     ''' Agent configuration management CLI. '''
 
-    command: __.typx.Annotated[
-        _commands.DetectCommand,
-        __.tyro.conf.subcommand( 'detect', prefix_name = False ),
+    command: __.typx.Union[
+        __.typx.Annotated[
+            _commands.DetectCommand,
+            __.tyro.conf.subcommand( 'detect', prefix_name = False ),
+        ],
+        __.typx.Annotated[
+            _commands.PopulateCommand,
+            __.tyro.conf.subcommand( 'populate', prefix_name = False ),
+        ],
     ] = __.dcls.field( default_factory = _commands.DetectCommand )
 
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:

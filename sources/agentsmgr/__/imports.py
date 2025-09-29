@@ -44,3 +44,4 @@ import tyro
 
 from absence import Absential, absent, is_absent
 from appcore import cli as appcore_cli
+import frigid as immut
