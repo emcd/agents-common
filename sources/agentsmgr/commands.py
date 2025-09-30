@@ -28,7 +28,9 @@ from . import __
 from . import exceptions as _exceptions
 from . import results as _results
 
+
 CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
+
 
 _TEMPLATE_PARTS_MINIMUM = 3
 
@@ -72,7 +74,7 @@ def intercept_errors( ) -> __.cabc.Callable[
 class DetectCommand( __.appcore_cli.Command ):
     ''' Detects and displays current Copier configuration for agents. '''
 
-    target: __.typx.Annotated[
+    source: __.typx.Annotated[
         __.Path,
         __.tyro.conf.arg(
             help = "Target directory to search for configuration." ),
@@ -81,9 +83,9 @@ class DetectCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Detects agent configuration and displays formatted result. '''
-        configuration = await self._detect_configuration( self.target )
+        configuration = await self._detect_configuration( self.source )
         result = _results.ConfigurationDetectionResult(
-            target = self.target,
+            target = self.source,
             coders = tuple( configuration[ 'coders' ] ),
             languages = tuple( configuration[ 'languages' ] ),
             project_name = configuration.get( 'project_name' ),
@@ -116,79 +118,10 @@ class DetectCommand( __.appcore_cli.Command ):
         self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
     ) -> None:
         ''' Validates required configuration fields. '''
-        if not configuration.get( "coders" ):
+        if not configuration.get( 'coders' ):
             raise _exceptions.ConfigurationInvalidity( )
-        if not configuration.get( "languages" ):
+        if not configuration.get( 'languages' ):
             raise _exceptions.ConfigurationInvalidity( )
-
-
-def _retrieve_data_location( source_spec: str ) -> __.Path:
-    ''' Retrieves data source location and returns local path. '''
-    if not source_spec.startswith( ( 'http', 'git@', 'gh:' ) ):
-        return __.Path( source_spec ).resolve( )
-    raise _exceptions.UnsupportedSourceError( source_spec )
-
-
-def update_content(
-    content: str, location: __.Path, simulate: bool = False
-) -> bool:
-    ''' Updates content file, creating directories as needed.
-
-        Returns True if file was written, False if simulated.
-    '''
-    if simulate: return False
-    try: location.parent.mkdir( parents = True, exist_ok = True )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.DirectoryCreateFailure(
-            location.parent ) from exception
-    try: location.write_text( content, encoding = 'utf-8' )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.ContentUpdateFailure( location ) from exception
-    return True
-
-
-def _generate_coder_item_type(
-    generator: 'ContentGenerator',
-    coder: str,
-    item_type: str,
-    target: __.Path,
-    simulate: bool
-) -> tuple[ int, int ]:
-    ''' Generates items of specific type for a coder.
-
-        Returns tuple of (items_attempted, items_written).
-    '''
-    items_attempted = 0
-    items_written = 0
-    configuration_directory = (
-        generator.location / 'configurations' / item_type )
-    if not configuration_directory.exists( ):
-        return ( items_attempted, items_written )
-    for configuration_file in configuration_directory.glob( '*.toml' ):
-        items_attempted += 1
-        result = generator.render_single_item(
-            item_type, configuration_file.stem, coder, target )
-        if update_content( result.content, result.location, simulate ):
-            items_written += 1
-    return ( items_attempted, items_written )
-
-
-def generate_items_to_directory(
-    generator: 'ContentGenerator', target: __.Path, simulate: bool = False
-) -> tuple[ int, int ]:
-    ''' Generates all content items to target directory.
-
-        Returns tuple of (items_attempted, items_written).
-    '''
-    items_attempted = 0
-    items_written = 0
-    for coder in generator.configuration[ 'coders' ]:
-        for item_type in ( 'commands', 'agents' ):
-            attempted, written = _generate_coder_item_type(
-                generator, coder, item_type, target, simulate )
-            items_attempted += attempted
-            items_written += written
-    return ( items_attempted, items_written )
 
 
 class ContentGenerator( __.immut.DataclassObject ):
@@ -202,12 +135,6 @@ class ContentGenerator( __.immut.DataclassObject ):
         self.jinja_environment = ( # pyright: ignore[reportAttributeAccessIssue]
             self._provide_jinja_environment( ) )
 
-    def _provide_jinja_environment( self ) -> _jinja2.Environment:
-        ''' Provides Jinja2 environment with templates directory. '''
-        directory = self.location / "templates"
-        loader = _jinja2.FileSystemLoader( directory )
-        return _jinja2.Environment( loader = loader, autoescape = True )
-
     def generate(
         self, target: __.Path, simulate: bool = True
     ) -> None:
@@ -217,26 +144,6 @@ class ContentGenerator( __.immut.DataclassObject ):
                 self._generate_coder_content( coder, target, simulate )
         except Exception as exception:
             print( f"⚠️  Failed to generate {coder} content: {exception}" )
-
-    def _generate_coder_content(
-        self, coder: str, target: __.Path, simulate: bool
-    ) -> None:
-        ''' Generates commands and agents for specific coder. '''
-        print( f"📁 Generating content for {coder}:" )
-        self._render_item_type( "commands", coder, target, simulate )
-        self._render_item_type( "agents", coder, target, simulate )
-
-    def _render_item_type(
-        self, item_type: str, coder: str, target: __.Path, simulate: bool
-    ) -> None:
-        ''' Renders all items of a specific type for a coder. '''
-        configuration_directory = self.location / "configurations" / item_type
-        if not configuration_directory.exists( ):
-            print( f"   ⚠️  No {item_type} configurations found" )
-            return
-        for configuration_file in configuration_directory.glob( "*.toml" ):
-            self._render_single_item(
-                item_type, configuration_file.stem, coder, target, simulate )
 
     def render_single_item(
         self, item_type: str, item_name: str, coder: str, target: __.Path
@@ -261,16 +168,47 @@ class ContentGenerator( __.immut.DataclassObject ):
             item_type / f"{item_name}.{extension}" )
         return RenderedItem( content = content, location = location )
 
-    def _render_single_item(
-        self, item_type: str, item_name: str, coder: str,
-        target: __.Path, simulate: bool
+    def _generate_coder_content(
+        self, coder: str, target: __.Path, simulate: bool
     ) -> None:
-        ''' Renders a single item and prints status (legacy method). '''
-        result = self.render_single_item( item_type, item_name, coder, target )
-        print( f"   ✅ {result.location}" )
-        if simulate:
-            print(
-                f"      Content preview: {len( result.content )} characters" )
+        ''' Generates commands and agents for specific coder. '''
+        print( f"📁 Generating content for {coder}:" )
+        self._render_item_type( "commands", coder, target, simulate )
+        self._render_item_type( "agents", coder, target, simulate )
+
+    def _get_available_templates( self, item_type: str ) -> list[ str ]:
+        ''' Gets available templates for item type. '''
+        directory = self.location / "templates"
+        singular_type = item_type.rstrip( 's' )
+        pattern = f"{singular_type}.*.jinja"
+        return [ p.name for p in directory.glob( pattern ) ]
+
+    def _get_content_with_fallback(
+        self, item_type: str, item_name: str, coder: str
+    ) -> str:
+        ''' Gets content with Claude↔OpenCode fallback logic. '''
+        primary_path = (
+            self.location / "contents" / item_type / coder /
+            f"{item_name}.md" )
+        if primary_path.exists( ):
+            return primary_path.read_text( encoding = 'utf-8' )
+        fallback_map = { "claude": "opencode", "opencode": "claude" }
+        fallback_coder = fallback_map.get( coder )
+        if fallback_coder:
+            fallback_path = (
+                self.location / "contents" / item_type /
+                fallback_coder / f"{item_name}.md" )
+            if fallback_path.exists( ):
+                print( f"   🔄 Using {fallback_coder} content for {coder}" )
+                return fallback_path.read_text( encoding = 'utf-8' )
+        raise _exceptions.ContentAbsence( item_type, item_name, coder )
+
+    def _get_output_extension( self, template_name: str ) -> str:
+        ''' Extracts output extension from template name. '''
+        parts = template_name.split( '.' )
+        if len( parts ) >= _TEMPLATE_PARTS_MINIMUM and parts[ -1 ] == 'jinja':
+            return parts[ -2 ]
+        return 'txt'
 
     def _load_item_metadata(
         self, item_type: str, item_name: str, coder: str
@@ -295,30 +233,38 @@ class ContentGenerator( __.immut.DataclassObject ):
             { 'name': coder } )
         return { 'frontmatter': frontmatter, 'coder': coder_config }
 
-    def _get_content_with_fallback(
-        self, item_type: str, item_name: str, coder: str
-    ) -> str:
-        ''' Gets content with Claude↔OpenCode fallback logic. '''
-        primary_path = (
-            self.location / "contents" / item_type / coder /
-            f"{item_name}.md" )
-        if primary_path.exists( ):
-            return primary_path.read_text( encoding = 'utf-8' )
-        fallback_map = { "claude": "opencode", "opencode": "claude" }
-        fallback_coder = fallback_map.get( coder )
-        if fallback_coder:
-            fallback_path = (
-                self.location / "contents" / item_type /
-                fallback_coder / f"{item_name}.md" )
-            if fallback_path.exists( ):
-                print( f"   🔄 Using {fallback_coder} content for {coder}" )
-                return fallback_path.read_text( encoding = 'utf-8' )
-        raise _exceptions.ContentAbsence( item_type, item_name, coder )
+    def _provide_jinja_environment( self ) -> _jinja2.Environment:
+        ''' Provides Jinja2 environment with templates directory. '''
+        directory = self.location / "templates"
+        loader = _jinja2.FileSystemLoader( directory )
+        return _jinja2.Environment( loader = loader, autoescape = True )
+
+    def _render_item_type(
+        self, item_type: str, coder: str, target: __.Path, simulate: bool
+    ) -> None:
+        ''' Renders all items of a specific type for a coder. '''
+        configuration_directory = self.location / "configurations" / item_type
+        if not configuration_directory.exists( ):
+            print( f"   ⚠️  No {item_type} configurations found" )
+            return
+        for configuration_file in configuration_directory.glob( "*.toml" ):
+            self._render_single_item(
+                item_type, configuration_file.stem, coder, target, simulate )
+
+    def _render_single_item(
+        self, item_type: str, item_name: str, coder: str,
+        target: __.Path, simulate: bool
+    ) -> None:
+        ''' Renders a single item and prints status (legacy method). '''
+        result = self.render_single_item( item_type, item_name, coder, target )
+        print( f"   ✅ {result.location}" )
+        if simulate:
+            print(
+                f"      Content preview: {len( result.content )} characters" )
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities. '''
         available = self._get_available_templates( item_type )
-        # Convert plural item_type to singular for template name matching
         singular_type = item_type.rstrip( 's' )
         preferences = {
             "claude": [ f"{singular_type}.md.jinja" ],
@@ -332,21 +278,6 @@ class ContentGenerator( __.immut.DataclassObject ):
             raise _exceptions.UnsupportedCoderError( coder )
         raise _exceptions.TemplateAbsence( item_type, coder )
 
-    def _get_available_templates( self, item_type: str ) -> list[ str ]:
-        ''' Gets available templates for item type. '''
-        directory = self.location / "templates"
-        # Convert plural item_type to singular for template matching
-        singular_type = item_type.rstrip( 's' )
-        pattern = f"{singular_type}.*.jinja"
-        return [ p.name for p in directory.glob( pattern ) ]
-
-    def _get_output_extension( self, template_name: str ) -> str:
-        ''' Extracts output extension from template name. '''
-        parts = template_name.split( '.' )
-        if len( parts ) >= _TEMPLATE_PARTS_MINIMUM and parts[ -1 ] == 'jinja':
-            return parts[ -2 ]
-        return 'txt'
-
 
 class PopulateCommand( __.appcore_cli.Command ):
     ''' Generates dynamic agent content from data sources. '''
@@ -354,13 +285,11 @@ class PopulateCommand( __.appcore_cli.Command ):
     source: __.typx.Annotated[
         str,
         __.tyro.conf.arg( help = "Data source (local path or git URL)" ),
-    ] = "."
-
+    ] = '.'
     target: __.typx.Annotated[
         __.Path,
         __.tyro.conf.arg( help = "Target directory for content generation" ),
     ] = __.dcls.field( default_factory = __.Path.cwd )
-
     simulate: __.typx.Annotated[
         bool,
         __.tyro.conf.arg( help = "Dry run mode - show generated content" ),
@@ -409,9 +338,9 @@ class PopulateCommand( __.appcore_cli.Command ):
         self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
     ) -> None:
         ''' Validates required configuration fields. '''
-        if not configuration.get( "coders" ):
+        if not configuration.get( 'coders' ):
             raise _exceptions.ConfigurationInvalidity( )
-        if not configuration.get( "languages" ):
+        if not configuration.get( 'languages' ):
             raise _exceptions.ConfigurationInvalidity( )
 
 
@@ -431,12 +360,14 @@ class ValidateCommand( __.appcore_cli.Command ):
     variant: __.typx.Annotated[
         str,
         __.tyro.conf.arg(
-            help = "Configuration variant to test (default, maximum)" ),
-    ] = "default"
-
+            help = "Configuration variant to test.",
+            prefix_name = False ),
+    ] = 'default'
     preserve: __.typx.Annotated[
         bool,
-        __.tyro.conf.arg( help = "Keep temporary files for inspection" ),
+        __.tyro.conf.arg(
+            help = "Keep temporary files for inspection.",
+            prefix_name = False ),
     ] = False
 
     @intercept_errors( )
@@ -452,7 +383,7 @@ class ValidateCommand( __.appcore_cli.Command ):
             location = _retrieve_data_location( "defaults" )
             generator = ContentGenerator(
                 location = location, configuration = configuration )
-            items_attempted, items_generated = generate_items_to_directory(
+            items_attempted, items_generated = populate_directory(
                 generator, temporary_directory, simulate = False )
         finally:
             if not self.preserve:
@@ -482,6 +413,86 @@ class ValidateCommand( __.appcore_cli.Command ):
         return __.immut.Dictionary( configuration )
 
 
+def populate_directory(
+    generator: ContentGenerator, target: __.Path, simulate: bool = False
+) -> tuple[ int, int ]:
+    ''' Generates all content items to target directory.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    for coder in generator.configuration[ 'coders' ]:
+        for item_type in ( 'commands', 'agents' ):
+            attempted, written = _generate_coder_item_type(
+                generator, coder, item_type, target, simulate )
+            items_attempted += attempted
+            items_written += written
+    return ( items_attempted, items_written )
+
+
+def survey_variants( ) -> tuple[ str, ... ]:
+    ''' Surveys available configuration variants from data directory. '''
+    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
+    profiles_directory = data_directory / 'agentsmgr' / 'profiles'
+    if not profiles_directory.exists( ): return ( )
+    return tuple(
+        fsent.stem.removeprefix( 'answers-' )
+        for fsent in profiles_directory.glob( 'answers-*.yaml' )
+        if fsent.is_file( ) )
+
+
+def update_content(
+    content: str, location: __.Path, simulate: bool = False
+) -> bool:
+    ''' Updates content file, creating directories as needed.
+
+        Returns True if file was written, False if simulated.
+    '''
+    if simulate: return False
+    try: location.parent.mkdir( parents = True, exist_ok = True )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.DirectoryCreateFailure(
+            location.parent ) from exception
+    try: location.write_text( content, encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.ContentUpdateFailure( location ) from exception
+    return True
+
+
+def _generate_coder_item_type(
+    generator: ContentGenerator,
+    coder: str,
+    item_type: str,
+    target: __.Path,
+    simulate: bool
+) -> tuple[ int, int ]:
+    ''' Generates items of specific type for a coder.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_attempted, items_written )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        items_attempted += 1
+        result = generator.render_single_item(
+            item_type, configuration_file.stem, coder, target )
+        if update_content( result.content, result.location, simulate ):
+            items_written += 1
+    return ( items_attempted, items_written )
+
+
+def _retrieve_data_location( source_spec: str ) -> __.Path:
+    ''' Retrieves data source location and returns local path. '''
+    if not source_spec.startswith( ( 'http', 'git@', 'gh:' ) ):
+        return __.Path( source_spec ).resolve( )
+    raise _exceptions.UnsupportedSourceError( source_spec )
+
+
 def _retrieve_variant_answers_file( variant: str ) -> __.Path:
     ''' Retrieves path to variant answers file in data directory. '''
     data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
@@ -490,15 +501,3 @@ def _retrieve_variant_answers_file( variant: str ) -> __.Path:
     if not answers_file.exists( ):
         raise _exceptions.ConfigurationAbsence( )
     return answers_file
-
-
-def survey_variants( ) -> tuple[ str, ... ]:
-    ''' Surveys available configuration variants from data directory. '''
-    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
-    profiles_directory = data_directory / 'agentsmgr' / 'profiles'
-    if not profiles_directory.exists( ):
-        return ( )
-    return tuple(
-        fsent.stem.removeprefix( 'answers-' )
-        for fsent in profiles_directory.glob( 'answers-*.yaml' )
-        if fsent.is_file( ) )
