@@ -26,10 +26,40 @@ import yaml as _yaml
 
 from . import __
 from . import exceptions as _exceptions
+from . import results as _results
 
 CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
 
 _TEMPLATE_PARTS_MINIMUM = 3
+
+
+def intercept_errors( ) -> __.cabc.Callable[
+    [ __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ] ],
+    __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ]
+]:
+    ''' Decorator for CLI handlers to intercept and render exceptions. '''
+    def decorator(
+        function: __.cabc.Callable[
+            ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ]
+    ) -> __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ]
+    ]:
+        @__.funct.wraps( function )
+        async def wrapper(
+            self: __.typx.Any,
+            auxdata: __.typx.Any,
+            *posargs: __.typx.Any,
+            **nomargs: __.typx.Any,
+        ) -> None:
+            try: return await function( self, auxdata, *posargs, **nomargs )
+            except _exceptions.Omnierror as exception:
+                for line in exception.render_as_markdown( ):
+                    print( line, file = __.sys.stderr )
+                raise SystemExit( 1 ) from None
+        return wrapper
+    return decorator
 
 
 class DetectCommand( __.appcore_cli.Command ):
@@ -41,16 +71,18 @@ class DetectCommand( __.appcore_cli.Command ):
             help = "Target directory to search for configuration." ),
     ] = __.dcls.field( default_factory = __.Path.cwd )
 
-    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:
-        ''' Detects and displays agent configuration from Copier answers. '''
-        try: configuration = await self._detect_configuration( self.target )
-        except _exceptions.ConfigurationAbsence as exception:
-            print( f"❌ {exception}" )
-            raise SystemExit( 1 ) from None
-        except _exceptions.ConfigurationInvalidity as exception:
-            print( f"❌ {exception}" )
-            raise SystemExit( 1 ) from None
-        await self._display_configuration( configuration )
+    @intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Detects agent configuration and displays formatted result. '''
+        configuration = await self._detect_configuration( self.target )
+        result = _results.ConfigurationDetectionResult(
+            target = self.target,
+            coders = tuple( configuration[ 'coders' ] ),
+            languages = tuple( configuration[ 'languages' ] ),
+            project_name = configuration.get( 'project_name' ),
+        )
+        for line in result.render_as_markdown( ):
+            print( line )
 
     async def _detect_configuration(
         self, target: __.Path
@@ -81,17 +113,6 @@ class DetectCommand( __.appcore_cli.Command ):
             raise _exceptions.ConfigurationInvalidity( )
         if not configuration.get( "languages" ):
             raise _exceptions.ConfigurationInvalidity( )
-
-    async def _display_configuration(
-        self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
-    ) -> None:
-        ''' Displays configuration in a readable format. '''
-        print( "🔍 Agent Configuration Detected:" )
-        print( f"   Coders: {', '.join( configuration[ 'coders' ] )}" )
-        print( f"   Languages: {', '.join( configuration[ 'languages' ] )}" )
-        if "project_name" in configuration:
-            print( f"   Project: {configuration[ 'project_name' ]}" )
-        print( f"   Target Directory: {self.target.resolve( )}" )
 
 
 def _retrieve_data_location( source_spec: str ) -> __.Path:
@@ -235,34 +256,23 @@ class PopulateCommand( __.appcore_cli.Command ):
         __.tyro.conf.arg( help = "Dry run mode - show generated content" ),
     ] = True
 
-    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:
-        ''' Generates content from data sources with simulation mode. '''
-        try:
-            configuration = await self._detect_configuration( self.target )
-        except _exceptions.ConfigurationAbsence as exception:
-            print( f"❌ {exception}" )
-            raise SystemExit( 1 ) from None
-        except _exceptions.ConfigurationInvalidity as exception:
-            print( f"❌ {exception}" )
-            raise SystemExit( 1 ) from None
-        try:
-            location = _retrieve_data_location( self.source )
-        except _exceptions.UnsupportedSourceError as exception:
-            print( f"❌ {exception}" )
-            raise SystemExit( 1 ) from None
+    @intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Generates content from data sources and displays result. '''
+        configuration = await self._detect_configuration( self.target )
+        location = _retrieve_data_location( self.source )
         generator = ContentGenerator(
             location = location, configuration = configuration )
-        print( f"🚀 Populating agent content (simulate={self.simulate}):" )
-        print( f"   Source: {location}" )
-        print( f"   Target: {self.target.resolve( )}" )
-        print( f"   Coders: {', '.join( configuration[ 'coders' ] )}" )
-        print( )
         generator.generate( self.target, self.simulate )
-        print( )
-        if self.simulate:
-            print( "✅ Simulation complete. Use --no-simulate to write." )
-        else:
-            print( "✅ Content generation complete." )
+        result = _results.ContentGenerationResult(
+            source_location = location,
+            target_location = self.target,
+            coders = tuple( configuration[ 'coders' ] ),
+            simulated = self.simulate,
+            items_generated = 0,
+        )
+        for line in result.render_as_markdown( ):
+            print( line )
 
     async def _detect_configuration(
         self, target: __.Path

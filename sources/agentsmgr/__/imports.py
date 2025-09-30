@@ -29,6 +29,8 @@ import collections.abc as   cabc
 import contextlib as        ctxl
 import dataclasses as       dcls
 import                      enum
+import functools as         funct
+import                      sys
 import                      types
 
 from pathlib import Path

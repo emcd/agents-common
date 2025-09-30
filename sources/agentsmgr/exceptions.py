@@ -35,6 +35,10 @@ class Omniexception( BaseException ):
 class Omnierror( Omniexception, Exception ):
     ''' Base for error exceptions raised by package API. '''
 
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders exception as Markdown lines for display. '''
+        return ( f"❌ {self}", )
+
 
 class ConfigurationAbsence( Omnierror, FileNotFoundError ):
     ''' Configuration file absence. '''
@@ -44,9 +48,27 @@ class ConfigurationAbsence( Omnierror, FileNotFoundError ):
         else: message = f"No agents configuration found in {target}."
         super( ).__init__( message )
 
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders configuration absence with helpful guidance. '''
+        lines = [ "## Error: Agent Configuration Not Found" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Run 'copier copy gh:emcd/agents-common' "
+            "to configure agents." )
+        return tuple( lines )
+
 
 class ConfigurationInvalidity( Omnierror, ValueError ):
     ''' Configuration data invalidity. '''
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders configuration invalidity with helpful guidance. '''
+        lines = [ "## Error: Invalid Agent Configuration" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check configuration file format and "
+            "ensure required fields are present." )
+        return tuple( lines )
 
 
 class ContentAbsence( Omnierror, FileNotFoundError ):
