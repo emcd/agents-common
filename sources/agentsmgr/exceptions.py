@@ -102,3 +102,41 @@ class UnsupportedSourceError( Omnierror, ValueError ):
     def __init__( self, source_spec: str ):
         message = f"Unsupported source format: {source_spec}"
         super( ).__init__( message )
+
+
+class DirectoryCreateFailure( Omnierror, OSError ):
+    ''' Directory create failure. '''
+
+    def __init__( self, directory: __.Path ):
+        message = f"Failed to create directory: {directory}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders directory creation failure with helpful guidance. '''
+        lines = [ "## Error: Directory Creation Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check directory permissions and available "
+            "disk space." )
+        return tuple( lines )
+
+
+class ContentUpdateFailure( Omnierror, OSError ):
+    ''' Content file update failure. '''
+
+    def __init__( self, file_path: __.Path ):
+        message = f"Failed to update content at: {file_path}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders content update failure with helpful guidance. '''
+        lines = [ "## Error: Content Update Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check file permissions and ensure parent "
+            "directory exists." )
+        return tuple( lines )
+
+
+class ContentGenerationFailure( Omnierror, RuntimeError ):
+    ''' Content generation failure. '''

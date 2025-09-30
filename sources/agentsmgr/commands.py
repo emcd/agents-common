@@ -33,6 +33,13 @@ CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
 _TEMPLATE_PARTS_MINIMUM = 3
 
 
+class RenderedItem( __.immut.DataclassObject ):
+    ''' Single rendered item with location and content. '''
+
+    content: str
+    location: __.Path
+
+
 def intercept_errors( ) -> __.cabc.Callable[
     [ __.cabc.Callable[
         ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ] ],
@@ -122,6 +129,68 @@ def _retrieve_data_location( source_spec: str ) -> __.Path:
     raise _exceptions.UnsupportedSourceError( source_spec )
 
 
+def update_content(
+    content: str, location: __.Path, simulate: bool = False
+) -> bool:
+    ''' Updates content file, creating directories as needed.
+
+        Returns True if file was written, False if simulated.
+    '''
+    if simulate: return False
+    try: location.parent.mkdir( parents = True, exist_ok = True )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.DirectoryCreateFailure(
+            location.parent ) from exception
+    try: location.write_text( content, encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.ContentUpdateFailure( location ) from exception
+    return True
+
+
+def _generate_coder_item_type(
+    generator: 'ContentGenerator',
+    coder: str,
+    item_type: str,
+    target: __.Path,
+    simulate: bool
+) -> tuple[ int, int ]:
+    ''' Generates items of specific type for a coder.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_attempted, items_written )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        items_attempted += 1
+        result = generator.render_single_item(
+            item_type, configuration_file.stem, coder, target )
+        if update_content( result.content, result.location, simulate ):
+            items_written += 1
+    return ( items_attempted, items_written )
+
+
+def generate_items_to_directory(
+    generator: 'ContentGenerator', target: __.Path, simulate: bool = False
+) -> tuple[ int, int ]:
+    ''' Generates all content items to target directory.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    for coder in generator.configuration[ 'coders' ]:
+        for item_type in ( 'commands', 'agents' ):
+            attempted, written = _generate_coder_item_type(
+                generator, coder, item_type, target, simulate )
+            items_attempted += attempted
+            items_written += written
+    return ( items_attempted, items_written )
+
+
 class ContentGenerator( __.immut.DataclassObject ):
     ''' Generates coder-specific content from data sources. '''
 
@@ -169,25 +238,62 @@ class ContentGenerator( __.immut.DataclassObject ):
             self._render_single_item(
                 item_type, configuration_file.stem, coder, target, simulate )
 
+    def render_single_item(
+        self, item_type: str, item_name: str, coder: str, target: __.Path
+    ) -> RenderedItem:
+        ''' Renders a single item (command or agent) for a coder.
+
+            Returns RenderedItem with content and location.
+        '''
+        body = self._get_content_with_fallback( item_type, item_name, coder )
+        metadata = self._load_item_metadata( item_type, item_name, coder )
+        template_name = self._select_template_for_coder( item_type, coder )
+        template = self.jinja_environment.get_template( template_name )
+        variables: dict[ str, __.typx.Any ] = {
+            'content': body,
+            'coder': metadata[ 'coder' ],
+            **metadata[ 'frontmatter' ],
+        }
+        content = template.render( **variables )
+        extension = self._get_output_extension( template_name )
+        location = (
+            target / ".auxiliary" / "configuration" / coder /
+            item_type / f"{item_name}.{extension}" )
+        return RenderedItem( content = content, location = location )
+
     def _render_single_item(
         self, item_type: str, item_name: str, coder: str,
         target: __.Path, simulate: bool
     ) -> None:
-        ''' Renders a single item (command or agent) for a coder. '''
-        content = self._get_content_with_fallback(
-            item_type, item_name, coder )
-        template_name = self._select_template_for_coder( item_type, coder )
-        template = self.jinja_environment.get_template( template_name )
-        variables: dict[ str, __.typx.Any ] = {
-            'content': content, 'coder': { 'name': coder } }
-        rendered = template.render( **variables )
-        extension = self._get_output_extension( template_name )
-        output_path = (
-            target / ".auxiliary" / "configuration" / coder /
-            item_type / f"{item_name}.{extension}" )
-        print( f"   ✅ {output_path}" )
+        ''' Renders a single item and prints status (legacy method). '''
+        result = self.render_single_item( item_type, item_name, coder, target )
+        print( f"   ✅ {result.location}" )
         if simulate:
-            print( f"      Content preview: {len( rendered )} characters" )
+            print(
+                f"      Content preview: {len( result.content )} characters" )
+
+    def _load_item_metadata(
+        self, item_type: str, item_name: str, coder: str
+    ) -> dict[ str, __.typx.Any ]:
+        ''' Loads TOML metadata and extracts frontmatter and coder config. '''
+        configuration_file = (
+            self.location / 'configurations' / item_type
+            / f"{item_name}.toml" )
+        if not configuration_file.exists( ):
+            raise _exceptions.ConfigurationAbsence( configuration_file )
+        try: toml_content = configuration_file.read_bytes( )
+        except ( OSError, IOError ) as exception:
+            raise _exceptions.ConfigurationAbsence( ) from exception
+        try: toml_data: dict[ str, __.typx.Any ] = __.tomli.loads(
+            toml_content.decode( 'utf-8' ) )
+        except __.tomli.TOMLDecodeError as exception:
+            raise _exceptions.ConfigurationInvalidity( ) from exception
+        frontmatter = toml_data.get( 'frontmatter', { } )
+        coders = toml_data.get( 'coders', [ ] )
+        coder_config = next(
+            ( c for c in coders if c.get( 'name' ) == coder ),
+            { 'name': coder } )
+        return { 'frontmatter': frontmatter, 'coder': coder_config }
 
     def _get_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
@@ -212,10 +318,12 @@ class ContentGenerator( __.immut.DataclassObject ):
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities. '''
         available = self._get_available_templates( item_type )
+        # Convert plural item_type to singular for template name matching
+        singular_type = item_type.rstrip( 's' )
         preferences = {
-            "claude": [ f"{item_type}.md.jinja" ],
-            "opencode": [ f"{item_type}.md.jinja" ],
-            "gemini": [ f"{item_type}.toml.jinja" ],
+            "claude": [ f"{singular_type}.md.jinja" ],
+            "opencode": [ f"{singular_type}.md.jinja" ],
+            "gemini": [ f"{singular_type}.toml.jinja" ],
         }
         for preferred in preferences.get( coder, [ ] ):
             if preferred in available:
@@ -227,7 +335,9 @@ class ContentGenerator( __.immut.DataclassObject ):
     def _get_available_templates( self, item_type: str ) -> list[ str ]:
         ''' Gets available templates for item type. '''
         directory = self.location / "templates"
-        pattern = f"{item_type}.*.jinja"
+        # Convert plural item_type to singular for template matching
+        singular_type = item_type.rstrip( 's' )
+        pattern = f"{singular_type}.*.jinja"
         return [ p.name for p in directory.glob( pattern ) ]
 
     def _get_output_extension( self, template_name: str ) -> str:
@@ -303,3 +413,92 @@ class PopulateCommand( __.appcore_cli.Command ):
             raise _exceptions.ConfigurationInvalidity( )
         if not configuration.get( "languages" ):
             raise _exceptions.ConfigurationInvalidity( )
+
+
+class SurveyCommand( __.appcore_cli.Command ):
+    ''' Surveys available configuration variants. '''
+
+    @intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Lists available configuration variants. '''
+        for variant in survey_variants( ):
+            print( variant )
+
+
+class ValidateCommand( __.appcore_cli.Command ):
+    ''' Validates template generation in temporary directory. '''
+
+    variant: __.typx.Annotated[
+        str,
+        __.tyro.conf.arg(
+            help = "Configuration variant to test (default, maximum)" ),
+    ] = "default"
+
+    preserve: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg( help = "Keep temporary files for inspection" ),
+    ] = False
+
+    @intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Validates template generation and displays result. '''
+        try: temporary_directory = __.Path( __.tempfile.mkdtemp(
+            prefix = f"agents-validate-{self.variant}-" ) )
+        except ( OSError, IOError ) as exception:
+            raise _exceptions.DirectoryCreateFailure(
+                __.Path( __.tempfile.gettempdir( ) ) ) from exception
+        try:
+            configuration = self._create_test_configuration( )
+            location = _retrieve_data_location( "defaults" )
+            generator = ContentGenerator(
+                location = location, configuration = configuration )
+            items_attempted, items_generated = generate_items_to_directory(
+                generator, temporary_directory, simulate = False )
+        finally:
+            if not self.preserve:
+                with __.ctxl.suppress( OSError, IOError ):
+                    __.shutil.rmtree( temporary_directory )
+        result = _results.ValidationResult(
+            variant = self.variant,
+            temporary_directory = temporary_directory,
+            items_attempted = items_attempted,
+            items_generated = items_generated,
+            preserved = self.preserve,
+        )
+        for line in result.render_as_markdown( ):
+            print( line )
+
+    def _create_test_configuration( self ) -> CoderConfiguration:
+        ''' Creates test configuration for specified variant. '''
+        answers_file = _retrieve_variant_answers_file( self.variant )
+        try: content = answers_file.read_text( encoding = 'utf-8' )
+        except ( OSError, IOError ) as exception:
+            raise _exceptions.ConfigurationAbsence( ) from exception
+        try: configuration: CoderConfiguration = _yaml.safe_load( content )
+        except _yaml.YAMLError as exception:
+            raise _exceptions.ConfigurationInvalidity( ) from exception
+        if not isinstance( configuration, __.cabc.Mapping ):
+            raise _exceptions.ConfigurationInvalidity( )
+        return __.immut.Dictionary( configuration )
+
+
+def _retrieve_variant_answers_file( variant: str ) -> __.Path:
+    ''' Retrieves path to variant answers file in data directory. '''
+    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
+    answers_file = (
+        data_directory / 'agentsmgr' / 'profiles' / f"answers-{variant}.yaml" )
+    if not answers_file.exists( ):
+        raise _exceptions.ConfigurationAbsence( )
+    return answers_file
+
+
+def survey_variants( ) -> tuple[ str, ... ]:
+    ''' Surveys available configuration variants from data directory. '''
+    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
+    profiles_directory = data_directory / 'agentsmgr' / 'profiles'
+    if not profiles_directory.exists( ):
+        return ( )
+    return tuple(
+        fsent.stem.removeprefix( 'answers-' )
+        for fsent in profiles_directory.glob( 'answers-*.yaml' )
+        if fsent.is_file( ) )

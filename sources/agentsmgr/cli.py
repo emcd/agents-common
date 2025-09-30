@@ -37,6 +37,14 @@ class Application( __.appcore_cli.Application ):
             _commands.PopulateCommand,
             __.tyro.conf.subcommand( 'populate', prefix_name = False ),
         ],
+        __.typx.Annotated[
+            _commands.SurveyCommand,
+            __.tyro.conf.subcommand( 'survey', prefix_name = False ),
+        ],
+        __.typx.Annotated[
+            _commands.ValidateCommand,
+            __.tyro.conf.subcommand( 'validate', prefix_name = False ),
+        ],
     ] = __.dcls.field( default_factory = _commands.DetectCommand )
 
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:

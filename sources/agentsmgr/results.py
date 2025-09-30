@@ -76,3 +76,28 @@ class ContentGenerationResult( ResultBase ):
         else:
             lines.append( "✅ Content generation complete." )
         return tuple( lines )
+
+
+class ValidationResult( ResultBase ):
+    ''' Template validation result with formatted summary. '''
+
+    variant: str
+    temporary_directory: __.Path
+    items_attempted: int
+    items_generated: int
+    preserved: bool
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders validation results as Markdown lines. '''
+        lines = [ f"✅ Validation complete for '{self.variant}' variant:" ]
+        lines.append( f"   Temporary Directory: {self.temporary_directory}" )
+        lines.append(
+            f"   Items: {self.items_generated}/{self.items_attempted} "
+            "generated" )
+        if self.preserved:
+            lines.append(
+                f"   📁 Files preserved for inspection at: "
+                f"{self.temporary_directory}" )
+        else:
+            lines.append( "   🗑️  Temporary files cleaned up" )
+        return tuple( lines )

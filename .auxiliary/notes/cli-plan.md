@@ -17,7 +17,12 @@ This document outlines the implementation plan for the `agentsmgr` CLI in Phase 
 - Coder-specific content files organized properly
 - Generic Jinja2 templates ready for rendering
 
-**Phase 3: agentsmgr Command Implementation** ⚠️ **READY TO BEGIN**
+**Phase 3: agentsmgr Command Implementation** 🚧 **IN PROGRESS**
+- ✅ Phase 3.1: DetectCommand with configuration detection
+- ✅ Phase 3.2: PopulateCommand with simulation mode (rendering only, no file writes)
+- ⚠️ Phase 3.3: File writing functionality (next - will integrate with Phase 3.5 functions)
+- ✅ Phase 3.4: Result object rendering with Markdown formatting
+- ✅ Phase 3.5: ValidationCommand with temp directory (establishes safe file writing patterns)
 
 ## CLI Architecture Design
 
@@ -259,36 +264,92 @@ def _determine_output_extension(self, template_name: str) -> str:
 
 ### Implementation Order (Revised)
 
-**Phase 3.1: Configuration Detection (Immediate)**
+**Phase 3.1: Configuration Detection** ✅ **COMPLETED**
 1. `DetectCommand` - Display current Copier configuration
    - Establishes basic CLI framework with appcore integration
    - Tests configuration detection logic in isolation
    - Provides debugging utility for troubleshooting
    - Foundation for all other commands
 
-**Phase 3.2: Template Pipeline Foundation**
-2. `PopulateCommand` (simulation mode only) - Test template discovery and rendering
+**Phase 3.2: Template Pipeline Foundation** ✅ **COMPLETED**
+2. `PopulateCommand` (simulation mode) - Template discovery and rendering
    - Template discovery and selection logic
-   - Content generation pipeline without actual file writing
+   - Content generation pipeline with simulation mode (rendering only)
    - Error handling for missing templates/content
-
-**Phase 3.3: Full Population Implementation**
-3. `PopulateCommand` (complete) - Full content generation
    - Local data source support (`source="."`)
-   - Claude coder support (most complex due to semantic tool mappings)
-   - Actual file writing with proper error handling
+   - Claude coder support with semantic tool mappings
+   - **Note**: File writing intentionally deferred to Phase 3.5 → 3.3 progression
 
-**Phase 3.4: Output Formatting Enhancement**
+**Phase 3.3: File Writing Functionality** ⚠️ **DEFERRED**
+3. Actual file writing for `PopulateCommand` - Deferred until after Phase 3.5
+   - Will reuse safe file writing functions developed in Phase 3.5
+   - Enables live content generation in target projects
+   - **Rationale**: Implement and validate file writing in safe temp directory first (Phase 3.5) before enabling live writes to project
+
+**Phase 3.4: Output Formatting Enhancement** ✅ **COMPLETED**
 4. Result objects with Markdown rendering - Professional output formatting
-   - Implement `ResultBase` protocol and result objects for structured output
-   - Add `intercept_errors` decorator for consistent error handling
-   - Enhance exception classes with `render_as_markdown()` methods
-   - **Reference**: See `.auxiliary/notes/cli-rendering.md` for complete strategy
+   - Implemented `ResultBase` protocol and result objects for structured output
+   - Added `intercept_errors` decorator for consistent error handling with ellipsis pattern
+   - Enhanced exception classes with `render_as_markdown()` methods
+   - Achieved separation of concerns between business logic and presentation
+   - ~~**Reference**: See `.auxiliary/notes/cli-rendering.md` for complete strategy~~ (planning doc removed after completion)
 
-**Phase 3.5: Validation Infrastructure**
-5. `ValidateCommand` - Template testing in temporary directories
-   - Configuration variant testing
-   - Temporary directory generation for safe testing
+**Phase 3.5: Validation Infrastructure** ✅ **COMPLETED**
+5. `ValidateCommand` - Template testing with file writing in temporary directories
+   - ✅ Extracted file writing logic into standalone functions (`update_content`, `generate_items_to_directory`)
+   - ✅ Configuration variant testing in isolated temp directories with `SurveyCommand` for listing variants
+   - ✅ Validation with actual file generation and item counting
+   - ✅ TOML parsing implementation for frontmatter and coder-specific metadata
+   - ✅ Fixed exception swallowing (removed try/except/continue that violated practices)
+   - ✅ Fixed template lookup plural/singular mismatch
+   - ✅ Directory refactoring: separated `defaults/` (unpublished) from `data/agentsmgr/` (published)
+   - ✅ All quality gates passed (linters, tests, type checking)
+
+### Revised Implementation Strategy (Phases 3.5 → 3.3)
+
+**Architecture Goal**: Factor file writing logic into reusable functions that both ValidationCommand and PopulateCommand can use, enabling safe testing in temporary directories before production use.
+
+**Proposed Function Organization**:
+```python
+# Standalone functions (not methods) for file writing operations
+def write_generated_content(
+    rendered: str,
+    output_path: Path,
+    simulate: bool = False
+) -> bool:
+    ''' Writes rendered content to file, creating directories as needed. '''
+    if simulate: return False
+    output_path.parent.mkdir( parents = True, exist_ok = True )
+    output_path.write_text( rendered, encoding = 'utf-8' )
+    return True
+
+def generate_items_to_directory(
+    generator: ContentGenerator,
+    target: Path,
+    simulate: bool = False
+) -> tuple[ int, int ]:  # (items_attempted, items_written)
+    ''' Generates all content items to target directory. '''
+    # Reusable by both ValidationCommand and PopulateCommand
+    pass
+```
+
+**Phase 3.5 Implementation**:
+1. Create `ValidateCommand` that generates to temp directory using standalone functions
+2. Test and validate file structure, permissions, content correctness
+3. Confirm item counting works correctly
+4. Establish patterns for error handling during file I/O
+
+**Phase 3.3 Implementation** (after 3.5):
+1. Update `ContentGenerator._render_single_item()` to call `write_generated_content()`
+2. Update `ContentGenerator.generate()` to track and return item counts
+3. Update `PopulateCommand` to use the validated file writing functions
+4. Update `ContentGenerationResult.items_generated` with actual counts
+
+**Benefits**:
+- Safe testing of file writing in isolated environment
+- Reusable logic reduces duplication and maintenance burden
+- Item counting logic validated before production use
+- Risk mitigation: any file I/O bugs discovered in Phase 3.5, not in live projects
 
 ### MVP Implementation (Immediate - Phase 3.1)
 
