@@ -278,11 +278,22 @@ class ContentGenerator:
 
 ## Implementation Checklist
 
-### Phase 1: Display Options Extension
-- [ ] Create `Presentations` enum in interfaces module with `Markdown` variant only (future: Json, Toml)
-- [ ] Create `DisplayOptions(appcore_cli.DisplayOptions)` subclass in state module
-- [ ] Create `ApplicationGlobals(appcore.state.Globals)` with display options
-- [ ] Implement `_render_and_print_result()` helper with match statement on presentation
+### Phase 1: Display Options Extension ✅ COMPLETE
+- [x] Create `Presentations` enum in cli module with `Markdown` variant only (future: Json, Toml)
+- [x] Create `DisplayOptions(appcore_cli.DisplayOptions)` subclass in cli module
+- [x] Create `Globals(appcore.state.Globals)` with display options in cli module
+- [x] Implement `_render_and_print_result()` helper with match statement on presentation
+- [x] Implement `Application.prepare()` method to construct custom Globals
+- [x] Add Jinja2 and PyYAML to main dependencies (were only in dev)
+- [x] Add Vulture suppressions for new infrastructure classes/functions
+- [x] Verify CLI functionality in both default and develop environments
+
+**Implementation Notes:**
+- Consolidated all state classes in cli.py per user feedback (no separate interfaces/state modules needed)
+- Followed librovore pattern exactly for consistency
+- Added pyright ignore for method override compatibility (standard pattern in librovore)
+- All tests passing, all linters passing (0 errors, 0 warnings)
+- See `.auxiliary/notes/cli-cleanup-phase1--progress.md` for detailed tracking
 
 ### Phase 2: Logging Integration
 - [ ] Replace all `print()` with `produce_scribe()` calls

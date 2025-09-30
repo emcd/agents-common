@@ -1,8 +1,12 @@
 ComparisonResult        # unused variable
 ContentGenerationFailure # unused exception class for future use
+DisplayOptions          # unused class - will be used in Phase 2+
+Globals                 # unused class - will be used in Phase 2+
 NominativeArguments     # unused variable
 PositionalArguments     # unused variable
+Presentations           # unused enum - will be used in Phase 2+
 package_name            # unused variable
+_render_and_print_result # unused function - will be used in Phase 5
 
 # --- BEGIN: Injected by Copier ---
 Omnierror              # unused base exception class for derivation

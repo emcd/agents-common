@@ -23,11 +23,57 @@
 
 from . import __
 from . import commands as _commands
+from . import results as _results
+
+
+class Presentations( __.enum.Enum ):
+    ''' Enumeration for CLI display presentation formats. '''
+
+    Markdown = 'markdown'
+
+
+class DisplayOptions( __.appcore_cli.DisplayOptions ):
+    ''' Consolidated display configuration for CLI output. '''
+
+    presentation: Presentations = Presentations.Markdown
+
+
+class Globals( __.appcore.state.Globals ):
+    ''' Agentsmgr-specific global state container.
+
+        Extends appcore.state.Globals with agentsmgr-specific display
+        configuration.
+    '''
+
+    display: DisplayOptions = __.dcls.field( default_factory = DisplayOptions )
+
+
+async def _render_and_print_result(
+    result: _results.ResultBase,
+    display: DisplayOptions,
+    exits: __.ctxl.AsyncExitStack,
+    **nomargs: __.typx.Any
+) -> None:
+    ''' Centralizes result rendering logic with Rich formatting support. '''
+    stream = await display.provide_stream( exits )
+    match display.presentation:
+        case Presentations.Markdown:
+            lines = result.render_as_markdown( **nomargs )
+            if display.determine_colorization( stream ):
+                from rich.console import Console
+                from rich.markdown import Markdown
+                console = Console( file = stream, force_terminal = True )
+                markdown_obj = Markdown( '\n'.join( lines ) )
+                console.print( markdown_obj )
+            else:
+                output = '\n'.join( lines )
+                print( output, file = stream )
 
 
 class Application( __.appcore_cli.Application ):
     ''' Agent configuration management CLI. '''
 
+    display: DisplayOptions = __.dcls.field( default_factory = DisplayOptions )
     command: __.typx.Union[
         __.typx.Annotated[
             _commands.DetectCommand,
@@ -47,9 +93,18 @@ class Application( __.appcore_cli.Application ):
         ],
     ] = __.dcls.field( default_factory = _commands.DetectCommand )
 
-    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:
+    async def execute( self, auxdata: Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Executes the specified command. '''
         await self.command( auxdata )
+
+    async def prepare( self, exits: __.ctxl.AsyncExitStack ) -> Globals:
+        ''' Prepares agentsmgr-specific global state with display options. '''
+        auxdata_base = await super( ).prepare( exits )
+        nomargs = {
+            field.name: getattr( auxdata_base, field.name )
+            for field in __.dcls.fields( auxdata_base )
+            if not field.name.startswith( '_' ) }
+        return Globals( display = self.display, **nomargs )
 
 
 def execute( ) -> None:
