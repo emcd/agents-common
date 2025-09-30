@@ -295,17 +295,32 @@ class ContentGenerator:
 - All tests passing, all linters passing (0 errors, 0 warnings)
 - See `.auxiliary/notes/cli-cleanup-phase1--progress.md` for detailed tracking
 
-### Phase 2: Logging Integration
-- [ ] Replace all `print()` with `produce_scribe()` calls
-- [ ] Use appropriate log levels (debug, info, warning)
-- [ ] Remove progress messages from ContentGenerator
-- [ ] Add logging to command execute() methods
+### Phase 2: Logging Integration ✅ COMPLETE
+- [x] Replace all `print()` with `provide_scribe()` calls
+- [x] Use appropriate log levels (debug, info, warning)
+- [x] Remove progress messages from ContentGenerator
+- [x] Add logging to command execute() methods
 
-### Phase 3: Error Handling
-- [ ] Remove deep exception handler from ContentGenerator.generate() (L145)
-- [ ] Remove 'txt' fallback from _get_output_extension() (L211)
-- [ ] Add TemplateExtensionError exception
-- [ ] Narrow exception scope in ValidateCommand (L381)
+**Implementation Notes:**
+- Added module-level `_scribe = __.provide_scribe(__package__)` in commands.py
+- ContentGenerator uses info/debug/warning levels appropriately
+- All commands (Detect, Populate, Validate) now include logging
+- Removed deep exception handler from ContentGenerator.generate()
+- All tests passing, all linters passing (0 errors, 0 warnings)
+- See `.auxiliary/notes/cli-cleanup-phase2--progress.md` for detailed tracking
+
+### Phase 3: Error Handling ✅ COMPLETE
+- [x] Remove deep exception handler from ContentGenerator.generate() (completed in Phase 2)
+- [x] Remove 'txt' fallback from _get_output_extension()
+- [x] Add TemplateExtensionError exception
+- [x] Narrow exception scope in ValidateCommand (improved with logging in Phase 2)
+
+**Implementation Notes:**
+- Added TemplateExtensionError exception following Omnierror hierarchy
+- Removed silent 'txt' fallback from _get_output_extension()
+- Method now raises TemplateExtensionError when extension cannot be determined
+- All tests passing, all linters passing (0 errors, 0 warnings)
+- See `.auxiliary/notes/cli-cleanup-phase3--progress.md` for detailed tracking
 
 ### Phase 4: Package Data Paths
 - [ ] Propagate auxdata to survey_variants() (L436)

@@ -35,6 +35,7 @@ import                      sys
 import                      tempfile
 import                      types
 
+from logging import getLogger as provide_scribe
 from pathlib import Path
 
 

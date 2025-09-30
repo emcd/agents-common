@@ -34,6 +34,8 @@ CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
 
 _TEMPLATE_PARTS_MINIMUM = 3
 
+_scribe = __.provide_scribe( __name__ )
+
 
 class RenderedItem( __.immut.DataclassObject ):
     ''' Single rendered item with location and content. '''
@@ -83,7 +85,9 @@ class DetectCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Detects agent configuration and displays formatted result. '''
+        _scribe.info( f"Detecting agent configuration in {self.source}" )
         configuration = await self._detect_configuration( self.source )
+        _scribe.debug( f"Found configuration: {configuration}" )
         result = _results.ConfigurationDetectionResult(
             target = self.source,
             coders = tuple( configuration[ 'coders' ] ),
@@ -139,11 +143,8 @@ class ContentGenerator( __.immut.DataclassObject ):
         self, target: __.Path, simulate: bool = True
     ) -> None:
         ''' Generates content for all configured coders. '''
-        try:
-            for coder in self.configuration[ "coders" ]:
-                self._generate_coder_content( coder, target, simulate )
-        except Exception as exception:
-            print( f"⚠️  Failed to generate {coder} content: {exception}" )
+        for coder in self.configuration[ "coders" ]:
+            self._generate_coder_content( coder, target, simulate )
 
     def render_single_item(
         self, item_type: str, item_name: str, coder: str, target: __.Path
@@ -172,7 +173,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         self, coder: str, target: __.Path, simulate: bool
     ) -> None:
         ''' Generates commands and agents for specific coder. '''
-        print( f"📁 Generating content for {coder}:" )
+        _scribe.info( f"Generating content for {coder}" )
         self._render_item_type( "commands", coder, target, simulate )
         self._render_item_type( "agents", coder, target, simulate )
 
@@ -199,7 +200,7 @@ class ContentGenerator( __.immut.DataclassObject ):
                 self.location / "contents" / item_type /
                 fallback_coder / f"{item_name}.md" )
             if fallback_path.exists( ):
-                print( f"   🔄 Using {fallback_coder} content for {coder}" )
+                _scribe.debug( f"Using {fallback_coder} content for {coder}" )
                 return fallback_path.read_text( encoding = 'utf-8' )
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
@@ -208,7 +209,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         parts = template_name.split( '.' )
         if len( parts ) >= _TEMPLATE_PARTS_MINIMUM and parts[ -1 ] == 'jinja':
             return parts[ -2 ]
-        return 'txt'
+        raise _exceptions.TemplateExtensionError( template_name )
 
     def _load_item_metadata(
         self, item_type: str, item_name: str, coder: str
@@ -245,7 +246,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         ''' Renders all items of a specific type for a coder. '''
         configuration_directory = self.location / "configurations" / item_type
         if not configuration_directory.exists( ):
-            print( f"   ⚠️  No {item_type} configurations found" )
+            _scribe.warning( f"No {item_type} configurations found" )
             return
         for configuration_file in configuration_directory.glob( "*.toml" ):
             self._render_single_item(
@@ -255,12 +256,12 @@ class ContentGenerator( __.immut.DataclassObject ):
         self, item_type: str, item_name: str, coder: str,
         target: __.Path, simulate: bool
     ) -> None:
-        ''' Renders a single item and prints status (legacy method). '''
+        ''' Renders a single item and logs status (legacy method). '''
         result = self.render_single_item( item_type, item_name, coder, target )
-        print( f"   ✅ {result.location}" )
+        _scribe.debug( f"Generated {result.location}" )
         if simulate:
-            print(
-                f"      Content preview: {len( result.content )} characters" )
+            _scribe.debug(
+                f"Content preview: {len( result.content )} characters" )
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities. '''
@@ -298,7 +299,11 @@ class PopulateCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates content from data sources and displays result. '''
+        _scribe.info(
+            f"Populating agent content from {self.source} to {self.target}" )
         configuration = await self._detect_configuration( self.target )
+        coder_count = len( configuration[ 'coders' ] )
+        _scribe.debug( f"Detected configuration with {coder_count} coders" )
         location = _retrieve_data_location( self.source )
         generator = ContentGenerator(
             location = location, configuration = configuration )
@@ -373,11 +378,13 @@ class ValidateCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Validates template generation and displays result. '''
+        _scribe.info( f"Validating template generation for {self.variant}" )
         try: temporary_directory = __.Path( __.tempfile.mkdtemp(
             prefix = f"agents-validate-{self.variant}-" ) )
         except ( OSError, IOError ) as exception:
             raise _exceptions.DirectoryCreateFailure(
                 __.Path( __.tempfile.gettempdir( ) ) ) from exception
+        _scribe.debug( f"Created temporary directory: {temporary_directory}" )
         try:
             configuration = self._create_test_configuration( )
             location = _retrieve_data_location( "defaults" )
@@ -385,8 +392,12 @@ class ValidateCommand( __.appcore_cli.Command ):
                 location = location, configuration = configuration )
             items_attempted, items_generated = populate_directory(
                 generator, temporary_directory, simulate = False )
+            _scribe.info(
+                f"Generated {items_generated}/{items_attempted} items" )
         finally:
             if not self.preserve:
+                _scribe.debug(
+                    f"Cleaning up temporary directory: {temporary_directory}" )
                 with __.ctxl.suppress( OSError, IOError ):
                     __.shutil.rmtree( temporary_directory )
         result = _results.ValidationResult(

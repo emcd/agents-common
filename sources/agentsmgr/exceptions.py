@@ -88,6 +88,14 @@ class TemplateAbsence( Omnierror, FileNotFoundError ):
         super( ).__init__( message )
 
 
+class TemplateExtensionError( Omnierror, ValueError ):
+    ''' Template extension determination error. '''
+
+    def __init__( self, template_name: str ):
+        message = f"Cannot determine output extension for: {template_name}"
+        super( ).__init__( message )
+
+
 class UnsupportedCoderError( Omnierror, ValueError ):
     ''' Unsupported coder error. '''
 
