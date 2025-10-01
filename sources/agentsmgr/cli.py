@@ -24,29 +24,6 @@
 from . import __
 from . import commands as _commands
 from . import core as _core
-from . import results as _results
-
-
-async def _render_and_print_result(
-    result: _results.ResultBase,
-    display: _core.DisplayOptions,
-    exits: __.ctxl.AsyncExitStack,
-    **nomargs: __.typx.Any
-) -> None:
-    ''' Centralizes result rendering logic with Rich formatting support. '''
-    stream = await display.provide_stream( exits )
-    match display.presentation:
-        case _core.Presentations.Markdown:
-            lines = result.render_as_markdown( **nomargs )
-            if display.determine_colorization( stream ):
-                from rich.console import Console
-                from rich.markdown import Markdown
-                console = Console( file = stream, force_terminal = True )
-                markdown_obj = Markdown( '\n'.join( lines ) )
-                console.print( markdown_obj )
-            else:
-                output = '\n'.join( lines )
-                print( output, file = stream )
 
 
 class Application( __.appcore_cli.Application ):

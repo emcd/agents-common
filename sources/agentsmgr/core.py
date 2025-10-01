@@ -24,6 +24,14 @@
 from . import __
 
 
+class Renderable( __.typx.Protocol ):
+    ''' Protocol for objects that can be rendered as Markdown. '''
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders object as Markdown lines for display. '''
+        ...
+
+
 class Presentations( __.enum.Enum ):
     ''' Enumeration for CLI display presentation formats. '''
 
@@ -44,3 +52,24 @@ class Globals( __.appcore.state.Globals ):
     '''
 
     display: DisplayOptions = __.dcls.field( default_factory = DisplayOptions )
+
+
+async def render_and_print_result(
+    result: Renderable,
+    display: DisplayOptions,
+    exits: __.ctxl.AsyncExitStack,
+) -> None:
+    ''' Centralizes result rendering logic with Rich formatting support. '''
+    stream = await display.provide_stream( exits )
+    match display.presentation:
+        case Presentations.Markdown:
+            lines = result.render_as_markdown( )
+            if display.determine_colorization( stream ):
+                from rich.console import Console
+                from rich.markdown import Markdown
+                console = Console( file = stream, force_terminal = True )
+                markdown_obj = Markdown( '\n'.join( lines ) )
+                console.print( markdown_obj )
+            else:
+                output = '\n'.join( lines )
+                print( output, file = stream )

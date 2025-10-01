@@ -67,8 +67,12 @@ def intercept_errors( ) -> __.cabc.Callable[
         ) -> None:
             try: return await function( self, auxdata, *posargs, **nomargs )
             except _exceptions.Omnierror as exception:
-                for line in exception.render_as_markdown( ):
-                    print( line, file = __.sys.stderr )
+                if isinstance( auxdata, _core.Globals ):
+                    await _core.render_and_print_result(
+                        exception, auxdata.display, auxdata.exits )
+                else:
+                    for line in exception.render_as_markdown( ):
+                        print( line, file = __.sys.stderr )
                 raise SystemExit( 1 ) from None
         return wrapper
     return decorator
@@ -86,6 +90,8 @@ class DetectCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Detects agent configuration and displays formatted result. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info( f"Detecting agent configuration in {self.source}" )
         configuration = await self._detect_configuration( self.source )
         _scribe.debug( f"Found configuration: {configuration}" )
@@ -95,8 +101,8 @@ class DetectCommand( __.appcore_cli.Command ):
             languages = tuple( configuration[ 'languages' ] ),
             project_name = configuration.get( 'project_name' ),
         )
-        for line in result.render_as_markdown( ):
-            print( line )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )
 
     async def _detect_configuration(
         self, target: __.Path
@@ -300,6 +306,8 @@ class PopulateCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates content from data sources and displays result. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info(
             f"Populating agent content from {self.source} to {self.target}" )
         configuration = await self._detect_configuration( self.target )
@@ -316,8 +324,8 @@ class PopulateCommand( __.appcore_cli.Command ):
             simulated = self.simulate,
             items_generated = 0,
         )
-        for line in result.render_as_markdown( ):
-            print( line )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )
 
     async def _detect_configuration(
         self, target: __.Path
@@ -412,8 +420,8 @@ class ValidateCommand( __.appcore_cli.Command ):
             items_generated = items_generated,
             preserved = self.preserve,
         )
-        for line in result.render_as_markdown( ):
-            print( line )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )
 
     def _create_test_configuration(
         self, auxdata: _core.Globals

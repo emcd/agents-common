@@ -340,13 +340,25 @@ class ContentGenerator:
 - Did NOT update _retrieve_data_location() - currently only handles local paths, no need for auxdata until remote git sources implemented
 - All tests passing (9 tests), all linters passing (0 errors, 0 warnings)
 - CLI verified working: `hatch run agentsmgr --help`, `agentsmgr detect`, `agentsmgr survey`
-- See `.auxiliary/notes/cli-cleanup-phase4--progress.md` for detailed tracking
 
-### Phase 5: Result Rendering
-- [ ] Keep `render_as_markdown()` methods on result/exception objects
-- [ ] Add switch logic based on `Presentations` enum to call appropriate render method
-- [ ] Pattern: `match auxdata.display.presentation: case Presentations.Markdown: result.render_as_markdown()`
+### Phase 5: Result Rendering ✅ COMPLETE
+- [x] Keep `render_as_markdown()` methods on result/exception objects
+- [x] Add switch logic based on `Presentations` enum to call appropriate render method
+- [x] Pattern: `match auxdata.display.presentation: case Presentations.Markdown: result.render_as_markdown()`
+- [x] Update all command execute() methods to use centralized render_and_print_result()
+- [x] Update intercept_errors() to use centralized rendering for exceptions
+- [x] Create Renderable protocol for type safety
+- [x] Move render_and_print_result() from cli.py to core.py to avoid circular imports
 - [ ] Future: Add `render_as_json()`, `render_as_toml()` methods when formats added
+
+**Implementation Notes:**
+- Created Renderable protocol in core.py for type-safe rendering interface
+- Moved render_and_print_result() from cli.py to core.py to avoid circular import issues
+- All command execute() methods now use centralized rendering
+- intercept_errors() decorator now renders exceptions through centralized logic
+- Added type guards for Globals in command execute() methods
+- All tests passing (9 tests), all linters passing (0 errors, 0 warnings)
+- CLI verified working: detect, populate, survey, validate commands
 
 ### Phase 6: Configuration-Based Fallbacks
 - [ ] See TODO in .auxiliary/notes/todo.md for configuration-based fallback design
