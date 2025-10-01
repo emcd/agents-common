@@ -322,11 +322,25 @@ class ContentGenerator:
 - All tests passing, all linters passing (0 errors, 0 warnings)
 - See `.auxiliary/notes/cli-cleanup-phase3--progress.md` for detailed tracking
 
-### Phase 4: Package Data Paths
-- [ ] Propagate auxdata to survey_variants() (L436)
-- [ ] Use auxdata.distribution.provide_data_location()
-- [ ] Update _retrieve_data_location() to use auxdata
-- [ ] Update _retrieve_variant_answers_file() to use auxdata
+### Phase 4: Package Data Paths ✅ COMPLETE
+- [x] Propagate auxdata to survey_variants() (L452)
+- [x] Use auxdata.provide_data_location()
+- [x] Update _retrieve_variant_answers_file() to use auxdata
+- [x] Update ValidateCommand._create_test_configuration() to use auxdata
+- [x] Create core.py module to avoid circular imports
+- [x] Add type guards with ContextInvalidity exception
+
+**Implementation Notes:**
+- Created `core.py` module with `Presentations`, `DisplayOptions`, and `Globals` to avoid circular import between `cli.py` and `commands.py`
+- Added `ContextInvalidity` exception following librovore pattern for type guard validation
+- Replaced all __file__-relative paths with auxdata.provide_data_location()
+- Functions now accept `_core.Globals` parameter: survey_variants(), _retrieve_variant_answers_file(), ValidateCommand._create_test_configuration()
+- Command execute() methods use type guards: `if not isinstance(auxdata, _core.Globals): raise _exceptions.ContextInvalidity`
+- Only execute() methods use base `appcore.state.Globals` for signature compatibility; internal functions use specific `_core.Globals` type
+- Did NOT update _retrieve_data_location() - currently only handles local paths, no need for auxdata until remote git sources implemented
+- All tests passing (9 tests), all linters passing (0 errors, 0 warnings)
+- CLI verified working: `hatch run agentsmgr --help`, `agentsmgr detect`, `agentsmgr survey`
+- See `.auxiliary/notes/cli-cleanup-phase4--progress.md` for detailed tracking
 
 ### Phase 5: Result Rendering
 - [ ] Keep `render_as_markdown()` methods on result/exception objects

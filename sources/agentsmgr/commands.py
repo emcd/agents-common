@@ -25,6 +25,7 @@ import jinja2 as _jinja2
 import yaml as _yaml
 
 from . import __
+from . import core as _core
 from . import exceptions as _exceptions
 from . import results as _results
 
@@ -355,7 +356,9 @@ class SurveyCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Lists available configuration variants. '''
-        for variant in survey_variants( ):
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
+        for variant in survey_variants( auxdata ):
             print( variant )
 
 
@@ -378,6 +381,8 @@ class ValidateCommand( __.appcore_cli.Command ):
     @intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Validates template generation and displays result. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info( f"Validating template generation for {self.variant}" )
         try: temporary_directory = __.Path( __.tempfile.mkdtemp(
             prefix = f"agents-validate-{self.variant}-" ) )
@@ -386,7 +391,7 @@ class ValidateCommand( __.appcore_cli.Command ):
                 __.Path( __.tempfile.gettempdir( ) ) ) from exception
         _scribe.debug( f"Created temporary directory: {temporary_directory}" )
         try:
-            configuration = self._create_test_configuration( )
+            configuration = self._create_test_configuration( auxdata )
             location = _retrieve_data_location( "defaults" )
             generator = ContentGenerator(
                 location = location, configuration = configuration )
@@ -410,9 +415,11 @@ class ValidateCommand( __.appcore_cli.Command ):
         for line in result.render_as_markdown( ):
             print( line )
 
-    def _create_test_configuration( self ) -> CoderConfiguration:
+    def _create_test_configuration(
+        self, auxdata: _core.Globals
+    ) -> CoderConfiguration:
         ''' Creates test configuration for specified variant. '''
-        answers_file = _retrieve_variant_answers_file( self.variant )
+        answers_file = _retrieve_variant_answers_file( auxdata, self.variant )
         try: content = answers_file.read_text( encoding = 'utf-8' )
         except ( OSError, IOError ) as exception:
             raise _exceptions.ConfigurationAbsence( ) from exception
@@ -442,9 +449,9 @@ def populate_directory(
     return ( items_attempted, items_written )
 
 
-def survey_variants( ) -> tuple[ str, ... ]:
+def survey_variants( auxdata: _core.Globals ) -> tuple[ str, ... ]:
     ''' Surveys available configuration variants from data directory. '''
-    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
+    data_directory = auxdata.provide_data_location( )
     profiles_directory = data_directory / 'agentsmgr' / 'profiles'
     if not profiles_directory.exists( ): return ( )
     return tuple(
@@ -504,9 +511,11 @@ def _retrieve_data_location( source_spec: str ) -> __.Path:
     raise _exceptions.UnsupportedSourceError( source_spec )
 
 
-def _retrieve_variant_answers_file( variant: str ) -> __.Path:
+def _retrieve_variant_answers_file(
+    auxdata: _core.Globals, variant: str
+) -> __.Path:
     ''' Retrieves path to variant answers file in data directory. '''
-    data_directory = __.Path( __file__ ).parent.parent.parent / 'data'
+    data_directory = auxdata.provide_data_location( )
     answers_file = (
         data_directory / 'agentsmgr' / 'profiles' / f"answers-{variant}.yaml" )
     if not answers_file.exists( ):

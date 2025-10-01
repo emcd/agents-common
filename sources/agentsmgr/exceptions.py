@@ -58,6 +58,14 @@ class ConfigurationAbsence( Omnierror, FileNotFoundError ):
         return tuple( lines )
 
 
+class ContextInvalidity( Omnierror, TypeError ):
+    ''' Invalid execution context. '''
+
+    def __init__( self ):
+        message = "Invalid execution context: expected agentsmgr.cli.Globals"
+        super( ).__init__( message )
+
+
 class ConfigurationInvalidity( Omnierror, ValueError ):
     ''' Configuration data invalidity. '''
 
