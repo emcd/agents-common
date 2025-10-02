@@ -146,13 +146,6 @@ class ContentGenerator( __.immut.DataclassObject ):
         self.jinja_environment = ( # pyright: ignore[reportAttributeAccessIssue]
             self._provide_jinja_environment( ) )
 
-    def generate(
-        self, target: __.Path, simulate: bool = True
-    ) -> None:
-        ''' Generates content for all configured coders. '''
-        for coder in self.configuration[ "coders" ]:
-            self._generate_coder_content( coder, target, simulate )
-
     def render_single_item(
         self, item_type: str, item_name: str, coder: str, target: __.Path
     ) -> RenderedItem:
@@ -175,14 +168,6 @@ class ContentGenerator( __.immut.DataclassObject ):
             target / ".auxiliary" / "configuration" / coder /
             item_type / f"{item_name}.{extension}" )
         return RenderedItem( content = content, location = location )
-
-    def _generate_coder_content(
-        self, coder: str, target: __.Path, simulate: bool
-    ) -> None:
-        ''' Generates commands and agents for specific coder. '''
-        _scribe.info( f"Generating content for {coder}" )
-        self._render_item_type( "commands", coder, target, simulate )
-        self._render_item_type( "agents", coder, target, simulate )
 
     def _get_available_templates( self, item_type: str ) -> list[ str ]:
         ''' Gets available templates for item type. '''
@@ -245,30 +230,10 @@ class ContentGenerator( __.immut.DataclassObject ):
         ''' Provides Jinja2 environment with templates directory. '''
         directory = self.location / "templates"
         loader = _jinja2.FileSystemLoader( directory )
-        return _jinja2.Environment( loader = loader, autoescape = True )
-
-    def _render_item_type(
-        self, item_type: str, coder: str, target: __.Path, simulate: bool
-    ) -> None:
-        ''' Renders all items of a specific type for a coder. '''
-        configuration_directory = self.location / "configurations" / item_type
-        if not configuration_directory.exists( ):
-            _scribe.warning( f"No {item_type} configurations found" )
-            return
-        for configuration_file in configuration_directory.glob( "*.toml" ):
-            self._render_single_item(
-                item_type, configuration_file.stem, coder, target, simulate )
-
-    def _render_single_item(
-        self, item_type: str, item_name: str, coder: str,
-        target: __.Path, simulate: bool
-    ) -> None:
-        ''' Renders a single item and logs status (legacy method). '''
-        result = self.render_single_item( item_type, item_name, coder, target )
-        _scribe.debug( f"Generated {result.location}" )
-        if simulate:
-            _scribe.debug(
-                f"Content preview: {len( result.content )} characters" )
+        return _jinja2.Environment(
+            loader = loader,
+            autoescape = False,  # noqa: S701  Markdown output, not HTML
+        )
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities. '''
@@ -316,13 +281,15 @@ class PopulateCommand( __.appcore_cli.Command ):
         location = _retrieve_data_location( self.source )
         generator = ContentGenerator(
             location = location, configuration = configuration )
-        generator.generate( self.target, self.simulate )
+        items_attempted, items_generated = populate_directory(
+            generator, self.target, self.simulate )
+        _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
-            items_generated = 0,
+            items_generated = items_generated,
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
