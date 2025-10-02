@@ -8,7 +8,7 @@ This document specifies the goal state for template rendering context in `agents
 
 ### Current Implementation
 
-**File**: `sources/agentsmgr/commands.py:167-171`
+**File**: `sources/agentsmgr/commands/generator.py:76-81`
 
 ```python
 variables: dict[ str, __.typx.Any ] = {
@@ -213,66 +213,101 @@ allowed-tools = [
 
 **Future**: Other coders (Opencode, Gemini) with their own mapping rules
 
+## Architecture Notes
+
+### Commands Module Refactor Impact
+
+The commands module was recently refactored (commit `5fe291b`) from a monolithic 500-line `commands.py` into a focused subpackage structure:
+
+- **`base.py`**: Shared infrastructure (error handling, config loading, validation)
+- **`generator.py`**: Template rendering and content generation (`ContentGenerator` class)
+- **`operations.py`**: Directory population orchestration
+- **`detection.py`, `population.py`, `validation.py`**: Individual command implementations
+- **`__.py`**: Centralized imports following project patterns
+
+This refactor improves the natural placement of render context logic:
+
+1. **Clear ownership**: Template variable construction now lives in `ContentGenerator.render_single_item()` at `generator.py:76-81`
+2. **Focused scope**: Generator module handles all template rendering concerns
+3. **Room for growth**: Module currently ~194 lines, can accommodate Phase 1 normalization
+4. **Extension path**: Phase 2 complexity warrants new `context.py` module in commands subpackage
+
+### Module Placement Strategy
+
+**Phase 1** (Basic normalization):
+- Add `_normalize_context()` method to `ContentGenerator` class
+- Rationale: Simple transformation tightly coupled to rendering flow
+- Keeps template variable construction cohesive
+
+**Phase 2** (Tool mapping):
+- Create new `commands/context.py` module
+- Rationale: Significant complexity (3+ functions), clear separation of concerns
+- Provides extension point for future context transformations
+- Note: Initially considered standalone `tools.py` but rejected as too narrow in scope
+
 ## Implementation Approach
 
 ### Phase 1: Variable Normalization (Immediate)
 
-**Location**: `sources/agentsmgr/commands.py:_load_item_metadata()` or new `_normalize_render_context()` method
+**Location**: `sources/agentsmgr/commands/generator.py` (add method to `ContentGenerator` class)
+
+**Implementation Strategy**: Add normalization directly to generator module since:
+- Normalization logic is tightly coupled to template rendering
+- `generator.py` currently ~194 lines, has room for this functionality
+- Keeps all template variable construction in one cohesive location
 
 **Tasks**:
-1. Transform hyphenated keys to underscored keys
-2. Create `SimpleNamespace` for coder configuration
-3. Create `SimpleNamespace` for context (normalized frontmatter)
-4. Return variables dictionary with `content`, `coder`, `context`
+1. Add normalization method to `ContentGenerator` class
+2. Transform hyphenated keys to underscored keys
+3. Create `SimpleNamespace` for coder configuration
+4. Create `SimpleNamespace` for context (normalized frontmatter)
+5. Update `render_single_item()` at line 76-81 to use normalized context
+6. Return variables dictionary with `content`, `coder`, `context`
 
-**Example Implementation Pattern**:
-```python
-def _normalize_context(
-    frontmatter: dict[ str, __.typx.Any ], coder: str
-) -> __.types.SimpleNamespace:
-    ''' Normalizes frontmatter into context namespace. '''
-    normalized = {
-        key.replace( '-', '_' ): value
-        for key, value in frontmatter.items( )
-    }
-    # Map allowed_tools if present
-    if 'allowed_tools' in normalized:
-        normalized[ 'allowed_tools' ] = _map_allowed_tools(
-            normalized[ 'allowed_tools' ], coder )
-    return __.types.SimpleNamespace( **normalized )
-```
+**Implementation Considerations**:
+- Use `types.SimpleNamespace` for dot-notation access in templates
+- Simple key transformation: replace hyphens with underscores
+- Preserve all frontmatter values unchanged (except key names)
+- Integration point: `ContentGenerator.render_single_item()` after `_load_item_metadata()`
+- Variables dict should spread `coder` and `context` namespaces alongside `content`
 
 ### Phase 2: Tool Specification Mapping (Subsequent)
 
-**Location**: New module `sources/agentsmgr/tools.py`
+**Location**: New module `sources/agentsmgr/commands/context.py`
 
-**Tasks**:
-1. Implement `map_allowed_tools(specs: list, coder: str) -> list[str]`
-2. Handle `{ tool = 'shell', arguments, allow-extra-arguments }` format
-3. Handle `{ server, tool }` format for MCP servers
-4. Handle semantic tool names (lowercase strings)
-5. Integrate into normalization pipeline
+**Implementation Strategy**: Create dedicated context module for Phase 2 because:
+- Tool mapping has significant complexity (3+ helper functions)
+- Clear separation of concerns: normalization + tool mapping
+- Natural extension point for future context transformations
+- Keeps generator module focused on rendering orchestration
 
-**Example**:
-```python
-def map_allowed_tools(
-    specs: __.cabc.Sequence[ str | dict[ str, __.typx.Any ] ], coder: str
-) -> list[ str ]:
-    ''' Maps tool specifications to coder-specific syntax. '''
-    result = [ ]
-    for spec in specs:
-        if isinstance( spec, str ):
-            # Semantic name: 'read' → 'Read', 'list-directory' → 'LS'
-            result.append( _map_semantic_tool( spec, coder ) )
-        elif isinstance( spec, dict ):
-            if 'server' in spec:
-                # MCP server tool
-                result.append( _map_mcp_tool( spec, coder ) )
-            elif spec.get( 'tool' ) == 'shell':
-                # Shell command
-                result.append( _map_shell_command( spec, coder ) )
-    return result
-```
+**Required Functionality**:
+1. Normalization function combining Phase 1 logic with tool mapping
+2. Tool specification mapper handling three spec types:
+   - String literals (semantic names): `'read'` → coder-specific tool name
+   - Shell commands: `{ tool = 'shell', arguments, allow-extra-arguments }` → coder syntax
+   - MCP tools: `{ server, tool }` → coder-specific MCP format
+3. Helper functions for each tool specification type
+4. Coder-specific mapping rules (initially Claude, extensible for Opencode/Gemini)
+
+**Implementation Considerations**:
+- **Tool specification types**: Must handle strings, shell dicts, and MCP dicts
+- **Shell command wildcards**: `allow-extra-arguments: true` → append wildcard (e.g., `Bash(git pull:*)`)
+- **Semantic tool mappings**: Maintain lookup table for semantic names to coder tools
+  - Examples: `'read'` → `'Read'`, `'list-directory'` → `'LS'` (Claude)
+- **MCP tool format**: `{ server = 'librovore', tool = 'query-inventory' }` → `'mcp__librovore__query_inventory'`
+- **Unknown spec handling**: Decide whether to error, warn, or pass through
+- **Coder extensibility**: Design mapping rules to accommodate future coders
+- **Integration**: Move Phase 1 normalization from `generator.py` into this module
+- **Validation**: Consider validating tool specs before mapping (schema compliance)
+
+**Integration Tasks**:
+1. Create `sources/agentsmgr/commands/context.py` module
+2. Implement tool mapping functions with coder-specific logic
+3. Move normalization from `generator.py` to `context.py`
+4. Update `ContentGenerator.render_single_item()` to use context module
+5. Add validation for tool specifications
+6. Update existing TOML files with explicit tool specifications
 
 ## Template Contract
 
@@ -324,41 +359,32 @@ allowed-tools: {{ context.allowed_tools | join(', ') }}
 
 ## Testing Strategy
 
-### Unit Tests
+### Test Coverage Requirements
 
-**Test normalization**:
-```python
-def test_normalize_hyphenated_keys():
-    frontmatter = {
-        'argument-hint': 'major.minor',
-        'allowed-tools': [
-            { 'tool': 'shell', 'arguments': 'git status' },
-            { 'tool': 'shell', 'arguments': 'git pull', 'allow-extra-arguments': True },
-            'read',
-            'list-directory',
-            { 'server': 'librovore', 'tool': 'query-inventory' },
-        ],
-    }
-    context = _normalize_context( frontmatter, 'claude' )
-    assert context.argument_hint == 'major.minor'
-    assert context.allowed_tools == [
-        'Bash(git status)',
-        'Bash(git pull:*)',
-        'Read',
-        'LS',
-        'mcp__librovore__query_inventory',
-    ]
-```
+**Phase 1 Tests** (normalization in `generator.py`):
+- Hyphen-to-underscore transformation for all frontmatter keys
+- `SimpleNamespace` creation for both `coder` and `context`
+- Dot-notation access to all normalized fields
+- Preservation of non-hyphenated keys
+- Handling of empty frontmatter
+- Multiple hyphen cases (e.g., `argument-hint`, `allowed-tools`)
 
-### Integration Tests
+**Phase 2 Tests** (tool mapping in `context.py`):
+- Each tool specification type (string, shell dict, MCP dict)
+- Shell commands with and without `allow-extra-arguments`
+- Semantic tool name mappings for each supported coder
+- MCP tool format construction
+- Mixed specification lists
+- Unknown/invalid specification handling
+- Coder-specific mapping rules (Claude, Opencode, Gemini)
+- Integration of normalization + tool mapping pipeline
 
-**Test rendering**:
-```python
-def test_render_with_normalized_context():
-    # Given: TOML with hyphenated keys and explicit tool specifications
-    # When: Render template
-    # Then: Output has proper frontmatter with coder-specific tools
-```
+**Integration Tests**:
+- End-to-end template rendering with normalized context
+- TOML configuration → template → output verification
+- Generated frontmatter matches expected coder format
+- No undefined template variables in rendered output
+- Multiple coders with same source configuration
 
 ## Migration Path
 
