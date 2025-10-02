@@ -1,0 +1,152 @@
+# vim: set filetype=python fileencoding=utf-8:
+# -*- coding: utf-8 -*-
+
+#============================================================================#
+#                                                                            #
+#  Licensed under the Apache License, Version 2.0 (the "License");           #
+#  you may not use this file except in compliance with the License.          #
+#  You may obtain a copy of the License at                                   #
+#                                                                            #
+#      http://www.apache.org/licenses/LICENSE-2.0                            #
+#                                                                            #
+#  Unless required by applicable law or agreed to in writing, software       #
+#  distributed under the License is distributed on an "AS IS" BASIS,         #
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  #
+#  See the License for the specific language governing permissions and       #
+#  limitations under the License.                                            #
+#                                                                            #
+#============================================================================#
+
+
+''' Shared infrastructure for command implementations.
+
+    This module provides common utilities used across multiple command
+    implementations, including error handling, configuration management,
+    and data location resolution.
+'''
+
+
+import yaml as _yaml
+
+from . import __
+
+
+CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
+
+
+def intercept_errors( ) -> __.cabc.Callable[
+    [ __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ] ],
+    __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ]
+]:
+    ''' Decorator for CLI command handlers to intercept and render errors.
+
+        Provides clean separation between business logic and error handling:
+
+        **Purpose**: Enables command implementations to focus purely on
+        business logic while the decorator handles all error presentation
+        concerns.
+
+        **Responsibilities**:
+
+        - Intercepts Omnierror exceptions from command execution
+        - Renders errors in appropriate format (markdown for CLI)
+        - Ensures proper exit code handling (SystemExit with code 1)
+
+        **Pattern**: Commands implement business logic and raise exceptions;
+        decorator handles presentation and process termination. This
+        separation ensures commands remain testable and focused.
+
+        **Type narrowing note**: The isinstance(auxdata, _core.Globals)
+        checks in individual command execute methods serve type narrowing
+        purposes and must be retained for proper type checking.
+    '''
+    def decorator(
+        function: __.cabc.Callable[
+            ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ] ]
+    ) -> __.cabc.Callable[
+        ..., __.cabc.Coroutine[ __.typx.Any, __.typx.Any, None ]
+    ]:
+        @__.funct.wraps( function )
+        async def wrapper(
+            self: __.typx.Any,
+            auxdata: __.typx.Any,
+            *posargs: __.typx.Any,
+            **nomargs: __.typx.Any,
+        ) -> None:
+            try: return await function( self, auxdata, *posargs, **nomargs )
+            except __.Omnierror as exception:
+                if isinstance( auxdata, __.Globals ):
+                    await __.render_and_print_result(
+                        exception, auxdata.display, auxdata.exits )
+                else:
+                    for line in exception.render_as_markdown( ):
+                        print( line, file = __.sys.stderr )
+                raise SystemExit( 1 ) from None
+        return wrapper
+    return decorator
+
+
+async def retrieve_configuration(
+    target: __.Path
+) -> __.cabc.Mapping[ str, __.typx.Any ]:
+    ''' Loads and validates configuration from Copier answers file.
+
+        Unified configuration loading used by multiple command
+        implementations. Reads from standard Copier answers location
+        and validates required fields.
+    '''
+    answers_file = (
+        target / ".auxiliary/configuration/copier-answers--agents.yaml" )
+    if not answers_file.exists( ):
+        raise __.ConfigurationAbsence( target )
+    try: content = answers_file.read_text( encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise __.ConfigurationAbsence( ) from exception
+    try:
+        configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
+            _yaml.safe_load( content ) )
+    except _yaml.YAMLError as exception:
+        raise __.ConfigurationInvalidity( ) from exception
+    if not isinstance( configuration, __.cabc.Mapping ):
+        raise __.ConfigurationInvalidity( )
+    await validate_configuration( configuration )
+    return configuration
+
+
+async def validate_configuration(
+    configuration: __.cabc.Mapping[ str, __.typx.Any ]
+) -> None:
+    ''' Validates required configuration fields are present and non-empty. '''
+    if not configuration.get( 'coders' ):
+        raise __.ConfigurationInvalidity( )
+    if not configuration.get( 'languages' ):
+        raise __.ConfigurationInvalidity( )
+
+
+def retrieve_data_location( source_spec: str ) -> __.Path:
+    ''' Resolves data source specification to local filesystem path.
+
+        Currently supports local paths only. Git URLs and remote sources
+        will raise UnsupportedSourceError.
+    '''
+    if not source_spec.startswith( ( 'http', 'git@', 'gh:' ) ):
+        return __.Path( source_spec ).resolve( )
+    raise __.UnsupportedSourceError( source_spec )
+
+
+def retrieve_variant_answers_file(
+    auxdata: __.Globals, variant: str
+) -> __.Path:
+    ''' Retrieves path to variant answers file in data directory.
+
+        Validates file existence and raises ConfigurationAbsence if not
+        found.
+    '''
+    data_directory = auxdata.provide_data_location( )
+    answers_file = (
+        data_directory / 'agentsmgr' / 'profiles' / f"answers-{variant}.yaml" )
+    if not answers_file.exists( ):
+        raise __.ConfigurationAbsence( )
+    return answers_file

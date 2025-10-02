@@ -41,10 +41,6 @@ class Application( __.appcore_cli.Application ):
             __.tyro.conf.subcommand( 'populate', prefix_name = False ),
         ],
         __.typx.Annotated[
-            _commands.SurveyCommand,
-            __.tyro.conf.subcommand( 'survey', prefix_name = False ),
-        ],
-        __.typx.Annotated[
             _commands.ValidateCommand,
             __.tyro.conf.subcommand( 'validate', prefix_name = False ),
         ],
