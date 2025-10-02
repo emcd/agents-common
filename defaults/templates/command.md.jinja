@@ -1,10 +1,10 @@
 ---
-{%- if coder.name == 'claude' and allowed_tools is defined %}
-allowed-tools: {{ allowed_tools | join(', ') }}
+{%- if coder.name == 'claude' and context.allowed_tools is defined %}
+allowed-tools: {{ context.allowed_tools | join(', ') }}
 {%- endif %}
-description: {{ description }}
-{%- if argument_hint is defined %}
-argument-hint: "{{ argument_hint }}"
+description: {{ context.description }}
+{%- if context.argument_hint is defined %}
+argument-hint: "{{ context.argument_hint }}"
 {%- endif %}
 ---
 

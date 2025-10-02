@@ -1,7 +1,7 @@
 # Agent: Python Conformer
 # Review Python code for compliance with project practices and systematically fix violations
 
-[frontmatter]
+[context]
 name = 'python-conformer'
 description = '''
 Use this agent ONLY when changes include Python code (.py and .pyi files) and you need to review them for

@@ -44,9 +44,10 @@ def populate_directory(
     items_attempted = 0
     items_written = 0
     for coder in generator.configuration[ 'coders' ]:
+        coder_name = coder[ 'name' ]
         for item_type in ( 'commands', 'agents' ):
             attempted, written = produce_coder_item_type(
-                generator, coder, item_type, target, simulate )
+                generator, coder_name, item_type, target, simulate )
             items_attempted += attempted
             items_written += written
     return ( items_attempted, items_written )

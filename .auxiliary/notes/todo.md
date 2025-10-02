@@ -7,6 +7,8 @@
 
 ## Features
 
+- [ ] **Support subdirectory specification in remote repository URLs**: When implementing remote git source support (e.g., `gh:emcd/agents-common`), need mechanism to specify data directory within repository. Current `--command.source=defaults` works for local paths but won't translate to remote URLs. Consider URL fragment syntax (e.g., `gh:emcd/agents-common#defaults`) or query parameter approach (e.g., `gh:emcd/agents-common?path=defaults`)
+
 ## Documentation
 
 ## Testing

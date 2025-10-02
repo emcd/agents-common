@@ -73,10 +73,11 @@ class ContentGenerator( __.immut.DataclassObject ):
         metadata = self._load_item_metadata( item_type, item_name, coder )
         template_name = self._select_template_for_coder( item_type, coder )
         template = self.jinja_environment.get_template( template_name )
+        normalized = self._normalize_context(
+            metadata[ 'context' ], metadata[ 'coder' ] )
         variables: dict[ str, __.typx.Any ] = {
             'content': body,
-            'coder': metadata[ 'coder' ],
-            **metadata[ 'frontmatter' ],
+            **normalized,
         }
         content = template.render( **variables )
         extension = self._parse_template_extension( template_name )
@@ -135,9 +136,9 @@ class ContentGenerator( __.immut.DataclassObject ):
     def _load_item_metadata(
         self, item_type: str, item_name: str, coder: str
     ) -> dict[ str, __.typx.Any ]:
-        ''' Loads TOML metadata and extracts frontmatter and coder config.
+        ''' Loads TOML metadata and extracts context and coder config.
 
-            Reads item configuration file and separates frontmatter fields
+            Reads item configuration file and separates context fields
             from coder-specific configuration.
         '''
         configuration_file = (
@@ -152,12 +153,12 @@ class ContentGenerator( __.immut.DataclassObject ):
             toml_content.decode( 'utf-8' ) )
         except __.tomli.TOMLDecodeError as exception:
             raise __.ConfigurationInvalidity( ) from exception
-        frontmatter = toml_data.get( 'frontmatter', { } )
+        context = toml_data.get( 'context', { } )
         coders = toml_data.get( 'coders', [ ] )
         coder_config = next(
             ( c for c in coders if c.get( 'name' ) == coder ),
             { 'name': coder } )
-        return { 'frontmatter': frontmatter, 'coder': coder_config }
+        return { 'context': context, 'coder': coder_config }
 
     def _produce_jinja_environment( self ) -> _jinja2.Environment:
         ''' Produces Jinja2 environment configured for templates directory.
@@ -171,6 +172,28 @@ class ContentGenerator( __.immut.DataclassObject ):
             loader = loader,
             autoescape = False,  # noqa: S701  Markdown output, not HTML
         )
+
+    def _normalize_context(
+        self,
+        context_data: dict[ str, __.typx.Any ],
+        coder_config: dict[ str, __.typx.Any ],
+    ) -> dict[ str, __.typx.Any ]:
+        ''' Normalizes template rendering context with SimpleNamespace objects.
+
+            Transforms hyphenated keys to underscored keys for template
+            access and wraps configurations in SimpleNamespace objects
+            for dot-notation access.
+        '''
+        normalized_context = {
+            key.replace( '-', '_' ): value
+            for key, value in context_data.items( ) }
+        context_namespace = __.types.SimpleNamespace(
+            **normalized_context )
+        coder_namespace = __.types.SimpleNamespace( **coder_config )
+        return {
+            'context': context_namespace,
+            'coder': coder_namespace,
+        }
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities.

@@ -1,9 +1,9 @@
 ---
 {%- if coder.name == 'claude' %}
-name: {{ name }}
+name: {{ context.name }}
 {%- endif %}
 description: |
-{{ description | indent(2, True) }}
+{{ context.description | indent(2, True) }}
 {%- if coder.name == 'claude' and coder.model is defined %}
 model: {{ coder.model }}
 {%- elif coder.name == 'opencode' %}
@@ -14,8 +14,8 @@ mode: {{ coder.mode }}
 model: {{ coder.model }}
 {%- endif %}
 {%- endif %}
-{%- if color is defined %}
-color: {{ color }}
+{%- if context.color is defined %}
+color: {{ context.color }}
 {%- endif %}
 ---
 
