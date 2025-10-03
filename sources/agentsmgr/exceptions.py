@@ -69,6 +69,17 @@ class ContextInvalidity( Omnierror, TypeError ):
 class ConfigurationInvalidity( Omnierror, ValueError ):
     ''' Configuration data invalidity. '''
 
+    TOML_DECODE_ERROR = "TOML decode error."
+    UNRECOGNIZED_TOOL_SPEC = "Unrecognized tool specification."
+    TOOL_SPEC_TYPE_ERROR = "Tool specification must be string or dict."
+
+    def __init__( self, reason: __.typx.Any = None ):
+        if reason is None:
+            message = "Invalid configuration."
+        else:
+            message = f"Invalid configuration: {reason}"
+        super( ).__init__( message )
+
     def render_as_markdown( self ) -> tuple[ str, ... ]:
         ''' Renders configuration invalidity with helpful guidance. '''
         lines = [ "## Error: Invalid Agent Configuration" ]

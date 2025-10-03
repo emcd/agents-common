@@ -1,6 +1,3 @@
-# Agent: Python Conformer
-# Review Python code for compliance with project practices and systematically fix violations
-
 [context]
 name = 'python-conformer'
 description = '''

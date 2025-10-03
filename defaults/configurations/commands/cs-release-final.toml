@@ -2,6 +2,31 @@
 name = 'cs-release-final'
 description = 'Execute automated final release with QA monitoring and development cycle setup'
 argument-hint = 'major.minor'
-allowed-tools = [ ]
+allowed-tools = [
+    # Shell commands - exact match
+    { tool = 'shell', arguments = 'git status' },
+
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'git pull', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git checkout', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git add', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git commit', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git tag', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git rm', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git cherry-pick', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git log', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git branch', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'gh run list', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'gh run watch', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'hatch version', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'hatch --env develop run', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'echo', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'grep', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'list-directory',
+    'read',
+]
 color = 'red'
 permissions = ['read', 'write', 'execute']

@@ -30,6 +30,7 @@ import jinja2 as _jinja2
 
 from . import __
 from . import base as _base
+from . import context as _context
 
 
 _TEMPLATE_PARTS_MINIMUM = 3
@@ -73,7 +74,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         metadata = self._load_item_metadata( item_type, item_name, coder )
         template_name = self._select_template_for_coder( item_type, coder )
         template = self.jinja_environment.get_template( template_name )
-        normalized = self._normalize_context(
+        normalized = _context.normalize_render_context(
             metadata[ 'context' ], metadata[ 'coder' ] )
         variables: dict[ str, __.typx.Any ] = {
             'content': body,
@@ -152,7 +153,8 @@ class ContentGenerator( __.immut.DataclassObject ):
         try: toml_data: dict[ str, __.typx.Any ] = __.tomli.loads(
             toml_content.decode( 'utf-8' ) )
         except __.tomli.TOMLDecodeError as exception:
-            raise __.ConfigurationInvalidity( ) from exception
+            reason = __.ConfigurationInvalidity.TOML_DECODE_ERROR
+            raise __.ConfigurationInvalidity( reason ) from exception
         context = toml_data.get( 'context', { } )
         coders = toml_data.get( 'coders', [ ] )
         coder_config = next(
@@ -173,27 +175,6 @@ class ContentGenerator( __.immut.DataclassObject ):
             autoescape = False,  # noqa: S701  Markdown output, not HTML
         )
 
-    def _normalize_context(
-        self,
-        context_data: dict[ str, __.typx.Any ],
-        coder_config: dict[ str, __.typx.Any ],
-    ) -> dict[ str, __.typx.Any ]:
-        ''' Normalizes template rendering context with SimpleNamespace objects.
-
-            Transforms hyphenated keys to underscored keys for template
-            access and wraps configurations in SimpleNamespace objects
-            for dot-notation access.
-        '''
-        normalized_context = {
-            key.replace( '-', '_' ): value
-            for key, value in context_data.items( ) }
-        context_namespace = __.types.SimpleNamespace(
-            **normalized_context )
-        coder_namespace = __.types.SimpleNamespace( **coder_config )
-        return {
-            'context': context_namespace,
-            'coder': coder_namespace,
-        }
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities.
