@@ -39,6 +39,7 @@ from logging import getLogger as provide_scribe
 from pathlib import Path
 
 
+import accretive as         accret
 import                      appcore
 import                      appcore.exceptions
 import                      appcore.state
