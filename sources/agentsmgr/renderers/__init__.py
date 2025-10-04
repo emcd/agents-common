@@ -18,14 +18,15 @@
 #============================================================================#
 
 
-''' Centralized imports for commands subpackage. '''
+''' Coder renderer registry and lookup.
+
+    Provides centralized registry for coder-specific renderers using
+    accretive dictionary. Individual renderers register themselves
+    directly with the registry.
+'''
 
 
-# ruff: noqa: F403
+from .base import RENDERERS, RendererBase, TargetingMode
 
-
-from ..__ import *
-from ..core import *
-from ..exceptions import *
-from ..renderers import *
-from ..results import *
+# Import renderer modules to populate registry
+from . import claude, codex, opencode

@@ -18,14 +18,11 @@
 #============================================================================#
 
 
-''' Centralized imports for commands subpackage. '''
+''' Centralized imports for renderers subpackage. '''
 
 
 # ruff: noqa: F403
 
 
 from ..__ import *
-from ..core import *
 from ..exceptions import *
-from ..renderers import *
-from ..results import *

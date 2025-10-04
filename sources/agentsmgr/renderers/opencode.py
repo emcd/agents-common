@@ -18,14 +18,39 @@
 #============================================================================#
 
 
-''' Centralized imports for commands subpackage. '''
+''' OpenCode renderer implementation.
+
+    Provides path resolution and targeting mode validation for OpenCode,
+    which supports both per-user and per-project configuration.
+'''
 
 
-# ruff: noqa: F403
+from . import __
+from .base import RENDERERS, RendererBase, TargetingMode
 
 
-from ..__ import *
-from ..core import *
-from ..exceptions import *
-from ..renderers import *
-from ..results import *
+class OpencodeRenderer( RendererBase ):
+    ''' Renderer for OpenCode coder. '''
+
+    name = 'opencode'
+    modes_available = frozenset( ( 'per-project', ) )
+
+    def resolve_base_directory(
+        self,
+        mode: TargetingMode,
+        target: __.Path,
+        configuration: __.cabc.Mapping[ str, __.typx.Any ],
+        environment: __.cabc.Mapping[ str, str ],
+    ) -> __.Path:
+        ''' Resolves base output directory for OpenCode.
+
+            For per-project mode, returns standard project configuration
+            path. Per-user mode not yet implemented.
+        '''
+        self.validate_target_mode( mode )
+        if mode == 'per-project':
+            return target / ".auxiliary" / "configuration" / "opencode"
+        raise __.TargetModeNoSupport( self.name, mode )
+
+
+RENDERERS[ 'opencode' ] = OpencodeRenderer( )

@@ -82,9 +82,17 @@ class ContentGenerator( __.immut.DataclassObject ):
         }
         content = template.render( **variables )
         extension = self._parse_template_extension( template_name )
-        location = (
-            target / ".auxiliary" / "configuration" / coder /
-            item_type / f"{item_name}.{extension}" )
+        try: renderer = __.RENDERERS[ coder ]
+        except KeyError as exception:
+            raise __.CoderAbsence( coder ) from exception
+        base_directory = renderer.resolve_base_directory(
+            mode = 'per-project',
+            target = target,
+            configuration = { },
+            environment = { },
+        )
+        dirname = renderer.produce_output_structure( item_type )
+        location = base_directory / dirname / f"{item_name}.{extension}"
         return RenderedItem( content = content, location = location )
 
     def _survey_available_templates( self, item_type: str ) -> list[ str ]:
@@ -201,5 +209,5 @@ class ContentGenerator( __.immut.DataclassObject ):
             if preferred in available:
                 return preferred
         if coder not in preferences:
-            raise __.UnsupportedCoderError( coder )
+            raise __.CoderAbsence( coder )
         raise __.TemplateAbsence( item_type, coder )

@@ -18,14 +18,44 @@
 #============================================================================#
 
 
-''' Centralized imports for commands subpackage. '''
+''' Codex CLI renderer implementation.
+
+    Provides path resolution and targeting mode validation for Codex CLI.
+    Codex CLI only supports per-user configuration as of version 0.44.0.
+'''
 
 
-# ruff: noqa: F403
+from . import __
+from .base import RENDERERS, RendererBase, TargetingMode
 
 
-from ..__ import *
-from ..core import *
-from ..exceptions import *
-from ..renderers import *
-from ..results import *
+class CodexRenderer( RendererBase ):
+    ''' Renderer for Codex CLI coder.
+
+        Codex CLI does not support per-project configuration as of
+        version 0.44.0.
+    '''
+
+    name = 'codex'
+    modes_available = frozenset( ( 'per-project', ) )
+
+    def resolve_base_directory(
+        self,
+        mode: TargetingMode,
+        target: __.Path,
+        configuration: __.cabc.Mapping[ str, __.typx.Any ],
+        environment: __.cabc.Mapping[ str, str ],
+    ) -> __.Path:
+        ''' Resolves base output directory for Codex CLI.
+
+            Uses per-project path structure for consistency, even though
+            Codex does not fully support it. Per-user mode will provide
+            proper Codex support.
+        '''
+        self.validate_target_mode( mode )
+        if mode == 'per-project':
+            return target / ".auxiliary" / "configuration" / "codex"
+        raise __.TargetModeNoSupport( self.name, mode )
+
+
+RENDERERS[ 'codex' ] = CodexRenderer( )

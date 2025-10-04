@@ -116,12 +116,37 @@ class TemplateExtensionError( Omnierror, ValueError ):
         super( ).__init__( message )
 
 
-class UnsupportedCoderError( Omnierror, ValueError ):
-    ''' Unsupported coder error. '''
+class CoderAbsence( Omnierror, ValueError ):
+    ''' Coder absence in registry. '''
 
     def __init__( self, coder: str ):
-        message = f"Unsupported coder: {coder}"
+        message = f"Coder not found in registry: {coder}"
         super( ).__init__( message )
+
+
+class TargetModeNoSupport( Omnierror, ValueError ):
+    ''' Targeting mode lack of support. '''
+
+    def __init__( self, coder: str, mode: str, reason: str = '' ):
+        self.coder = coder
+        self.mode = mode
+        self.reason = reason
+        message = (
+            f"The {coder} coder does not support {mode} targeting mode." )
+        if reason: message = f"{message} {reason}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders targeting mode error with helpful guidance. '''
+        lines = [
+            "## Error: Unsupported Targeting Mode",
+            "",
+            f"The **{self.coder}** coder does not support "
+            f"**{self.mode}** targeting mode.",
+        ]
+        if self.reason:
+            lines.extend( [ "", self.reason ] )
+        return tuple( lines )
 
 
 class UnsupportedSourceError( Omnierror, ValueError ):
