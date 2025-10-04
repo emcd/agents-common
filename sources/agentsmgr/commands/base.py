@@ -139,14 +139,16 @@ def retrieve_data_location( source_spec: str ) -> __.Path:
 def retrieve_variant_answers_file(
     auxdata: __.Globals, variant: str
 ) -> __.Path:
-    ''' Retrieves path to variant answers file in data directory.
+    ''' Retrieves path to variant answers file in test data directory.
 
         Validates file existence and raises ConfigurationAbsence if not
         found.
     '''
     data_directory = auxdata.provide_data_location( )
+    project_root = data_directory.parent
     answers_file = (
-        data_directory / 'agentsmgr' / 'profiles' / f"answers-{variant}.yaml" )
+        project_root / 'tests' / 'data' / 'profiles'
+        / f"answers-{variant}.yaml" )
     if not answers_file.exists( ):
         raise __.ConfigurationAbsence( )
     return answers_file
