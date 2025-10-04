@@ -57,16 +57,13 @@ def deep_merge(
     overwrite: bool = False,
     path: str = "",
 ) -> dict[str, Any]:
-    ''' Recursively merge source into target.
+    ''' Recursively merge source into target, modifying target in place.
 
-    Args:
-        target: Existing user settings (modified in place)
-        source: Template/recommended settings
-        overwrite: If True, source overwrites target; if False, target wins
-        path: Current path (for conflict reporting)
-
-    Returns:
-        Dictionary of conflicts: {path: (target_value, source_value)}
+    Iterates through source dictionary, adding missing keys to target. When both
+    target and source contain the same key with dict values, recursively merges
+    those nested dicts. For conflicting scalar values, target wins unless overwrite
+    is True. Returns dictionary mapping conflict paths to (target_value, source_value)
+    tuples for reporting purposes.
     '''
     conflicts = {}
 
@@ -472,13 +469,18 @@ def _show_json_diff(old_path: Path, new: dict) -> None:
 
 ## Recommendation
 
-**For your use case**, I recommend **Option 5 (Structured Conflict Resolution)** because:
+**For initial implementation**, start with **Option 1 (Custom Recursive Merge)** because:
 
-1. **Additive-only merge is trivial**: Just recursive dict merge with user values winning
-2. **Interactive resolution is valuable**: Users want to see what changed
-3. **No heavy dependencies**: Pure Python + stdlib
-4. **Excellent UX**: Clear output, user control, safety (backups)
-5. **Auditable**: Shows exactly what was added/changed
+1. **Simple and sufficient**: Handles the core use case of adding missing keys
+2. **No dependencies**: Pure Python + stdlib
+3. **Easy to understand**: Straightforward recursive logic
+4. **Safe defaults**: Preserves user values, creates backups
+5. **Foundation for enhancement**: Can add Option 5 interactivity later if needed
+
+**Future enhancement** with **Option 5 (Structured Conflict Resolution)** when:
+- Users request interactive conflict resolution
+- Need to visualize what changed between template and current settings
+- Want to selectively adopt template changes
 
 **CLI Integration**:
 ```bash

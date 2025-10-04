@@ -19,8 +19,9 @@ Additionally, different users have different preferences for config locations (X
 ┌─────────────────────────────────────────────────────────┐
 │ Layer 1: agentsmgr Configuration                        │
 │ Purpose: How agentsmgr operates (user preferences)      │
-│ Location: ~/.config/agentsmgr/config.yaml               │
+│ Location: ~/.config/emcd-agents/general.toml            │
 │ Scope: Per-user, persistent across all projects         │
+│ Note: Provided by appcore configuration system          │
 │                                                          │
 │ Contents:                                                │
 │   - Default targeting mode (per-user vs per-project)    │
@@ -56,40 +57,45 @@ Additionally, different users have different preferences for config locations (X
 
 ### Layer 1: agentsmgr Configuration
 
-**File**: `~/.config/agentsmgr/config.yaml` (or `$XDG_CONFIG_HOME/agentsmgr/config.yaml`)
+**File**: `~/.config/emcd-agents/general.toml` (provided by appcore configuration system)
 
 **Example**:
-```yaml
+```toml
 # Default targeting mode for all operations
 # Can be overridden per-invocation via CLI flag
-targeting_mode: per-project  # or: per-user
+target-mode = "per-project"  # or: "per-user"
 
-# Coder-specific path overrides
-# Supports environment variable substitution
-coder_overrides:
-  codex:
-    home: ${CODEX_HOME:-~/.codex}
+# Coder-specific configuration using table arrays
+# Environment variables take precedence over these settings
+[[coders]]
+name = "codex"
+home = "~/.codex"
+target-mode = "per-user"  # Force per-user for codex
 
-  claude:
-    config_dir: ${CLAUDE_CONFIG_DIR:-~/.config/claude}
+[[coders]]
+name = "claude"
+config-dir = "~/.config/claude"
+target-mode = "default"  # Use global target-mode
 
-  gemini:
-    config_dir: ${GEMINI_CONFIG_DIR:-~/.gemini}
+[[coders]]
+name = "gemini"
+config-dir = "~/.gemini"
 
-  opencode:
-    config_dir: ~/.config/opencode
-
-# Optional: Global vs project preferences per coder
-coder_targeting:
-  codex: per-user      # Force per-user for codex
-  claude: inherit      # Use default targeting_mode
-  opencode: per-project
+[[coders]]
+name = "opencode"
+config-dir = "~/.config/opencode"
+target-mode = "per-project"
 ```
+
+**Precedence Order** (highest to lowest):
+1. Environment variables (e.g., `CODEX_HOME`, `CLAUDE_CONFIG_DIR`)
+2. File configuration (`~/.config/emcd-agents/general.toml`)
+3. Coder defaults
 
 **Behavior**:
 - If file doesn't exist, use sensible defaults
-- CLI flag `--targeting-mode` overrides config
-- Environment variables expanded at runtime
+- CLI flag `--target-mode` overrides config (can specify per-coder)
+- Environment variables override file configuration
 - Invalid mode for coder raises helpful error
 
 ### Layer 2: Copier Answers (Unchanged)
@@ -163,188 +169,62 @@ class CoderRenderer(Protocol):
     ) -> Path:
         ''' Resolves base output directory for this coder.
 
-        Args:
-            targeting_mode: 'per-user' or 'per-project'
-            project_target: Project root path (for per-project mode)
-            agentsmgr_config: User's agentsmgr configuration
-            env: Environment variables (os.environ)
-
-        Returns:
-            Base path where coder config should be written.
-            Examples:
-              - per-user: /home/user/.config/claude
-              - per-project: /path/to/project/.auxiliary/configuration/claude
+        Determines the appropriate output location based on targeting mode,
+        respecting the precedence of environment variables over file configuration
+        over coder defaults. For per-user mode, checks environment first, then
+        configuration file overrides, then falls back to coder-specific defaults.
+        For per-project mode, constructs path within project structure.
         '''
         ...
 
     def get_output_structure(self, item_type: str) -> str:
         ''' Returns subdirectory structure for item type.
 
-        Args:
-            item_type: 'commands' or 'agents'
-
-        Returns:
-            Subdirectory path relative to output_base.
-            Examples:
-              - Claude: 'commands' → 'commands/'
-              - Codex: 'commands' → 'slash-commands/' (hypothetical)
+        Translates generic item type (commands/agents) to coder-specific
+        directory structure. Most coders use the same structure, but some
+        may have different conventions.
         '''
         ...
 ```
 
-#### Example Implementations
+#### Renderer Implementation Guidelines
+
+Each coder renderer should implement the `CoderRenderer` protocol with these considerations:
 
 **Codex Renderer** (`renderers/codex.py`):
-```python
-class CodexRenderer:
-    ''' Renderer for Codex CLI (per-user only). '''
-
-    coder_name = 'codex'
-    supported_targeting_modes = frozenset(['per-user'])
-
-    def validate_targeting_mode(self, mode: TargetingMode) -> None:
-        if mode != 'per-user':
-            raise UnsupportedTargetingMode(
-                coder='codex',
-                mode=mode,
-                reason='Codex CLI does not support per-project configuration. '
-                       'Only per-user configuration in ~/.codex or $CODEX_HOME '
-                       'is supported as of version 0.44.0.'
-            )
-
-    def resolve_output_base(
-        self,
-        targeting_mode: TargetingMode,
-        project_target: Path,
-        agentsmgr_config: Mapping[str, Any],
-        env: Mapping[str, str],
-    ) -> Path:
-        self.validate_targeting_mode(targeting_mode)
-
-        # Precedence: agentsmgr config > env > default
-
-        # 1. Check agentsmgr config override
-        override = (
-            agentsmgr_config
-            .get('coder_overrides', {})
-            .get('codex', {})
-            .get('home')
-        )
-        if override:
-            return Path(override).expanduser()
-
-        # 2. Check CODEX_HOME environment variable
-        if codex_home := env.get('CODEX_HOME'):
-            return Path(codex_home).expanduser()
-
-        # 3. Default location
-        return Path.home() / '.codex'
-
-    def get_output_structure(self, item_type: str) -> str:
-        # Codex uses same structure as our convention
-        return item_type  # 'commands' → 'commands/', 'agents' → 'agents/'
-```
+- Only supports `per-user` targeting mode (validation must error on `per-project`)
+- Path resolution precedence: `CODEX_HOME` env var > config file > `~/.codex` default
+- Error message should reference Codex CLI version 0.44.0 limitation
 
 **Claude Renderer** (`renderers/claude.py`):
-```python
-class ClaudeRenderer:
-    ''' Renderer for Claude Code (supports both modes). '''
-
-    coder_name = 'claude'
-    supported_targeting_modes = frozenset(['per-user', 'per-project'])
-
-    def validate_targeting_mode(self, mode: TargetingMode) -> None:
-        # Claude supports both modes
-        pass
-
-    def resolve_output_base(
-        self,
-        targeting_mode: TargetingMode,
-        project_target: Path,
-        agentsmgr_config: Mapping[str, Any],
-        env: Mapping[str, str],
-    ) -> Path:
-        if targeting_mode == 'per-project':
-            # Project-local configuration
-            return project_target / '.auxiliary' / 'configuration' / 'claude'
-
-        # Per-user configuration
-        # Precedence: agentsmgr config > env > default
-
-        override = (
-            agentsmgr_config
-            .get('coder_overrides', {})
-            .get('claude', {})
-            .get('config_dir')
-        )
-        if override:
-            return Path(override).expanduser()
-
-        if config_dir := env.get('CLAUDE_CONFIG_DIR'):
-            return Path(config_dir).expanduser()
-
-        return Path.home() / '.claude'
-
-    def get_output_structure(self, item_type: str) -> str:
-        return item_type
-```
+- Supports both `per-user` and `per-project` modes
+- For per-user: precedence is `CLAUDE_CONFIG_DIR` env var > config file > `~/.claude` default
+- For per-project: use standard `.auxiliary/configuration/claude/` structure
 
 **OpenCode Renderer** (`renderers/opencode.py`):
-```python
-class OpencodeRenderer:
-    ''' Renderer for OpenCode (supports both modes). '''
+- Supports both targeting modes
+- For per-user: precedence is `OPENCODE_CONFIG_DIR` env var > config file > `~/.config/opencode` default (XDG-compliant)
+- For per-project: use standard `.auxiliary/configuration/opencode/` structure
 
-    coder_name = 'opencode'
-    supported_targeting_modes = frozenset(['per-user', 'per-project'])
+**Path Resolution Pattern** (all renderers):
+1. Check environment variable (if per-user mode)
+2. Check configuration file override (if per-user mode)
+3. Use coder-specific default or project structure (based on mode)
 
-    def validate_targeting_mode(self, mode: TargetingMode) -> None:
-        pass
-
-    def resolve_output_base(
-        self,
-        targeting_mode: TargetingMode,
-        project_target: Path,
-        agentsmgr_config: Mapping[str, Any],
-        env: Mapping[str, str],
-    ) -> Path:
-        if targeting_mode == 'per-project':
-            return project_target / '.auxiliary' / 'configuration' / 'opencode'
-
-        override = (
-            agentsmgr_config
-            .get('coder_overrides', {})
-            .get('opencode', {})
-            .get('config_dir')
-        )
-        if override:
-            return Path(override).expanduser()
-
-        if config_dir := env.get('OPENCODE_CONFIG_DIR'):
-            return Path(config_dir).expanduser()
-
-        # Default to XDG-compliant location
-        return Path.home() / '.config' / 'opencode'
-
-    def get_output_structure(self, item_type: str) -> str:
-        return item_type
-```
+Note: Detailed implementations will follow project coding standards and practices.
 
 #### Renderer Registry
 
+The registry will use an accretive dictionary pattern where individual renderer modules
+register themselves on import. This allows renderers to be added without modifying
+central registry code.
+
+**Registry Structure** (`sources/agentsmgr/renderers/__init__.py`):
 ```python
-# sources/agentsmgr/renderers/__init__.py
+from accretive import Dictionary
 
-from .base import CoderRenderer, TargetingMode
-from .claude import ClaudeRenderer
-from .codex import CodexRenderer
-from .opencode import OpencodeRenderer
-
-# Registry mapping coder names to renderer instances
-RENDERERS: dict[str, CoderRenderer] = {
-    'claude': ClaudeRenderer(),
-    'codex': CodexRenderer(),
-    'opencode': OpencodeRenderer(),
-}
+# Accretive dictionary - can only add, never remove or modify
+RENDERERS: Dictionary[str, CoderRenderer] = Dictionary()
 
 def get_renderer(coder_name: str) -> CoderRenderer:
     ''' Retrieves renderer for specified coder. '''
@@ -352,6 +232,22 @@ def get_renderer(coder_name: str) -> CoderRenderer:
         raise UnknownCoderError(coder_name)
     return RENDERERS[coder_name]
 ```
+
+**Self-Registration Pattern** (each renderer module):
+```python
+# sources/agentsmgr/renderers/claude.py
+
+from . import RENDERERS
+
+class ClaudeRenderer:
+    coder_name = 'claude'
+    # ... implementation ...
+
+# Register on module import
+RENDERERS['claude'] = ClaudeRenderer()
+```
+
+This pattern ensures the registry grows naturally as new renderers are added.
 
 ### Integration with ContentGenerator
 
@@ -400,8 +296,9 @@ class PopulateCommand:
     target: Path = field(default_factory=Path.cwd)
     simulate: bool = True
 
-    # NEW: Targeting mode override
-    targeting_mode: Optional[TargetingMode] = None  # None = use config default
+    # NEW: Targeting mode overrides (can specify multiple, one per coder)
+    # Tyro will collect multiple uses into a sequence
+    target_mode: Sequence[str] = ()  # Format: "coder:mode" or just "mode" for all
 ```
 
 **Usage**:
@@ -409,15 +306,20 @@ class PopulateCommand:
 # Use default from agentsmgr config
 agentsmgr populate
 
-# Override to per-user mode
-agentsmgr populate --targeting-mode=per-user
+# Override to per-user mode for all coders
+agentsmgr populate --target-mode=per-user
 
-# Override to per-project mode
-agentsmgr populate --targeting-mode=per-project
+# Per-coder targeting modes
+agentsmgr populate --target-mode=codex:per-user --target-mode=claude:per-project
+
+# Mixed specification (default + override)
+agentsmgr populate --target-mode=per-project --target-mode=codex:per-user
 
 # Simulation mode to preview
-agentsmgr populate --targeting-mode=per-user --simulate
+agentsmgr populate --target-mode=per-user --simulate
 ```
+
+**Parsing logic**: Split `<coder>:<mode>` strings to build dictionary. If no colon, apply mode to all coders.
 
 ### Error Handling
 
