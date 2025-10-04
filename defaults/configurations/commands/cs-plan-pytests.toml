@@ -1,0 +1,4 @@
+[context]
+name = 'cs-plan-pytests'
+description = 'Analyze Python test coverage gaps and create focused test plan for uncovered areas and edge cases'
+permissions = ['read', 'write']

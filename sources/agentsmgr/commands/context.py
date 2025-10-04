@@ -35,10 +35,14 @@ ToolSpecification: __.typx.TypeAlias = (
 _SEMANTIC_TOOLS_CLAUDE: dict[ str, str ] = {
     'read': 'Read',
     'edit': 'Edit',
+    'multi-edit': 'MultiEdit',
     'write': 'Write',
     'list-directory': 'LS',
     'glob': 'Glob',
     'grep': 'Grep',
+    'todo-write': 'TodoWrite',
+    'web-fetch': 'WebFetch',
+    'web-search': 'WebSearch',
 }
 
 
@@ -91,6 +95,8 @@ def _map_tools_claude(
         - String literals (semantic names): 'read' → 'Read'
         - Shell commands: { tool = 'shell', arguments, ... } → 'Bash(...)'
         - MCP tools: { server, tool } → 'mcp__server__tool'
+
+        Returns tools sorted alphabetically for consistent output.
     '''
     mapped: list[ str ] = [ ]
     for spec in tool_specs:
@@ -107,16 +113,21 @@ def _map_tools_claude(
         else:
             raise __.ConfigurationInvalidity(
                 __.ConfigurationInvalidity.TOOL_SPEC_TYPE_ERROR )
-    return mapped
+    return sorted( mapped )
 
 
 def _map_semantic_tool_claude( tool_name: str ) -> str:
     ''' Maps semantic tool name to Claude tool name.
 
         Uses lookup table for known semantic names.
-        Unknown names are returned as-is.
+        Raises ConfigurationInvalidity for unknown tools.
     '''
-    return _SEMANTIC_TOOLS_CLAUDE.get( tool_name, tool_name )
+    if tool_name not in _SEMANTIC_TOOLS_CLAUDE:
+        reason = (
+            f"{__.ConfigurationInvalidity.UNKNOWN_SEMANTIC_TOOL} "
+            f"'{tool_name}'" )
+        raise __.ConfigurationInvalidity( reason )
+    return _SEMANTIC_TOOLS_CLAUDE[ tool_name ]
 
 
 def _map_shell_tool_claude( spec: dict[ str, __.typx.Any ] ) -> str:

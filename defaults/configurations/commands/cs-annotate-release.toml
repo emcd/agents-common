@@ -1,0 +1,17 @@
+[context]
+name = 'cs-annotate-release'
+description = 'Create Towncrier news fragments for user-facing changes since last release cleanup'
+allowed-tools = [
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'git log', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git show', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'grep', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'grep',
+    'read',
+    'write',
+    'list-directory',
+]
+permissions = ['read', 'write']

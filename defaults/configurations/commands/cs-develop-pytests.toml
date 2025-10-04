@@ -1,0 +1,4 @@
+[context]
+name = 'cs-develop-pytests'
+description = 'Implement comprehensive Python tests following an existing test plan and project guidelines'
+permissions = ['read', 'write']

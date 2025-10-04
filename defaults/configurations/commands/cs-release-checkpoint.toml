@@ -1,0 +1,29 @@
+[context]
+name = 'cs-release-checkpoint'
+description = 'Execute automated alpha checkpoint release with QA monitoring'
+argument-hint = '[alpha]'
+allowed-tools = [
+    # Shell commands - exact match
+    { tool = 'shell', arguments = 'git status' },
+
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'git pull', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git add', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git commit', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git tag', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git push', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'gh run list', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'gh run watch', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'hatch version', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'hatch --env develop run', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'echo', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'grep', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'date', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'list-directory',
+    'read',
+]
+color = 'red'
+permissions = ['read', 'write', 'execute']

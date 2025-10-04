@@ -72,6 +72,7 @@ class ConfigurationInvalidity( Omnierror, ValueError ):
     TOML_DECODE_ERROR = "TOML decode error."
     UNRECOGNIZED_TOOL_SPEC = "Unrecognized tool specification."
     TOOL_SPEC_TYPE_ERROR = "Tool specification must be string or dict."
+    UNKNOWN_SEMANTIC_TOOL = "Unknown semantic tool name."
 
     def __init__( self, reason: __.typx.Any = None ):
         if reason is None:

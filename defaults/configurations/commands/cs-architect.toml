@@ -1,0 +1,19 @@
+[context]
+name = 'cs-architect'
+description = 'Architectural analysis, system design decisions, and ADR creation'
+allowed-tools = [
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'find', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'tree', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'read',
+    'write',
+    'edit',
+    'multi-edit',
+    'list-directory',
+    'glob',
+    'grep',
+]
+permissions = ['read', 'write']

@@ -1,0 +1,19 @@
+[context]
+name = 'cs-review-todos'
+description = 'Systematically find, categorize, and analyze TODO comments for technical debt management'
+allowed-tools = [
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'find', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'wc', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'read',
+    'write',
+    'edit',
+    'multi-edit',
+    'list-directory',
+    'glob',
+    'grep',
+]
+permissions = ['read', 'write']

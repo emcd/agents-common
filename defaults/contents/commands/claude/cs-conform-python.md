@@ -1,4 +1,3 @@
-
 # Python Code Conformance
 
 For bringing existing Python code into full compliance with project standards.

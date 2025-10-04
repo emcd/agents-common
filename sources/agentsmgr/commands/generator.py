@@ -156,10 +156,18 @@ class ContentGenerator( __.immut.DataclassObject ):
             reason = __.ConfigurationInvalidity.TOML_DECODE_ERROR
             raise __.ConfigurationInvalidity( reason ) from exception
         context = toml_data.get( 'context', { } )
-        coders = toml_data.get( 'coders', [ ] )
-        coder_config = next(
-            ( c for c in coders if c.get( 'name' ) == coder ),
-            { 'name': coder } )
+        coders_list: list[ dict[ str, __.typx.Any ] ] = (
+            toml_data.get( 'coders', [ ] ) )
+        # Normalize coders table array to dict keyed by name
+        # TOML [[coders]] tables are optional; minimal config if absent
+        coders_dict: dict[ str, dict[ str, __.typx.Any ] ] = { }
+        for entry in coders_list:
+            if not isinstance( entry, __.cabc.Mapping ): continue
+            name_value = entry.get( 'name' )
+            if not isinstance( name_value, str ): continue
+            coders_dict[ name_value ] = entry
+        # Look up coder config from YAML, fallback to minimal config
+        coder_config = coders_dict.get( coder, { 'name': coder } )
         return { 'context': context, 'coder': coder_config }
 
     def _produce_jinja_environment( self ) -> _jinja2.Environment:

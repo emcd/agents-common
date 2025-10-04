@@ -1,0 +1,4 @@
+[context]
+name = 'cs-design-python'
+description = 'Python API design, filesystem organization, module structure, and interface specifications'
+permissions = ['read', 'write']

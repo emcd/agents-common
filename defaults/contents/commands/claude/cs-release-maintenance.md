@@ -1,14 +1,15 @@
-# Release Final
+# Release Patch
 
 **NOTE: This is an experimental workflow! If anything seems unclear or missing,
 please stop for consultation with the user.**
 
-For execution of a fully-automated final release.
+For execution of a fully-automated postrelease patch.
 
-Below is a validated process to create a final release with automated
-monitoring and next development cycle setup.
+Below is a validated process to create patch releases with automated monitoring
+and clean integration back to master.
 
 Target release version: $ARGUMENTS
+(e.g., `1.24`, `2.3`)
 
 Verify exactly one target release version provided.
 
@@ -27,25 +28,23 @@ Stop and consult if:
 
 ## Prerequisites
 
-Before starting, ensure:
+Before running this command, ensure:
 - GitHub CLI (`gh`) is installed and authenticated
-- For new releases: All changes are committed to `master` branch
-- For existing release branches: Release candidate has been validated and tested
+- Release branch exists for the target version (e.g., `release-1.24` for version `1.24`)
 - Working directory is clean with no uncommitted changes
-- Towncrier news fragments are present for the release enhancements
+- Towncrier news fragments are present for the patch changes
 
 ## Process Summary
 
 Key functional areas of the process:
 
-1. **Branch Setup**: Create new release branch or checkout existing one
-2. **Version Bump**: Set version to final release (major/minor/patch as appropriate)
-3. **Update Changelog**: Run Towncrier to build final changelog
+1. **Branch Setup**: Checkout and update the appropriate release branch
+2. **Version Bump**: Increment to next patch version with `hatch version patch`
+3. **Update Changelog**: Run Towncrier to build patch changelog
 4. **QA Monitoring**: Push commits and monitor QA workflow with GitHub CLI
 5. **Tag Release**: Create signed git tag after QA passes
 6. **Release Monitoring**: Monitor release workflow deployment
 7. **Cleanup**: Remove news fragments and cherry-pick back to master
-8. **Next Development Cycle**: Set up master branch for next development version
 
 ## Safety Requirements
 
@@ -53,8 +52,8 @@ Stop and consult the user if any of the following occur:
 
 - **Step failures**: If any command fails, git operation errors, or tests fail
 - **Workflow failures**: If QA or release workflows show failed jobs
-- **Unexpected output**: If commands produce unclear or concerning results
-- **Version conflicts**: If version bumps don't match expected patterns
+- **Version conflicts**: If patch version doesn't match expected patterns
+- **Branch issues**: If release branch doesn't exist or is in unexpected state
 - **Network issues**: If GitHub operations timeout or fail repeatedly
 
 **Your responsibilities**:
@@ -78,38 +77,77 @@ hatch --env develop run docsgen
 ```
 
 ### 2. Release Branch Setup
-Determine release branch name from target version (e.g., `1.6` → `release-1.6`).
-
-**If release branch exists** (for RC→final conversion):
+Checkout the target release branch:
 ```bash
 git checkout release-$ARGUMENTS
 git pull origin release-$ARGUMENTS
 ```
 
-**If creating new release branch**:
+### 3. Patch Integration
+**Determine patch location and integrate if needed:**
+
+### 3.1. Identify Patch Commits
+Before cherry-picking, identify which commits contain actual patch fixes vs. maintenance:
+
 ```bash
-git checkout master && git pull origin master
-git checkout -b release-$ARGUMENTS
+git log --oneline master
+git log --graph --oneline master --since="1 month ago"
+# Show commits on master not on release branch
+git log --oneline release-$ARGUMENTS..master --since="1 month ago"
 ```
 
-### 3. Version Management
-Set version to target release version:
+**IMPORTANT**
+- Do **not** cherry-pick commits which were previously cherry-picked onto the
+  branch.
+- Look at the Towncrier news fragments to help you decide what to pick.
+
+**Patch commits** (always cherry-pick):
+- Bug fixes
+- Security patches
+- Critical functionality fixes
+
+**Maintenance commits** (evaluate case-by-case):
+- Template updates
+- Dependency bumps
+- Documentation changes
+
+Use `git show <commit>` to review each commit's content before deciding.
+
+**If patches were developed on master** (cherry-pick to release branch):
 ```bash
-hatch version $ARGUMENTS
+# Cherry-pick patch commits from master to release branch
+# Use git log --oneline master to identify relevant commit hashes
+git cherry-pick <patch-commit-hash-1>
+git cherry-pick <patch-commit-hash-2>
+# Repeat for all patch commits
+```
+
+**If patches were developed on release branch**: Skip this step - patches are already present.
+
+### 4. Pre-Release Validation
+Run linting to catch issues before formal release process:
+```bash
+hatch --env develop run linters
+```
+Stop if any linting errors - fix issues before proceeding.
+
+### 5. Version Management
+Increment to next patch version:
+```bash
+hatch version patch
 git commit -am "Version: $(hatch version)"
 ```
 
-### 4. Changelog Generation
+### 6. Changelog Generation
 ```bash
 hatch --env develop run towncrier build --keep --version $(hatch version)
-git commit -am "Update changelog for v$(hatch version) release."
+git commit -am "Update changelog for v$(hatch version) patch release."
 ```
 
-### 5. Quality Assurance Phase
+### 7. Quality Assurance Phase
 Push branch and monitor QA workflow:
 ```bash
-# Use -u flag for new branches, omit for existing
-git push [-u] origin release-$ARGUMENTS
+git push origin release-$ARGUMENTS
 ```
 
 Workflow monitoring requirements:
@@ -133,10 +171,10 @@ Do not proceed until workflow completes:
 - Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
 - Stop if any jobs fail - consult user before proceeding
 
-### 6. Release Deployment
+### 8. Release Deployment
 **Verify QA passed before proceeding to release tag:**
 ```bash
-git tag -m "Release v$(hatch version): <brief-description>." v$(hatch version)
+git tag -m "Release v$(hatch version) patch: <brief-description>." v$(hatch version)
 git push --tags
 ```
 
@@ -161,15 +199,17 @@ Do not proceed until workflow completes:
 - Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
 - Stop if any jobs fail - consult user before proceeding
 
-### 7. Post-Release Cleanup
+### 9. Post-Release Cleanup
 ```bash
 git rm .auxiliary/data/towncrier/*.rst
 git commit -m "Clean up news fragments."
 git push origin release-$ARGUMENTS
 ```
 
-### 8. Master Branch Integration
-Cherry-pick release commits back to master:
+### 10. Master Branch Integration
+Cherry-pick commits back to master based on patch development location:
+
+**If patches were developed on master**: Cherry-pick changelog and cleanup commits:
 ```bash
 git checkout master && git pull origin master
 git cherry-pick <changelog-commit-hash>
@@ -177,13 +217,15 @@ git cherry-pick <cleanup-commit-hash>
 git push origin master
 ```
 
-### 9. Next Development Cycle (Major/Minor Releases Only)
-Set up next development version:
+**If patches were developed on release branch**: Cherry-pick patch, changelog, and cleanup commits:
 ```bash
-hatch version minor,alpha
-git commit -am "Start of development for release $(hatch version | sed 's/a[0-9]*$//')."
-git tag -m "Start of development for release $(hatch version | sed 's/a[0-9]*$//')." "i$(hatch version | sed 's/a[0-9]*$//')"
-git push origin master --tags
+git checkout master && git pull origin master
+git cherry-pick <patch-commit-hash-1>
+git cherry-pick <patch-commit-hash-2>
+# Repeat for all patch commits
+git cherry-pick <changelog-commit-hash>
+git cherry-pick <cleanup-commit-hash>
+git push origin master
 ```
 
 **Note**: Use `git log --oneline` to identify commit hashes for cherry-picking.

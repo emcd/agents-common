@@ -1,0 +1,10 @@
+[context]
+name = 'cs-create-command'
+description = 'Generate a new custom slash command with consistent structure and formatting'
+allowed-tools = [
+    # Built-in tools (semantic names)
+    'write',
+    'read',
+    'list-directory',
+]
+permissions = ['read', 'write']
