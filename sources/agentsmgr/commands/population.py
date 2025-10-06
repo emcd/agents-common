@@ -24,6 +24,7 @@
 from . import __
 from . import base as _base
 from . import generator as _generator
+from . import globalization as _globalization
 from . import operations as _operations
 
 
@@ -45,11 +46,15 @@ class PopulateCommand( __.appcore_cli.Command ):
         bool,
         __.tyro.conf.arg( help = "Dry run mode - show generated content" ),
     ] = True
-    target_mode: __.typx.Annotated[
+    mode: __.typx.Annotated[
         __.TargetingMode,
-        __.tyro.conf.arg(
-            help = "Targeting mode: per-user or per-project" ),
+        __.tyro.conf.arg( help = "Targeting mode: per-user or per-project" ),
     ] = 'per-project'
+    update_globals: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Update per-user global files (orthogonal to mode)" ),
+    ] = False
 
     @_base.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -61,19 +66,28 @@ class PopulateCommand( __.appcore_cli.Command ):
         configuration = await _base.retrieve_configuration( self.target )
         coder_count = len( configuration[ 'coders' ] )
         _scribe.debug( f"Detected configuration with {coder_count} coders" )
-        _scribe.debug( f"Using {self.target_mode} targeting mode" )
+        _scribe.debug( f"Using {self.mode} targeting mode" )
         location = _base.retrieve_data_location( self.source )
-        application_configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
-            __.immut.Dictionary[ str, __.typx.Any ]( ) )
         generator = _generator.ContentGenerator(
             location = location,
             configuration = configuration,
-            application_configuration = application_configuration,
-            target_mode = self.target_mode,
+            application_configuration = auxdata.configuration,
+            mode = self.mode,
         )
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
+        if self.update_globals:
+            globals_attempted, globals_updated = (
+                _globalization.populate_globals(
+                    location,
+                    configuration[ 'coders' ],
+                    auxdata.configuration,
+                    self.simulate,
+                ) )
+            _scribe.info(
+                f"Updated {globals_updated}/{globals_attempted} "
+                "global files" )
         result = __.ContentGenerationResult(
             source_location = location,
             target_location = self.target,

@@ -54,7 +54,7 @@ class OpencodeRenderer( RendererBase ):
             environment variable, configuration file override, or
             XDG-like ~/.config/opencode default.
         '''
-        self.validate_target_mode( mode )
+        self.validate_mode( mode )
         if mode == 'per-project':
             return target / ".opencode"
         if mode == 'per-user':

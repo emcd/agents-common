@@ -191,5 +191,22 @@ class ContentUpdateFailure( Omnierror, OSError ):
         return tuple( lines )
 
 
+class GlobalsPopulationFailure( Omnierror, OSError ):
+    ''' Global settings population failure. '''
+
+    def __init__( self, source: __.Path, target: __.Path ):
+        message = f"Failed to populate global file from {source} to {target}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders globals population failure with helpful guidance. '''
+        lines = [ "## Error: Globals Population Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check file permissions and ensure source "
+            "file is valid." )
+        return tuple( lines )
+
+
 class ContentGenerationFailure( Omnierror, RuntimeError ):
     ''' Content generation failure. '''

@@ -43,7 +43,7 @@ class RendererBase( __.immut.Object ):
     name: str
     modes_available: frozenset[ TargetingMode ]
 
-    def validate_target_mode( self, mode: TargetingMode ) -> None:
+    def validate_mode( self, mode: TargetingMode ) -> None:
         ''' Validates targeting mode is supported by this coder.
 
             Raises TargetModeNoSupport if mode not supported.

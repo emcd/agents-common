@@ -55,7 +55,7 @@ class CodexRenderer( RendererBase ):
             default ~/.codex location. Per-project mode raises error with
             explanation of Codex CLI limitation.
         '''
-        self.validate_target_mode( mode )
+        self.validate_mode( mode )
         if mode == 'per-user':
             return self._resolve_user_directory( configuration, environment )
         reason = (

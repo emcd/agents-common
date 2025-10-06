@@ -58,7 +58,7 @@ class ContentGenerator( __.immut.DataclassObject ):
     application_configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
         __.dcls.field(
             default_factory = __.immut.Dictionary[ str, __.typx.Any ] ) )
-    target_mode: __.TargetingMode = 'per-project'
+    mode: __.TargetingMode = 'per-project'
     jinja_environment: _jinja2.Environment = __.dcls.field( init = False )
 
     def __post_init__( self ) -> None:
@@ -91,7 +91,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         except KeyError as exception:
             raise __.CoderAbsence( coder ) from exception
         base_directory = renderer.resolve_base_directory(
-            mode = self.target_mode,
+            mode = self.mode,
             target = target,
             configuration = self.application_configuration,
             environment = __.os.environ,

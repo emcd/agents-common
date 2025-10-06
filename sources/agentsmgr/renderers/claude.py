@@ -54,7 +54,7 @@ class ClaudeRenderer( RendererBase ):
             environment variable, configuration file override, or default
             ~/.claude location.
         '''
-        self.validate_target_mode( mode )
+        self.validate_mode( mode )
         if mode == 'per-project':
             return target / ".claude"
         if mode == 'per-user':
