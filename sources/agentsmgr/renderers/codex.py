@@ -32,12 +32,14 @@ from .base import RENDERERS, RendererBase, TargetingMode
 class CodexRenderer( RendererBase ):
     ''' Renderer for Codex CLI coder.
 
-        Codex CLI does not support per-project configuration as of
-        version 0.44.0.
+        Only supports per-user configuration mode. Codex CLI does not
+        support per-project configuration as of version 0.44.0. Per-user
+        mode respects CODEX_HOME environment variable with fallback to
+        configuration overrides and default location.
     '''
 
     name = 'codex'
-    modes_available = frozenset( ( 'per-project', ) )
+    modes_available = frozenset( ( 'per-user', ) )
 
     def resolve_base_directory(
         self,
@@ -48,14 +50,54 @@ class CodexRenderer( RendererBase ):
     ) -> __.Path:
         ''' Resolves base output directory for Codex CLI.
 
-            Uses per-project path structure for consistency, even though
-            Codex does not fully support it. Per-user mode will provide
-            proper Codex support.
+            Only per-user mode is supported. Respects precedence: CODEX_HOME
+            environment variable, configuration file override (home key), or
+            default ~/.codex location. Per-project mode raises error with
+            explanation of Codex CLI limitation.
         '''
         self.validate_target_mode( mode )
-        if mode == 'per-project':
-            return target / ".auxiliary" / "configuration" / "codex"
-        raise __.TargetModeNoSupport( self.name, mode )
+        if mode == 'per-user':
+            return self._resolve_user_directory( configuration, environment )
+        reason = (
+            "Codex CLI does not support per-project configuration. "
+            "Only per-user configuration in ~/.codex or $CODEX_HOME "
+            "is supported as of version 0.44.0." )
+        raise __.TargetModeNoSupport( self.name, mode, reason )
+
+    def _resolve_user_directory(
+        self,
+        configuration: __.cabc.Mapping[ str, __.typx.Any ],
+        environment: __.cabc.Mapping[ str, str ],
+    ) -> __.Path:
+        ''' Resolves per-user directory following precedence rules.
+
+            Precedence order:
+            1. CODEX_HOME environment variable
+            2. Configuration file override (home key for this coder)
+            3. Default ~/.codex location
+        '''
+        if 'CODEX_HOME' in environment:
+            directory = __.Path( environment[ 'CODEX_HOME' ] )
+            return directory.expanduser( )
+        coder_configuration = self._extract_coder_configuration(
+            configuration )
+        if 'home' in coder_configuration:
+            directory = __.Path( coder_configuration[ 'home' ] )
+            return directory.expanduser( )
+        return __.Path.home( ) / '.codex'
+
+    def _extract_coder_configuration(
+        self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
+    ) -> __.cabc.Mapping[ str, __.typx.Any ]:
+        ''' Extracts configuration for this specific coder.
+
+            Looks for coder entry in configuration coders array by name.
+        '''
+        coders = configuration.get( 'coders', ( ) )
+        for coder in coders:
+            if coder.get( 'name' ) == self.name:
+                return coder
+        return { }
 
 
 RENDERERS[ 'codex' ] = CodexRenderer( )

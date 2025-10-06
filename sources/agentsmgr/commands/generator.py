@@ -50,10 +50,15 @@ class ContentGenerator( __.immut.DataclassObject ):
 
         Provides template-based content generation with intelligent
         fallback logic for compatible coders (Claude ↔ OpenCode).
+        Supports configurable targeting modes (per-user or per-project).
     '''
 
     location: __.Path
     configuration: _base.CoderConfiguration
+    application_configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
+        __.dcls.field(
+            default_factory = __.immut.Dictionary[ str, __.typx.Any ] ) )
+    target_mode: __.TargetingMode = 'per-project'
     jinja_environment: _jinja2.Environment = __.dcls.field( init = False )
 
     def __post_init__( self ) -> None:
@@ -86,10 +91,10 @@ class ContentGenerator( __.immut.DataclassObject ):
         except KeyError as exception:
             raise __.CoderAbsence( coder ) from exception
         base_directory = renderer.resolve_base_directory(
-            mode = 'per-project',
+            mode = self.target_mode,
             target = target,
-            configuration = { },
-            environment = { },
+            configuration = self.application_configuration,
+            environment = __.os.environ,
         )
         dirname = renderer.produce_output_structure( item_type )
         location = base_directory / dirname / f"{item_name}.{extension}"

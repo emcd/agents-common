@@ -199,12 +199,13 @@ Each coder renderer should implement the `CoderRenderer` protocol with these con
 **Claude Renderer** (`renderers/claude.py`):
 - Supports both `per-user` and `per-project` modes
 - For per-user: precedence is `CLAUDE_CONFIG_DIR` env var > config file > `~/.claude` default
-- For per-project: use standard `.auxiliary/configuration/claude/` structure
+- For per-project: use `.claude/` in project root (direct generation, no symlinks)
 
 **OpenCode Renderer** (`renderers/opencode.py`):
 - Supports both targeting modes
-- For per-user: precedence is `OPENCODE_CONFIG_DIR` env var > config file > `~/.config/opencode` default (XDG-compliant)
-- For per-project: use standard `.auxiliary/configuration/opencode/` structure
+- For per-user: precedence is `OPENCODE_CONFIG` env var > config file > `~/.config/opencode` default (XDG-like)
+- For per-project: use `.opencode/` in project root (per OpenCode documentation)
+- Note: `OPENCODE_CONFIG` points to directory containing `opencode.json` settings file
 
 **Path Resolution Pattern** (all renderers):
 1. Check environment variable (if per-user mode)
@@ -288,38 +289,37 @@ class ContentGenerator:
 
 ### CLI Changes
 
-**New flag for `populate` command**:
+**Flags for `populate` command**:
 
 ```python
 class PopulateCommand:
     source: str = '.'
     target: Path = field(default_factory=Path.cwd)
     simulate: bool = True
-
-    # NEW: Targeting mode overrides (can specify multiple, one per coder)
-    # Tyro will collect multiple uses into a sequence
-    target_mode: Sequence[str] = ()  # Format: "coder:mode" or just "mode" for all
+    mode: Literal['per-user', 'per-project'] = 'per-project'
+    update_globals: bool = False  # Orthogonal to mode
 ```
 
 **Usage**:
 ```bash
-# Use default from agentsmgr config
-agentsmgr populate
+# Most common: per-project commands/agents, update globals
+agentsmgr populate --mode=per-project --update-globals
 
-# Override to per-user mode for all coders
-agentsmgr populate --target-mode=per-user
+# Development: skip globals updates (default)
+agentsmgr populate --mode=per-project
 
-# Per-coder targeting modes
-agentsmgr populate --target-mode=codex:per-user --target-mode=claude:per-project
-
-# Mixed specification (default + override)
-agentsmgr populate --target-mode=per-project --target-mode=codex:per-user
+# Pure per-user mode
+agentsmgr populate --mode=per-user --update-globals
 
 # Simulation mode to preview
-agentsmgr populate --target-mode=per-user --simulate
+agentsmgr populate --mode=per-user --update-globals --simulate
 ```
 
-**Parsing logic**: Split `<coder>:<mode>` strings to build dictionary. If no colon, apply mode to all coders.
+**Semantics**:
+- `--mode` controls where commands/agents are generated (per-user or per-project)
+- `--update-globals` controls whether per-user global files are updated (independent of mode)
+- Globals always go to per-user locations (e.g., `~/.claude/statusline.py`)
+- Default: `--mode=per-project` with globals disabled for safety
 
 ### Error Handling
 
@@ -364,6 +364,43 @@ configuration in ~/.codex or $CODEX_HOME is supported as of version 0.44.0.
 - per-user
 ```
 
+### Data Source Organization
+
+The data source structure supports both per-project and per-user targeting modes:
+
+```
+defaults/
+├── configurations/
+│   ├── commands/              # Command metadata (both modes)
+│   │   └── cs-conform-python.toml
+│   └── agents/                # Agent metadata (both modes)
+│       └── python-conformer.toml
+├── contents/
+│   ├── commands/              # Command bodies (both modes)
+│   │   ├── claude/
+│   │   ├── opencode/
+│   │   └── gemini/
+│   └── agents/                # Agent bodies (both modes)
+│       ├── claude/
+│       ├── opencode/
+│       └── gemini/
+└── globals/                   # Per-user global files (per-user mode only)
+    ├── claude/
+    │   └── statusline.md
+    ├── opencode/
+    └── gemini/
+```
+
+**Global Files Usage**:
+- Only populated when `--update-globals` flag is set (orthogonal to `--mode`)
+- Examples: Claude Code statusline configuration (`statusline.py`), settings merges
+- Placed in root of per-user coder config directory (e.g., `~/.claude/statusline.py`)
+- Two types:
+  - **Direct copy**: Files like `statusline.py` - just overwrite
+  - **Merge**: Settings files (e.g., `settings.json`) - merge with existing config
+- Renderers have built-in knowledge of their coder's settings file name
+- Non-settings files are always replaced; settings files use merge strategies (see `.auxiliary/notes/json-merge-strategies.md`)
+
 ### Migration Path
 
 1. **Phase 1: Refactor without behavior change**
@@ -371,14 +408,19 @@ configuration in ~/.codex or $CODEX_HOME is supported as of version 0.44.0.
    - All renderers default to existing per-project behavior
    - No config changes, purely internal refactor
 
-2. **Phase 2: Add configuration support**
-   - Implement agentsmgr config loading
-   - Add `--targeting-mode` CLI flag
+2. **Phase 2: Add configuration support** ✅ COMPLETE
+   - Implement agentsmgr config infrastructure
+   - Add `--mode` CLI flag (renamed from `--target-mode`)
    - Enable per-user mode for coders that support it
+   - Add environment variable resolution
+   - Change per-project paths to direct generation (`.claude/`, `.opencode/`)
 
-3. **Phase 3: Environment variable support**
-   - Implement env var resolution in renderers
-   - Document environment variable usage
+3. **Phase 3: Globals support and configuration loading**
+   - Add `--update-globals` flag to populate command
+   - Implement globals population logic (direct copy vs merge)
+   - Implement settings file merge strategies (see `.auxiliary/notes/json-merge-strategies.md`)
+   - Add configuration file loading from `~/.config/emcd-agents/general.toml`
+   - Document memory file (`memory.md`) symlinking for shared context
 
 4. **Phase 4: Advanced features**
    - Interactive mode selection

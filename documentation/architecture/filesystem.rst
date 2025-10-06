@@ -80,12 +80,12 @@ AI Agent Configuration Structure
 Data-Driven Organization
 -------------------------------------------------------------------------------
 
-The primary content of this repository is organized under the ``data/``
+The primary content of this repository is organized under the ``defaults/``
 directory, implementing a 3-tier separation for structured agent configurations:
 
 .. code-block::
 
-    data/
+    defaults/
     ├── configurations/            # Tool-agnostic TOML configurations
     │   ├── commands/              # Command metadata
     │   │   ├── cs-conform-python.toml
@@ -104,6 +104,11 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │       │   └── python-conformer.md
     │       ├── opencode/          # Falls back to/from claude/
     │       └── gemini/            # No fallback - different syntax
+    ├── globals/                   # Per-user global files
+    │   ├── claude/
+    │   │   └── statusline.md
+    │   ├── opencode/
+    │   └── gemini/
     └── templates/                 # Generic, reusable templates
         ├── command.md.jinja       # For Claude/Opencode commands
         ├── command.toml.jinja     # For Gemini commands
@@ -133,6 +138,7 @@ directory, implementing a 3-tier separation for structured agent configurations:
 * **Content Fallback Strategy**: Claude ↔ Opencode compatibility, Gemini isolation
 * **Semantic Tool Mapping**: allowed-tools specifications map to tool-specific syntax
 * **Minimal Base Distribution**: Copier provides only essential templates and structure
+* **Global Per-User Files**: Direct coder-specific files (e.g., statusline configuration) populated only in per-user mode
 
 Distribution and Integration Patterns
 -------------------------------------------------------------------------------
@@ -149,7 +155,7 @@ The system uses dual-channel distribution combining Copier templates and dynamic
     target-project/.auxiliary/configuration/
 
     # Dynamic Content Generation (agentsmgr)
-    agents-common/data/
+    agents-common/defaults/
     ↓ (agentsmgr populate --source=agents-common@agents-N)
     target-project/.auxiliary/configuration/[tool]/commands/
     target-project/.auxiliary/configuration/[tool]/agents/
@@ -161,9 +167,9 @@ Content generation combines structured sources with generic templates:
 .. code-block::
 
     # Source Data Structure
-    data/configurations/commands/cs-release-final.toml  (metadata)
-    + data/contents/commands/claude/cs-release-final.md  (content body)
-    + data/templates/command.md.jinja                    (format template)
+    defaults/configurations/commands/cs-release-final.toml  (metadata)
+    + defaults/contents/commands/claude/cs-release-final.md  (content body)
+    + defaults/templates/command.md.jinja                    (format template)
     ↓ (agentsmgr populate)
     target/.auxiliary/configuration/claude/commands/cs-release-final.md
 
@@ -186,7 +192,7 @@ Variable transformation for template access:
 
 .. code-block::
 
-    agents-common (data/ + template/)
+    agents-common (defaults/ + template/)
     ↓ (tag: agents-N)
     agentsmgr populate --source=agents-common@agents-N
     ↓ (git fetch + template rendering)

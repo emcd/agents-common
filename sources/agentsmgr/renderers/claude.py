@@ -30,10 +30,15 @@ from .base import RENDERERS, RendererBase, TargetingMode
 
 
 class ClaudeRenderer( RendererBase ):
-    ''' Renderer for Claude Code coder. '''
+    ''' Renderer for Claude Code coder.
+
+        Supports both per-user and per-project configuration modes.
+        Per-user mode respects CLAUDE_CONFIG_DIR environment variable
+        with fallback to configuration overrides and default location.
+    '''
 
     name = 'claude'
-    modes_available = frozenset( ( 'per-project', ) )
+    modes_available = frozenset( ( 'per-user', 'per-project' ) )
 
     def resolve_base_directory(
         self,
@@ -44,13 +49,52 @@ class ClaudeRenderer( RendererBase ):
     ) -> __.Path:
         ''' Resolves base output directory for Claude Code.
 
-            For per-project mode, returns standard project configuration
-            path. Per-user mode not yet implemented.
+            For per-project mode, returns .claude in project root.
+            For per-user mode, respects precedence: CLAUDE_CONFIG_DIR
+            environment variable, configuration file override, or default
+            ~/.claude location.
         '''
         self.validate_target_mode( mode )
         if mode == 'per-project':
-            return target / ".auxiliary" / "configuration" / "claude"
+            return target / ".claude"
+        if mode == 'per-user':
+            return self._resolve_user_directory( configuration, environment )
         raise __.TargetModeNoSupport( self.name, mode )
+
+    def _resolve_user_directory(
+        self,
+        configuration: __.cabc.Mapping[ str, __.typx.Any ],
+        environment: __.cabc.Mapping[ str, str ],
+    ) -> __.Path:
+        ''' Resolves per-user directory following precedence rules.
+
+            Precedence order:
+            1. CLAUDE_CONFIG_DIR environment variable
+            2. Configuration file override (directory for this coder)
+            3. Default ~/.claude location
+        '''
+        if 'CLAUDE_CONFIG_DIR' in environment:
+            directory = __.Path( environment[ 'CLAUDE_CONFIG_DIR' ] )
+            return directory.expanduser( )
+        coder_configuration = self._extract_coder_configuration(
+            configuration )
+        if 'directory' in coder_configuration:
+            directory = __.Path( coder_configuration[ 'directory' ] )
+            return directory.expanduser( )
+        return __.Path.home( ) / '.claude'
+
+    def _extract_coder_configuration(
+        self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
+    ) -> __.cabc.Mapping[ str, __.typx.Any ]:
+        ''' Extracts configuration for this specific coder.
+
+            Looks for coder entry in configuration coders array by name.
+        '''
+        coders = configuration.get( 'coders', ( ) )
+        for coder in coders:
+            if coder.get( 'name' ) == self.name:
+                return coder
+        return { }
 
 
 RENDERERS[ 'claude' ] = ClaudeRenderer( )
