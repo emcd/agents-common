@@ -1,17 +1,38 @@
 # Coder Renderers and Configuration Architecture
 
+## Implementation Status
+
+### ✅ Phases 1-3 Complete (commits dffc4b2, 0555ebd, ebaed49)
+
+**Phase 1**: Renderer architecture with base class, registry, self-registration pattern, and three renderers (Claude, OpenCode, Codex).
+
+**Phase 2**: Configuration support via appcore, `--mode` CLI flag, environment variable resolution, direct per-project paths (`.claude/`, `.opencode/`).
+
+**Phase 3**: Globals population with `--update-globals` flag, JSON merge strategies for settings files, TypeGuard pattern for type safety.
+
+### 🔲 Phase 4 Remaining Work
+
+See **Remaining Work** section below for details on:
+- Extended targeting mode enum (`default`, `nowhere`)
+- Coder default modes
+- Memory file symlinking documentation
+- Interactive mode selection (optional)
+- Migration tools (optional)
+
+---
+
 ## Problem Statement
 
 Need to support multiple AI coding assistants with different requirements:
 
-- **Claude Code**: Supports both per-project (`.auxiliary/configuration/claude/`) and per-user (`~/.config/claude/`) configuration
+- **Claude Code**: Supports both per-project (`.claude/`) and per-user (`~/.config/claude/`) configuration
 - **Codex CLI**: Only supports per-user configuration (`~/.codex/` or `$CODEX_HOME`)
-- **OpenCode**: Supports both per-project and per-user modes
+- **OpenCode**: Supports both per-project (`.opencode/`) and per-user (`~/.config/opencode/`) modes
 - **Gemini CLI**: (Future) likely per-user only
 
 Additionally, different users have different preferences for config locations (XDG-compliant vs. defaults).
 
-## Proposed Architecture
+## Architecture Overview
 
 ### Three-Layer Configuration Model
 
@@ -24,9 +45,9 @@ Additionally, different users have different preferences for config locations (X
 │ Note: Provided by appcore configuration system          │
 │                                                          │
 │ Contents:                                                │
-│   - Default targeting mode (per-user vs per-project)    │
+│   - Default targeting mode (default | per-user |        │
+│     per-project | nowhere)                              │
 │   - Coder-specific path overrides                       │
-│   - Environment variable substitution                   │
 └─────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -49,6 +70,7 @@ Additionally, different users have different preferences for config locations (X
 │                                                          │
 │ Responsibilities:                                        │
 │   - Declare supported targeting modes                   │
+│   - Declare default targeting mode                      │
 │   - Resolve config paths (env vars, defaults)           │
 │   - Validate targeting mode compatibility               │
 │   - Format-specific output structure                    │
@@ -59,46 +81,42 @@ Additionally, different users have different preferences for config locations (X
 
 **File**: `~/.config/emcd-agents/general.toml` (provided by appcore configuration system)
 
+**Note**: Only this location is supported - no simple dotfiles polluting user home directory.
+
 **Example**:
 ```toml
 # Default targeting mode for all operations
 # Can be overridden per-invocation via CLI flag
-target-mode = "per-project"  # or: "per-user"
+# Options: "default" | "per-user" | "per-project" | "nowhere"
+mode = "default"
 
 # Coder-specific configuration using table arrays
 # Environment variables take precedence over these settings
 [[coders]]
 name = "codex"
-home = "~/.codex"
-target-mode = "per-user"  # Force per-user for codex
+directory = "~/.codex"
 
 [[coders]]
 name = "claude"
-config-dir = "~/.config/claude"
-target-mode = "default"  # Use global target-mode
-
-[[coders]]
-name = "gemini"
-config-dir = "~/.gemini"
+directory = "~/.config/claude"
 
 [[coders]]
 name = "opencode"
-config-dir = "~/.config/opencode"
-target-mode = "per-project"
+directory = "~/.config/opencode"
 ```
 
 **Precedence Order** (highest to lowest):
-1. Environment variables (e.g., `CODEX_HOME`, `CLAUDE_CONFIG_DIR`)
+1. Environment variables (e.g., `CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `OPENCODE_CONFIG`)
 2. File configuration (`~/.config/emcd-agents/general.toml`)
-3. Coder defaults
+3. Coder-specific defaults (declared in renderer)
 
 **Behavior**:
-- If file doesn't exist, use sensible defaults
-- CLI flag `--target-mode` overrides config (can specify per-coder)
-- Environment variables override file configuration
-- Invalid mode for coder raises helpful error
+- If file doesn't exist, use `mode = "default"` with coder-specific defaults
+- CLI flag `--mode` overrides config file setting
+- Environment variables override file configuration for path resolution
+- Invalid explicit mode for coder raises helpful error
 
-### Layer 2: Copier Answers (Unchanged)
+### Layer 2: Copier Answers
 
 **File**: `.auxiliary/configuration/copier-answers--agents.yaml`
 
@@ -109,366 +127,268 @@ _src_path: .
 coders:
 - claude
 - opencode
+- codex
 languages:
 - python
 project_name: agents-common
 ```
 
-**No changes needed** - this layer only declares *what* to generate, not *where*.
+This layer only declares *what* to generate, not *where*. With `mode = "default"`, Claude and OpenCode would use per-project (`.claude/`, `.opencode/`), while Codex would use per-user (`~/.codex/`) automatically.
 
 ### Layer 3: Coder Renderer Architecture
 
-**New Module Structure**:
+**Module Structure** (✅ implemented):
 ```
 sources/agentsmgr/
 ├── renderers/
 │   ├── __init__.py          # Renderer registry
-│   ├── base.py              # Protocol/ABC definitions
+│   ├── base.py              # Base class and type definitions
 │   ├── claude.py            # Claude Code renderer
 │   ├── codex.py             # Codex CLI renderer
 │   ├── opencode.py          # OpenCode renderer
 │   └── gemini.py            # Gemini CLI renderer (future)
 └── commands/
-    └── generator.py         # Updated to use renderers
+    ├── generator.py         # Uses renderers for path resolution
+    ├── population.py        # Main populate command
+    └── globalization.py     # Globals population logic
 ```
 
-#### Renderer Protocol
+#### Renderer Base Class (✅ implemented)
 
 ```python
 # sources/agentsmgr/renderers/base.py
 
-from typing import Literal, Protocol
-from pathlib import Path
-from collections.abc import Mapping
+TargetingMode: TypeAlias = Literal['per-user', 'per-project']
 
-TargetingMode = Literal['per-user', 'per-project']
+class RendererBase(immut.Object):
+    ''' Base class for coder-specific rendering and path resolution. '''
 
-class CoderRenderer(Protocol):
-    ''' Protocol for coder-specific rendering and path resolution. '''
+    name: str
+    modes_available: frozenset[TargetingMode]
 
-    @property
-    def coder_name(self) -> str:
-        ''' Canonical name of the coder (e.g., 'claude', 'codex'). '''
-        ...
+    def validate_mode(self, mode: TargetingMode) -> None:
+        ''' Validates targeting mode is supported by this coder. '''
+        if mode not in self.modes_available:
+            raise TargetModeNoSupport(self.name, mode)
 
-    @property
-    def supported_targeting_modes(self) -> frozenset[TargetingMode]:
-        ''' Set of targeting modes this coder supports. '''
-        ...
-
-    def validate_targeting_mode(self, mode: TargetingMode) -> None:
-        ''' Raises UnsupportedTargetingMode if mode not supported. '''
-        ...
-
-    def resolve_output_base(
+    def resolve_base_directory(
         self,
-        targeting_mode: TargetingMode,
-        project_target: Path,
-        agentsmgr_config: Mapping[str, Any],
-        env: Mapping[str, str],
+        mode: TargetingMode,
+        target: Path,
+        configuration: Mapping[str, Any],
+        environment: Mapping[str, str],
     ) -> Path:
-        ''' Resolves base output directory for this coder.
+        ''' Resolves base output directory for this coder. '''
+        raise NotImplementedError
 
-        Determines the appropriate output location based on targeting mode,
-        respecting the precedence of environment variables over file configuration
-        over coder defaults. For per-user mode, checks environment first, then
-        configuration file overrides, then falls back to coder-specific defaults.
-        For per-project mode, constructs path within project structure.
-        '''
-        ...
-
-    def get_output_structure(self, item_type: str) -> str:
-        ''' Returns subdirectory structure for item type.
-
-        Translates generic item type (commands/agents) to coder-specific
-        directory structure. Most coders use the same structure, but some
-        may have different conventions.
-        '''
-        ...
+    def produce_output_structure(self, item_type: str) -> str:
+        ''' Produces subdirectory structure for item type. '''
+        return item_type
 ```
 
-#### Renderer Implementation Guidelines
+#### Renderer Implementation Status
 
-Each coder renderer should implement the `CoderRenderer` protocol with these considerations:
+**✅ Codex Renderer** (`renderers/codex.py`):
+- Supports only `per-user` targeting mode
+- Path precedence: `CODEX_HOME` env var > config file `directory` > `~/.codex` default
+- **Needs**: Default mode property (`mode_default = 'per-user'`)
 
-**Codex Renderer** (`renderers/codex.py`):
-- Only supports `per-user` targeting mode (validation must error on `per-project`)
-- Path resolution precedence: `CODEX_HOME` env var > config file > `~/.codex` default
-- Error message should reference Codex CLI version 0.44.0 limitation
-
-**Claude Renderer** (`renderers/claude.py`):
+**✅ Claude Renderer** (`renderers/claude.py`):
 - Supports both `per-user` and `per-project` modes
-- For per-user: precedence is `CLAUDE_CONFIG_DIR` env var > config file > `~/.claude` default
-- For per-project: use `.claude/` in project root (direct generation, no symlinks)
+- Per-user: `CLAUDE_CONFIG_DIR` env var > config `directory` > `~/.claude` default
+- Per-project: `.claude/` in project root
+- **Needs**: Default mode property (`mode_default = 'per-project'`)
 
-**OpenCode Renderer** (`renderers/opencode.py`):
+**✅ OpenCode Renderer** (`renderers/opencode.py`):
 - Supports both targeting modes
-- For per-user: precedence is `OPENCODE_CONFIG` env var > config file > `~/.config/opencode` default (XDG-like)
-- For per-project: use `.opencode/` in project root (per OpenCode documentation)
-- Note: `OPENCODE_CONFIG` points to directory containing `opencode.json` settings file
+- Per-user: `OPENCODE_CONFIG` env var > config `directory` > `~/.config/opencode` default
+- Per-project: `.opencode/` in project root
+- **Needs**: Default mode property (`mode_default = 'per-project'`)
 
-**Path Resolution Pattern** (all renderers):
-1. Check environment variable (if per-user mode)
-2. Check configuration file override (if per-user mode)
-3. Use coder-specific default or project structure (based on mode)
+#### Renderer Registry (✅ implemented)
 
-Note: Detailed implementations will follow project coding standards and practices.
+Uses accretive dictionary with self-registration pattern:
 
-#### Renderer Registry
-
-The registry will use an accretive dictionary pattern where individual renderer modules
-register themselves on import. This allows renderers to be added without modifying
-central registry code.
-
-**Registry Structure** (`sources/agentsmgr/renderers/__init__.py`):
 ```python
-from accretive import Dictionary
+# sources/agentsmgr/renderers/base.py
+RENDERERS: Dictionary[str, RendererBase] = Dictionary()
 
-# Accretive dictionary - can only add, never remove or modify
-RENDERERS: Dictionary[str, CoderRenderer] = Dictionary()
-
-def get_renderer(coder_name: str) -> CoderRenderer:
-    ''' Retrieves renderer for specified coder. '''
-    if coder_name not in RENDERERS:
-        raise UnknownCoderError(coder_name)
-    return RENDERERS[coder_name]
-```
-
-**Self-Registration Pattern** (each renderer module):
-```python
+# Each renderer self-registers on import
 # sources/agentsmgr/renderers/claude.py
-
-from . import RENDERERS
-
-class ClaudeRenderer:
-    coder_name = 'claude'
-    # ... implementation ...
-
-# Register on module import
-RENDERERS['claude'] = ClaudeRenderer()
+RENDERERS['claude'] = ClaudeRenderer(...)
 ```
 
-This pattern ensures the registry grows naturally as new renderers are added.
+### CLI Implementation (✅ completed)
 
-### Integration with ContentGenerator
-
-**Updated `generator.py`**:
-
-```python
-class ContentGenerator:
-
-    location: Path
-    configuration: CoderConfiguration
-    agentsmgr_config: Mapping[str, Any]  # NEW
-    targeting_mode: TargetingMode         # NEW
-    jinja_environment: Environment
-
-    def render_single_item(
-        self, item_type: str, item_name: str, coder: str, target: Path
-    ) -> RenderedItem:
-        # ... existing metadata/template loading ...
-
-        # NEW: Use renderer to resolve output location
-        renderer = renderers.get_renderer(coder)
-        renderer.validate_targeting_mode(self.targeting_mode)
-
-        output_base = renderer.resolve_output_base(
-            targeting_mode=self.targeting_mode,
-            project_target=target,
-            agentsmgr_config=self.agentsmgr_config,
-            env=os.environ,
-        )
-
-        output_subdir = renderer.get_output_structure(item_type)
-
-        extension = self._parse_template_extension(template_name)
-        location = output_base / output_subdir / f"{item_name}.{extension}"
-
-        return RenderedItem(content=content, location=location)
-```
-
-### CLI Changes
-
-**Flags for `populate` command**:
+**Current `populate` command** (`population.py`):
 
 ```python
 class PopulateCommand:
     source: str = '.'
     target: Path = field(default_factory=Path.cwd)
     simulate: bool = True
-    mode: Literal['per-user', 'per-project'] = 'per-project'
-    update_globals: bool = False  # Orthogonal to mode
+    mode: TargetingMode = 'per-project'  # Currently: 'per-user' | 'per-project'
+    update_globals: bool = False         # Orthogonal to mode
 ```
 
-**Usage**:
-```bash
-# Most common: per-project commands/agents, update globals
-agentsmgr populate --mode=per-project --update-globals
-
-# Development: skip globals updates (default)
-agentsmgr populate --mode=per-project
-
-# Pure per-user mode
-agentsmgr populate --mode=per-user --update-globals
-
-# Simulation mode to preview
-agentsmgr populate --mode=per-user --update-globals --simulate
-```
-
-**Semantics**:
-- `--mode` controls where commands/agents are generated (per-user or per-project)
+**Current semantics**:
+- `--mode` controls where commands/agents are generated
 - `--update-globals` controls whether per-user global files are updated (independent of mode)
 - Globals always go to per-user locations (e.g., `~/.claude/statusline.py`)
 - Default: `--mode=per-project` with globals disabled for safety
 
-### Error Handling
-
-**New Exception**:
+**🔲 Needs extension** to support new mode enum:
 ```python
-class UnsupportedTargetingMode(Omnierror):
-    ''' Raised when coder doesn't support requested targeting mode. '''
-
-    def __init__(self, coder: str, mode: str, reason: str = ''):
-        self.coder = coder
-        self.mode = mode
-        self.reason = reason
-
-    def render_as_markdown(self) -> tuple[str, ...]:
-        lines = [
-            f"# Error: Unsupported Targeting Mode",
-            f"",
-            f"The **{self.coder}** coder does not support **{self.mode}** targeting mode.",
-        ]
-        if self.reason:
-            lines.extend(["", self.reason])
-        lines.extend([
-            "",
-            "## Supported Modes",
-            "",
-            f"- {', '.join(RENDERERS[self.coder].supported_targeting_modes)}",
-        ])
-        return tuple(lines)
+mode: Literal['default', 'per-user', 'per-project', 'nowhere'] = 'default'
 ```
 
-**Example Error Output**:
-```
-# Error: Unsupported Targeting Mode
+### Exception Handling (✅ implemented)
 
-The **codex** coder does not support **per-project** targeting mode.
+**Exceptions** (`exceptions.py`):
+- `TargetModeNoSupport`: Raised when coder doesn't support requested explicit mode
+- `GlobalsPopulationFailure`: Raised when global file population fails
+- `CoderAbsence`: Raised when requesting unknown coder from registry
 
-Codex CLI does not support per-project configuration. Only per-user
-configuration in ~/.codex or $CODEX_HOME is supported as of version 0.44.0.
+All exceptions include `render_as_markdown()` for user-friendly error messages.
 
-## Supported Modes
-
-- per-user
-```
-
-### Data Source Organization
-
-The data source structure supports both per-project and per-user targeting modes:
+### Data Source Organization (✅ implemented)
 
 ```
 defaults/
 ├── configurations/
-│   ├── commands/              # Command metadata (both modes)
+│   ├── commands/              # Command metadata
 │   │   └── cs-conform-python.toml
-│   └── agents/                # Agent metadata (both modes)
+│   └── agents/                # Agent metadata
 │       └── python-conformer.toml
 ├── contents/
-│   ├── commands/              # Command bodies (both modes)
+│   ├── commands/              # Command bodies
 │   │   ├── claude/
 │   │   ├── opencode/
-│   │   └── gemini/
-│   └── agents/                # Agent bodies (both modes)
+│   │   └── codex/
+│   └── agents/                # Agent bodies
 │       ├── claude/
 │       ├── opencode/
-│       └── gemini/
-└── globals/                   # Per-user global files (per-user mode only)
+│       └── codex/
+└── globals/                   # Per-user global files
     ├── claude/
     │   └── statusline.md
     ├── opencode/
-    └── gemini/
+    └── codex/
 ```
 
-**Global Files Usage**:
-- Only populated when `--update-globals` flag is set (orthogonal to `--mode`)
-- Examples: Claude Code statusline configuration (`statusline.py`), settings merges
+**✅ Global Files Implementation** (`globalization.py`):
+- Populated when `--update-globals` flag is set (orthogonal to `--mode`)
 - Placed in root of per-user coder config directory (e.g., `~/.claude/statusline.py`)
-- Two types:
-  - **Direct copy**: Files like `statusline.py` - just overwrite
-  - **Merge**: Settings files (e.g., `settings.json`) - merge with existing config
-- Renderers have built-in knowledge of their coder's settings file name
-- Non-settings files are always replaced; settings files use merge strategies (see `.auxiliary/notes/json-merge-strategies.md`)
+- Two file types:
+  - **Direct copy**: Non-settings files (e.g., `statusline.py`) - just overwrite
+  - **Merge**: Settings files (e.g., `settings.json`) - additive merge preserving user values
+- Settings file detection: `claude/settings.json`, `opencode/{opencode.json,opencode.jsonc}`, `codex/config.json`
+- Merge strategy: See `.auxiliary/notes/json-merge-strategies.md`
 
-### Migration Path
+---
 
-1. **Phase 1: Refactor without behavior change**
-   - Introduce renderer architecture
-   - All renderers default to existing per-project behavior
-   - No config changes, purely internal refactor
+## Remaining Work
 
-2. **Phase 2: Add configuration support** ✅ COMPLETE
-   - Implement agentsmgr config infrastructure
-   - Add `--mode` CLI flag (renamed from `--target-mode`)
-   - Enable per-user mode for coders that support it
-   - Add environment variable resolution
-   - Change per-project paths to direct generation (`.claude/`, `.opencode/`)
+### 1. Extended Targeting Mode Enum
 
-3. **Phase 3: Globals support and configuration loading**
-   - Add `--update-globals` flag to populate command
-   - Implement globals population logic (direct copy vs merge)
-   - Implement settings file merge strategies (see `.auxiliary/notes/json-merge-strategies.md`)
-   - Add configuration file loading from `~/.config/emcd-agents/general.toml`
-   - Document memory file (`memory.md`) symlinking for shared context
+**🔲 Update TargetingMode type alias**:
+```python
+# sources/agentsmgr/renderers/base.py
+TargetingMode: TypeAlias = Literal['default', 'per-user', 'per-project', 'nowhere']
+```
 
-4. **Phase 4: Advanced features**
-   - Interactive mode selection
-   - Validation warnings for mixed modes
-   - Migration tools
+**Semantics**:
+- `'default'`: Use each coder's default mode (from renderer)
+- `'per-user'`: Force all coders to per-user (error if unsupported)
+- `'per-project'`: Force all coders to per-project (error if unsupported)
+- `'nowhere'`: Skip content generation entirely (only globals if `--update-globals`)
 
-## Open Questions
+**Validation behavior**:
+- Explicit modes (`per-user`, `per-project`): Validate per-coder during generation (current behavior)
+- `default` mode: No validation needed, each coder uses its own default
+- `nowhere` mode: Skip validation and generation entirely
 
-1. **Config file location**: Should agentsmgr config be:
-   - `~/.config/agentsmgr/config.yaml` (XDG-compliant)
-   - `~/.agentsmgr.yaml` (simple dotfile)
-   - Support both with precedence?
+### 2. Coder Default Modes
 
-2. **Mixed targeting**: If project answers specify `coders: [claude, codex]` and targeting mode is `per-project`, should we:
-   - Error immediately (codex doesn't support it)
-   - Skip codex with warning
-   - Auto-switch codex to per-user mode
+**🔲 Add `mode_default` property to RendererBase**:
+```python
+class RendererBase(immut.Object):
+    name: str
+    modes_available: frozenset[TargetingMode]
+    mode_default: Literal['per-user', 'per-project']  # NEW
+```
 
-3. **Validation timing**: When should targeting mode validation occur:
-   - At command start (fail fast)
-   - Per-coder during generation (partial success)
+**Required defaults**:
+- Claude: `mode_default = 'per-project'`
+- OpenCode: `mode_default = 'per-project'`
+- Codex: `mode_default = 'per-user'`
 
-4. **Default targeting mode**: What should the default be if no config exists:
-   - `per-project` (current behavior, safer)
-   - `per-user` (more useful for codex)
-   - Require explicit configuration
+**🔲 Update ContentGenerator** to resolve `'default'` mode:
+```python
+def render_single_item(...):
+    renderer = RENDERERS[coder]
 
-5. **Per-coder targeting override**: Should agentsmgr config support:
-   ```yaml
-   coder_targeting:
-     codex: per-user      # Always use per-user for codex
-     claude: per-project  # Always use per-project for claude
-   ```
-   This would override the global `targeting_mode` on a per-coder basis.
+    # Resolve 'default' to actual mode
+    actual_mode = (
+        renderer.mode_default if self.mode == 'default'
+        else self.mode
+    )
+
+    # Skip generation if mode is 'nowhere'
+    if self.mode == 'nowhere':
+        return None
+
+    # Validate only explicit modes
+    if actual_mode in ('per-user', 'per-project'):
+        renderer.validate_mode(actual_mode)
+
+    output_base = renderer.resolve_base_directory(
+        mode=actual_mode, ...)
+```
+
+### 3. Documentation
+
+**🔲 Document memory file symlinking strategy**:
+- Memory file (`memory.md`) provides shared context across coders
+- Should be symlinked from one coder's directory to others
+- Example: `~/.claude/memory.md` ← actual file, `~/.opencode/memory.md` ← symlink
+- Document recommended approach in user documentation or architecture docs
+
+### 4. Optional Enhancements (Phase 4)
+
+**Interactive mode selection**:
+- Prompt user to choose mode if not specified in config
+- Show which coders support which modes
+- Low priority - CLI flags are sufficient
+
+**Migration tools**:
+- Help users transition from old `.auxiliary/configuration/claude/` to `.claude/`
+- Automated detection and migration prompts
+- Low priority - breaking change already happened in Phase 2
+
+---
+
+## Design Decisions (Resolved)
+
+All design questions have been answered:
+
+1. **Config file location**: Only `~/.config/emcd-agents/general.toml` via appcore (no dotfiles)
+
+2. **Mixed targeting behavior**: Use 4-mode enum with `'default'` allowing each coder to use its preferred mode
+
+3. **Validation timing**: Per-coder during generation for explicit modes; no validation for `'default'` mode
+
+4. **Default targeting mode**: `'default'` (delegates to each coder's default)
+
+5. **Per-coder targeting**: Handled by coder's `mode_default` property, not config file
+
+---
 
 ## Benefits
 
-- **Explicit coder capabilities**: Each renderer declares what it supports
-- **Fail-fast validation**: Errors before generation starts
-- **Environment-aware**: Respects user's XDG preferences
-- **Extensible**: New coders are isolated implementations
-- **Backward compatible**: Existing per-project workflow unchanged
-- **Type-safe**: Protocol ensures all renderers implement required methods
-
-## Testing Strategy
-
-- Unit tests for each renderer (path resolution, validation)
-- Integration tests with different config combinations
-- Test environment variable expansion
-- Test error messages and user experience
-- Fixture-based tests using profiles in `tests/data/profiles/`
+- **Explicit coder capabilities**: Each renderer declares what it supports and its default
+- **Flexible targeting**: `'default'` mode allows mixed per-user/per-project in single project
+- **Environment-aware**: Respects environment variables and user configuration
+- **Extensible**: New coders register themselves with their own defaults
+- **Type-safe**: Immutable base classes and type aliases ensure correctness
+- **Fail-safe**: `'nowhere'` mode allows globals-only updates
