@@ -47,9 +47,12 @@ class PopulateCommand( __.appcore_cli.Command ):
         __.tyro.conf.arg( help = "Dry run mode - show generated content" ),
     ] = True
     mode: __.typx.Annotated[
-        __.TargetingMode,
-        __.tyro.conf.arg( help = "Targeting mode: per-user or per-project" ),
-    ] = 'per-project'
+        __.TargetMode,
+        __.tyro.conf.arg(
+            help = (
+                "Targeting mode: default (use coder defaults), per-user, "
+                "per-project, or nowhere (skip generation)" ) ),
+    ] = 'default'
     update_globals: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(

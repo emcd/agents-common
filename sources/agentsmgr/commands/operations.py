@@ -67,6 +67,8 @@ def produce_coder_item_type(
     '''
     items_attempted = 0
     items_written = 0
+    if generator.mode == 'nowhere':
+        return ( items_attempted, items_written )
     configuration_directory = (
         generator.location / 'configurations' / item_type )
     if not configuration_directory.exists( ):

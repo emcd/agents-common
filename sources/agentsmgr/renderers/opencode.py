@@ -26,7 +26,7 @@
 
 
 from . import __
-from .base import RENDERERS, RendererBase, TargetingMode
+from .base import RENDERERS, ExplicitTargetMode, RendererBase
 
 
 class OpencodeRenderer( RendererBase ):
@@ -39,10 +39,11 @@ class OpencodeRenderer( RendererBase ):
 
     name = 'opencode'
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
+    mode_default = 'per-project'
 
     def resolve_base_directory(
         self,
-        mode: TargetingMode,
+        mode: ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],

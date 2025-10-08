@@ -26,7 +26,7 @@
 
 
 from . import __
-from .base import RENDERERS, RendererBase, TargetingMode
+from .base import RENDERERS, ExplicitTargetMode, RendererBase
 
 
 class CodexRenderer( RendererBase ):
@@ -40,10 +40,11 @@ class CodexRenderer( RendererBase ):
 
     name = 'codex'
     modes_available = frozenset( ( 'per-user', ) )
+    mode_default = 'per-user'
 
     def resolve_base_directory(
         self,
-        mode: TargetingMode,
+        mode: ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],

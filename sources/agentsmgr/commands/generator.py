@@ -58,7 +58,7 @@ class ContentGenerator( __.immut.DataclassObject ):
     application_configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
         __.dcls.field(
             default_factory = __.immut.Dictionary[ str, __.typx.Any ] ) )
-    mode: __.TargetingMode = 'per-project'
+    mode: __.TargetMode = 'per-project'
     jinja_environment: _jinja2.Environment = __.dcls.field( init = False )
 
     def __post_init__( self ) -> None:
@@ -74,6 +74,16 @@ class ContentGenerator( __.immut.DataclassObject ):
             final coder-specific file. Returns RenderedItem with content
             and location.
         '''
+        try: renderer = __.RENDERERS[ coder ]
+        except KeyError as exception:
+            raise __.CoderAbsence( coder ) from exception
+        if self.mode == 'default':
+            actual_mode = renderer.mode_default
+        elif self.mode in ( 'per-user', 'per-project' ):
+            actual_mode = self.mode
+            renderer.validate_mode( actual_mode )
+        else:
+            raise __.TargetModeNoSupport( coder, self.mode )
         body = self._retrieve_content_with_fallback(
             item_type, item_name, coder )
         metadata = self._load_item_metadata( item_type, item_name, coder )
@@ -87,11 +97,8 @@ class ContentGenerator( __.immut.DataclassObject ):
         }
         content = template.render( **variables )
         extension = self._parse_template_extension( template_name )
-        try: renderer = __.RENDERERS[ coder ]
-        except KeyError as exception:
-            raise __.CoderAbsence( coder ) from exception
         base_directory = renderer.resolve_base_directory(
-            mode = self.mode,
+            mode = actual_mode,
             target = target,
             configuration = self.application_configuration,
             environment = __.os.environ,

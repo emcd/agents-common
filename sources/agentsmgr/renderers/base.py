@@ -29,7 +29,10 @@
 from . import __
 
 
-TargetingMode: __.typx.TypeAlias = __.typx.Literal[ 'per-user', 'per-project' ]
+TargetMode: __.typx.TypeAlias = __.typx.Literal[
+    'default', 'per-user', 'per-project', 'nowhere' ]
+ExplicitTargetMode: __.typx.TypeAlias = __.typx.Literal[
+    'per-user', 'per-project' ]
 
 
 class RendererBase( __.immut.Object ):
@@ -41,9 +44,10 @@ class RendererBase( __.immut.Object ):
     '''
 
     name: str
-    modes_available: frozenset[ TargetingMode ]
+    modes_available: frozenset[ ExplicitTargetMode ]
+    mode_default: ExplicitTargetMode
 
-    def validate_mode( self, mode: TargetingMode ) -> None:
+    def validate_mode( self, mode: ExplicitTargetMode ) -> None:
         ''' Validates targeting mode is supported by this coder.
 
             Raises TargetModeNoSupport if mode not supported.
@@ -53,7 +57,7 @@ class RendererBase( __.immut.Object ):
 
     def resolve_base_directory(
         self,
-        mode: TargetingMode,
+        mode: ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],

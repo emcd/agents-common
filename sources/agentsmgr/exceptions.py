@@ -24,12 +24,8 @@
 from . import __
 
 
-class Omniexception( BaseException ):
+class Omniexception( __.immut.exceptions.Omniexception ):
     ''' Base for all exceptions raised by package API. '''
-    # TODO: Class and instance attribute concealment and immutability.
-
-    _attribute_visibility_includes_: __.cabc.Collection[ str ] = (
-        frozenset( ( '__cause__', '__context__', ) ) )
 
 
 class Omnierror( Omniexception, Exception ):
@@ -41,15 +37,16 @@ class Omnierror( Omniexception, Exception ):
 
 
 class ConfigurationAbsence( Omnierror, FileNotFoundError ):
-    ''' Configuration file absence. '''
 
-    def __init__( self, target: __.Absential[ __.Path ] = __.absent ):
-        if __.is_absent( target ): message = "No agents configuration found."
-        else: message = f"No agents configuration found in {target}."
-        super( ).__init__( message )
+    def __init__(
+        self, location: __.Absential[ __.Path ] = __.absent
+    ) -> None:
+        message = "Could not locate agents configuration"
+        if not __.is_absent( location ):
+            message = f"{message} at '{location}'"
+        super( ).__init__( f"{message}." )
 
     def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders configuration absence with helpful guidance. '''
         lines = [ "## Error: Agent Configuration Not Found" ]
         lines.append( f"**Message:** {self}" )
         lines.append(

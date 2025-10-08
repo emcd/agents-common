@@ -2,22 +2,22 @@
 
 ## Implementation Status
 
-### ✅ Phases 1-3 Complete (commits dffc4b2, 0555ebd, ebaed49)
+### ✅ Phases 1-4 Complete
 
-**Phase 1**: Renderer architecture with base class, registry, self-registration pattern, and three renderers (Claude, OpenCode, Codex).
+**Phase 1** (commit dffc4b2): Renderer architecture with base class, registry, self-registration pattern, and three renderers (Claude, OpenCode, Codex).
 
-**Phase 2**: Configuration support via appcore, `--mode` CLI flag, environment variable resolution, direct per-project paths (`.claude/`, `.opencode/`).
+**Phase 2** (commits 0555ebd): Configuration support via appcore, `--mode` CLI flag, environment variable resolution, direct per-project paths (`.claude/`, `.opencode/`).
 
-**Phase 3**: Globals population with `--update-globals` flag, JSON merge strategies for settings files, TypeGuard pattern for type safety.
+**Phase 3** (commit ebaed49): Globals population with `--update-globals` flag, JSON merge strategies for settings files, TypeGuard pattern for type safety.
 
-### 🔲 Phase 4 Remaining Work
+**Phase 4** (current): Extended targeting mode enum with four modes (`default`, `per-user`, `per-project`, `nowhere`), coder default modes, mode resolution logic.
 
-See **Remaining Work** section below for details on:
-- Extended targeting mode enum (`default`, `nowhere`)
-- Coder default modes
+### 🔲 Optional Enhancements
+
+See **Optional Enhancements** section below for details on:
 - Memory file symlinking documentation
-- Interactive mode selection (optional)
-- Migration tools (optional)
+- Interactive mode selection
+- Migration tools
 
 ---
 
@@ -153,27 +153,29 @@ sources/agentsmgr/
     └── globalization.py     # Globals population logic
 ```
 
-#### Renderer Base Class (✅ implemented)
+#### Renderer Base Class (✅ implemented, Phase 4 complete)
 
 ```python
 # sources/agentsmgr/renderers/base.py
 
-TargetingMode: TypeAlias = Literal['per-user', 'per-project']
+TargetMode: TypeAlias = Literal['default', 'per-user', 'per-project', 'nowhere']
+ExplicitTargetMode: TypeAlias = Literal['per-user', 'per-project']
 
 class RendererBase(immut.Object):
     ''' Base class for coder-specific rendering and path resolution. '''
 
     name: str
-    modes_available: frozenset[TargetingMode]
+    modes_available: frozenset[ExplicitTargetMode]
+    mode_default: ExplicitTargetMode  # NEW in Phase 4
 
-    def validate_mode(self, mode: TargetingMode) -> None:
+    def validate_mode(self, mode: ExplicitTargetMode) -> None:
         ''' Validates targeting mode is supported by this coder. '''
         if mode not in self.modes_available:
             raise TargetModeNoSupport(self.name, mode)
 
     def resolve_base_directory(
         self,
-        mode: TargetingMode,
+        mode: ExplicitTargetMode,
         target: Path,
         configuration: Mapping[str, Any],
         environment: Mapping[str, str],
@@ -186,24 +188,24 @@ class RendererBase(immut.Object):
         return item_type
 ```
 
-#### Renderer Implementation Status
+#### Renderer Implementation Status (✅ Phase 4 complete)
 
 **✅ Codex Renderer** (`renderers/codex.py`):
 - Supports only `per-user` targeting mode
+- Default mode: `mode_default = 'per-user'`
 - Path precedence: `CODEX_HOME` env var > config file `directory` > `~/.codex` default
-- **Needs**: Default mode property (`mode_default = 'per-user'`)
 
 **✅ Claude Renderer** (`renderers/claude.py`):
 - Supports both `per-user` and `per-project` modes
+- Default mode: `mode_default = 'per-project'`
 - Per-user: `CLAUDE_CONFIG_DIR` env var > config `directory` > `~/.claude` default
 - Per-project: `.claude/` in project root
-- **Needs**: Default mode property (`mode_default = 'per-project'`)
 
 **✅ OpenCode Renderer** (`renderers/opencode.py`):
 - Supports both targeting modes
+- Default mode: `mode_default = 'per-project'`
 - Per-user: `OPENCODE_CONFIG` env var > config `directory` > `~/.config/opencode` default
 - Per-project: `.opencode/` in project root
-- **Needs**: Default mode property (`mode_default = 'per-project'`)
 
 #### Renderer Registry (✅ implemented)
 
@@ -218,29 +220,25 @@ RENDERERS: Dictionary[str, RendererBase] = Dictionary()
 RENDERERS['claude'] = ClaudeRenderer(...)
 ```
 
-### CLI Implementation (✅ completed)
+### CLI Implementation (✅ Phase 4 complete)
 
-**Current `populate` command** (`population.py`):
+**`populate` command** (`population.py`):
 
 ```python
 class PopulateCommand:
     source: str = '.'
     target: Path = field(default_factory=Path.cwd)
     simulate: bool = True
-    mode: TargetingMode = 'per-project'  # Currently: 'per-user' | 'per-project'
-    update_globals: bool = False         # Orthogonal to mode
+    mode: TargetMode = 'default'  # Four modes: 'default' | 'per-user' | 'per-project' | 'nowhere'
+    update_globals: bool = False  # Orthogonal to mode
 ```
 
-**Current semantics**:
+**Semantics**:
 - `--mode` controls where commands/agents are generated
 - `--update-globals` controls whether per-user global files are updated (independent of mode)
 - Globals always go to per-user locations (e.g., `~/.claude/statusline.py`)
-- Default: `--mode=per-project` with globals disabled for safety
-
-**🔲 Needs extension** to support new mode enum:
-```python
-mode: Literal['default', 'per-user', 'per-project', 'nowhere'] = 'default'
-```
+- Default: `--mode=default` uses each coder's preferred default mode
+- `--mode=nowhere` skips content generation entirely (only updates globals if `--update-globals` set)
 
 ### Exception Handling (✅ implemented)
 
@@ -287,84 +285,45 @@ defaults/
 
 ---
 
-## Remaining Work
+## Optional Enhancements
 
-### 1. Extended Targeting Mode Enum
+These enhancements are not required for core functionality but may improve user experience:
 
-**🔲 Update TargetingMode type alias**:
-```python
-# sources/agentsmgr/renderers/base.py
-TargetingMode: TypeAlias = Literal['default', 'per-user', 'per-project', 'nowhere']
-```
+### Memory File Symlinking Documentation
 
-**Semantics**:
-- `'default'`: Use each coder's default mode (from renderer)
-- `'per-user'`: Force all coders to per-user (error if unsupported)
-- `'per-project'`: Force all coders to per-project (error if unsupported)
-- `'nowhere'`: Skip content generation entirely (only globals if `--update-globals`)
+**Purpose**: Document strategy for sharing memory files across coders
 
-**Validation behavior**:
-- Explicit modes (`per-user`, `per-project`): Validate per-coder during generation (current behavior)
-- `default` mode: No validation needed, each coder uses its own default
-- `nowhere` mode: Skip validation and generation entirely
+Memory files (`memory.md`) provide shared context across different AI coding assistants. Since multiple coders may be used in the same project, it's valuable to share a single memory file rather than maintaining separate copies.
 
-### 2. Coder Default Modes
+**Recommended approach**:
+- Create memory file in primary coder's per-user directory (e.g., `~/.claude/memory.md`)
+- Symlink from other coders' directories (e.g., `ln -s ~/.claude/memory.md ~/.opencode/memory.md`)
+- Document this pattern in user documentation or architecture docs
 
-**🔲 Add `mode_default` property to RendererBase**:
-```python
-class RendererBase(immut.Object):
-    name: str
-    modes_available: frozenset[TargetingMode]
-    mode_default: Literal['per-user', 'per-project']  # NEW
-```
+**Priority**: Low - users can manage this manually without tooling support
 
-**Required defaults**:
-- Claude: `mode_default = 'per-project'`
-- OpenCode: `mode_default = 'per-project'`
-- Codex: `mode_default = 'per-user'`
+### Interactive Mode Selection
 
-**🔲 Update ContentGenerator** to resolve `'default'` mode:
-```python
-def render_single_item(...):
-    renderer = RENDERERS[coder]
+**Purpose**: Guided mode selection when not specified in configuration
 
-    # Resolve 'default' to actual mode
-    actual_mode = (
-        renderer.mode_default if self.mode == 'default'
-        else self.mode
-    )
-
-    # Skip generation if mode is 'nowhere'
-    if self.mode == 'nowhere':
-        return None
-
-    # Validate only explicit modes
-    if actual_mode in ('per-user', 'per-project'):
-        renderer.validate_mode(actual_mode)
-
-    output_base = renderer.resolve_base_directory(
-        mode=actual_mode, ...)
-```
-
-### 3. Documentation
-
-**🔲 Document memory file symlinking strategy**:
-- Memory file (`memory.md`) provides shared context across coders
-- Should be symlinked from one coder's directory to others
-- Example: `~/.claude/memory.md` ← actual file, `~/.opencode/memory.md` ← symlink
-- Document recommended approach in user documentation or architecture docs
-
-### 4. Optional Enhancements (Phase 4)
-
-**Interactive mode selection**:
-- Prompt user to choose mode if not specified in config
+If no mode is configured and user runs `agentsmgr populate` without `--mode` flag, could provide interactive prompt:
+- Display available modes with explanations
 - Show which coders support which modes
-- Low priority - CLI flags are sufficient
+- Allow user to save choice to configuration
 
-**Migration tools**:
-- Help users transition from old `.auxiliary/configuration/claude/` to `.claude/`
-- Automated detection and migration prompts
-- Low priority - breaking change already happened in Phase 2
+**Priority**: Low - CLI flags and configuration file provide sufficient control
+
+### Migration Tools
+
+**Purpose**: Automated migration from old configuration structure
+
+Help users transition from previous `.auxiliary/configuration/claude/` structure to new direct paths (`.claude/`, `.opencode/`):
+- Detect old configuration locations
+- Prompt user to migrate
+- Copy or move files to new locations
+- Update any references
+
+**Priority**: Low - breaking change happened in Phase 2, most users already migrated
 
 ---
 
