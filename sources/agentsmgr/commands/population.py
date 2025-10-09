@@ -25,6 +25,7 @@ from . import __
 from . import base as _base
 from . import generator as _generator
 from . import globalization as _globalization
+from . import memorylinks as _memorylinks
 from . import operations as _operations
 
 
@@ -80,6 +81,18 @@ class PopulateCommand( __.appcore_cli.Command ):
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
+        if self.mode != 'nowhere':
+            links_attempted, links_created = (
+                _memorylinks.create_memory_symlinks_for_coders(
+                    coders = configuration[ 'coders' ],
+                    target = self.target,
+                    renderers = __.RENDERERS,
+                    simulate = self.simulate,
+                ) )
+            if links_created > 0:
+                _scribe.info(
+                    f"Created {links_created}/{links_attempted} "
+                    "memory symlinks" )
         if self.update_globals:
             globals_attempted, globals_updated = (
                 _globalization.populate_globals(

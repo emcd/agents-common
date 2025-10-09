@@ -46,6 +46,7 @@ class RendererBase( __.immut.Object ):
     name: str
     modes_available: frozenset[ ExplicitTargetMode ]
     mode_default: ExplicitTargetMode
+    memory_filename: str
 
     def validate_mode( self, mode: ExplicitTargetMode ) -> None:
         ''' Validates targeting mode is supported by this coder.

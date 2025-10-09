@@ -97,6 +97,40 @@ class ContentAbsence( Omnierror, FileNotFoundError ):
         super( ).__init__( message )
 
 
+class MemoryFileAbsence( Omnierror, FileNotFoundError ):
+    ''' Memory file absence.
+
+        Raised when project memory file (conventions.md) does not exist
+        but memory symlinks need to be created.
+    '''
+
+    def __init__( self, location: __.Path ) -> None:
+        self.location = location
+        super( ).__init__( f"Memory file not found: {location}" )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders memory file absence with helpful guidance. '''
+        lines = [ "## Error: Memory File Not Found" ]
+        lines.append( "" )
+        lines.append(
+            "The project memory file does not exist at the expected "
+            "location:" )
+        lines.append( "" )
+        lines.append( f"    {self.location}" )
+        lines.append( "" )
+        lines.append(
+            "Memory files provide project-specific conventions and "
+            "context to AI coding assistants. Create this file before "
+            "running `agentsmgr populate`." )
+        lines.append( "" )
+        lines.append(
+            "**Suggested action**: Create "
+            "`.auxiliary/configuration/conventions.md` with "
+            "project-specific conventions, or copy from a template "
+            "project." )
+        return tuple( lines )
+
+
 class TemplateAbsence( Omnierror, FileNotFoundError ):
     ''' Template file absence. '''
 

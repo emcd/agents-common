@@ -41,6 +41,7 @@ class CodexRenderer( RendererBase ):
     name = 'codex'
     modes_available = frozenset( ( 'per-user', ) )
     mode_default = 'per-user'
+    memory_filename = 'AGENTS.md'
 
     def resolve_base_directory(
         self,

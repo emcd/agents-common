@@ -40,6 +40,7 @@ class ClaudeRenderer( RendererBase ):
     name = 'claude'
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
+    memory_filename = 'CLAUDE.md'
 
     def resolve_base_directory(
         self,

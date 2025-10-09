@@ -40,6 +40,7 @@ class OpencodeRenderer( RendererBase ):
     name = 'opencode'
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
+    memory_filename = 'AGENTS.md'
 
     def resolve_base_directory(
         self,
