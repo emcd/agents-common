@@ -152,7 +152,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         parts = template_name.split( '.' )
         if len( parts ) >= _TEMPLATE_PARTS_MINIMUM and parts[ -1 ] == 'jinja':
             return parts[ -2 ]
-        raise __.TemplateExtensionError( template_name )
+        raise __.TemplateError.for_extension_parse( template_name )
 
     def _load_item_metadata(
         self, item_type: str, item_name: str, coder: str
@@ -221,4 +221,4 @@ class ContentGenerator( __.immut.DataclassObject ):
                 return preferred
         if coder not in preferences:
             raise __.CoderAbsence( coder )
-        raise __.TemplateAbsence( item_type, coder )
+        raise __.TemplateError.for_missing_template( coder, item_type )

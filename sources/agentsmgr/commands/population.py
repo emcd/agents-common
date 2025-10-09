@@ -24,9 +24,9 @@
 from . import __
 from . import base as _base
 from . import generator as _generator
-from . import globalization as _globalization
 from . import memorylinks as _memorylinks
 from . import operations as _operations
+from . import userdata as _userdata
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -95,7 +95,7 @@ class PopulateCommand( __.appcore_cli.Command ):
                     "memory symlinks" )
         if self.update_globals:
             globals_attempted, globals_updated = (
-                _globalization.populate_globals(
+                _userdata.populate_globals(
                     location,
                     configuration[ 'coders' ],
                     auxdata.configuration,

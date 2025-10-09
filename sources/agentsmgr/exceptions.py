@@ -55,12 +55,11 @@ class ConfigurationAbsence( Omnierror, FileNotFoundError ):
         super( ).__init__( f"{message}." )
 
     def render_as_markdown( self ) -> tuple[ str, ... ]:
-        lines = [ "## Error: Agent Configuration Not Found" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Run 'copier copy gh:emcd/agents-common' "
-            "to configure agents." )
-        return tuple( lines )
+        return (
+            f"❌ {self}",
+            "",
+            "Run 'copier copy gh:emcd/agents-common' to configure agents."
+        )
 
 
 class ConfigurationInvalidity( Omnierror, ValueError ):
@@ -71,14 +70,6 @@ class ConfigurationInvalidity( Omnierror, ValueError ):
         else: message = f"Invalid configuration: {reason}"
         super( ).__init__( message )
 
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders configuration invalidity with helpful guidance. '''
-        lines = [ "## Error: Invalid Agent Configuration" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check configuration file format and "
-            "ensure required fields are present." )
-        return tuple( lines )
 
 
 class ContentAbsence( Omnierror, FileNotFoundError ):
@@ -90,25 +81,12 @@ class ContentAbsence( Omnierror, FileNotFoundError ):
         super( ).__init__( message )
 
 
-class ContentGenerationFailure( Omnierror, RuntimeError ):
-    ''' Content generation failure. '''
+class FileOperationFailure( Omnierror, OSError ):
+    ''' File or directory operation failure. '''
 
-
-class ContentUpdateFailure( Omnierror, OSError ):
-    ''' Content file update failure. '''
-
-    def __init__( self, file_path: __.Path ):
-        message = f"Failed to update content at: {file_path}"
+    def __init__( self, path: __.Path, operation: str = "access file" ):
+        message = f"Failed to {operation}: {path}"
         super( ).__init__( message )
-
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders content update failure with helpful guidance. '''
-        lines = [ "## Error: Content Update Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check file permissions and ensure parent "
-            "directory exists." )
-        return tuple( lines )
 
 
 class ContextInvalidity( Omnierror, TypeError ):
@@ -127,21 +105,6 @@ class DataSourceNoSupport( Omnierror, ValueError ):
         super( ).__init__( message )
 
 
-class DirectoryCreateFailure( Omnierror, OSError ):
-    ''' Directory create failure. '''
-
-    def __init__( self, directory: __.Path ):
-        message = f"Failed to create directory: {directory}"
-        super( ).__init__( message )
-
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders directory creation failure with helpful guidance. '''
-        lines = [ "## Error: Directory Creation Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check directory permissions and available "
-            "disk space." )
-        return tuple( lines )
 
 
 class GlobalsPopulationFailure( Omnierror, OSError ):
@@ -151,14 +114,6 @@ class GlobalsPopulationFailure( Omnierror, OSError ):
         message = f"Failed to populate global file from {source} to {target}"
         super( ).__init__( message )
 
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders globals population failure with helpful guidance. '''
-        lines = [ "## Error: Globals Population Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check file permissions and ensure source "
-            "file is valid." )
-        return tuple( lines )
 
 
 class MemoryFileAbsence( Omnierror, FileNotFoundError ):
@@ -220,20 +175,23 @@ class TargetModeNoSupport( Omnierror, ValueError ):
         return tuple( lines )
 
 
-class TemplateAbsence( Omnierror, FileNotFoundError ):
-    ''' Template file absence. '''
-
-    def __init__( self, template_type: str, coder: str ):
-        message = f"No template found for {coder} {template_type}"
-        super( ).__init__( message )
-
-
-class TemplateExtensionError( Omnierror, ValueError ):
-    ''' Template extension determination error. '''
+class TemplateError( Omnierror, ValueError ):
+    ''' Template processing error. '''
 
     def __init__( self, template_name: str ):
-        message = f"Cannot determine output extension for: {template_name}"
-        super( ).__init__( message )
+        super( ).__init__( f"Template error: {template_name}" )
+
+    @classmethod
+    def for_missing_template(
+        cls, coder: str, item_type: str
+    ) -> __.typx.Self:
+        ''' Creates error for missing template. '''
+        return cls( f"no {item_type} template found for {coder}" )
+
+    @classmethod
+    def for_extension_parse( cls, template_name: str ) -> __.typx.Self:
+        ''' Creates error for extension parsing failure. '''
+        return cls( f"cannot determine output extension for {template_name}" )
 
 
 class ToolSpecificationInvalidity( ConfigurationInvalidity ):

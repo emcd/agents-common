@@ -94,9 +94,10 @@ def update_content(
     if simulate: return False
     try: location.parent.mkdir( parents = True, exist_ok = True )
     except ( OSError, IOError ) as exception:
-        raise __.DirectoryCreateFailure(
-            location.parent ) from exception
+        raise __.FileOperationFailure(
+            location.parent, "create directory" ) from exception
     try: location.write_text( content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.ContentUpdateFailure( location ) from exception
+        raise __.FileOperationFailure(
+            location, "update content" ) from exception
     return True

@@ -57,8 +57,9 @@ class ValidateCommand( __.appcore_cli.Command ):
         try: temporary_directory = __.Path( __.tempfile.mkdtemp(
             prefix = f"agents-validate-{self.variant}-" ) )
         except ( OSError, IOError ) as exception:
-            raise __.DirectoryCreateFailure(
-                __.Path( __.tempfile.gettempdir( ) ) ) from exception
+            raise __.FileOperationFailure(
+                __.Path( __.tempfile.gettempdir( ) ),
+                "create directory" ) from exception
         _scribe.debug( f"Created temporary directory: {temporary_directory}" )
         try:
             configuration = self._produce_test_configuration( auxdata )
