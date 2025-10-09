@@ -36,6 +36,14 @@ class Omnierror( Omniexception, Exception ):
         return ( f"❌ {self}", )
 
 
+class CoderAbsence( Omnierror, ValueError ):
+    ''' Coder absence in registry. '''
+
+    def __init__( self, coder: str ):
+        message = f"Coder not found in registry: {coder}"
+        super( ).__init__( message )
+
+
 class ConfigurationAbsence( Omnierror, FileNotFoundError ):
 
     def __init__(
@@ -55,27 +63,12 @@ class ConfigurationAbsence( Omnierror, FileNotFoundError ):
         return tuple( lines )
 
 
-class ContextInvalidity( Omnierror, TypeError ):
-    ''' Invalid execution context. '''
-
-    def __init__( self ):
-        message = "Invalid execution context: expected agentsmgr.cli.Globals"
-        super( ).__init__( message )
-
-
 class ConfigurationInvalidity( Omnierror, ValueError ):
-    ''' Configuration data invalidity. '''
+    ''' Base configuration data invalidity. '''
 
-    TOML_DECODE_ERROR = "TOML decode error."
-    UNRECOGNIZED_TOOL_SPEC = "Unrecognized tool specification."
-    TOOL_SPEC_TYPE_ERROR = "Tool specification must be string or dict."
-    UNKNOWN_SEMANTIC_TOOL = "Unknown semantic tool name."
-
-    def __init__( self, reason: __.typx.Any = None ):
-        if reason is None:
-            message = "Invalid configuration."
-        else:
-            message = f"Invalid configuration: {reason}"
+    def __init__( self, reason: __.Absential[ str | Exception ] = __.absent ):
+        if __.is_absent( reason ): message = "Invalid configuration."
+        else: message = f"Invalid configuration: {reason}"
         super( ).__init__( message )
 
     def render_as_markdown( self ) -> tuple[ str, ... ]:
@@ -95,6 +88,77 @@ class ContentAbsence( Omnierror, FileNotFoundError ):
         message = (
             f"No {content_type} content found for {coder}: {content_name}" )
         super( ).__init__( message )
+
+
+class ContentGenerationFailure( Omnierror, RuntimeError ):
+    ''' Content generation failure. '''
+
+
+class ContentUpdateFailure( Omnierror, OSError ):
+    ''' Content file update failure. '''
+
+    def __init__( self, file_path: __.Path ):
+        message = f"Failed to update content at: {file_path}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders content update failure with helpful guidance. '''
+        lines = [ "## Error: Content Update Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check file permissions and ensure parent "
+            "directory exists." )
+        return tuple( lines )
+
+
+class ContextInvalidity( Omnierror, TypeError ):
+    ''' Invalid execution context. '''
+
+    def __init__( self ):
+        message = "Invalid execution context: expected agentsmgr.cli.Globals"
+        super( ).__init__( message )
+
+
+class DataSourceNoSupport( Omnierror, ValueError ):
+    ''' Unsupported data source format error. '''
+
+    def __init__( self, source_spec: str ):
+        message = f"Unsupported source format: {source_spec}"
+        super( ).__init__( message )
+
+
+class DirectoryCreateFailure( Omnierror, OSError ):
+    ''' Directory create failure. '''
+
+    def __init__( self, directory: __.Path ):
+        message = f"Failed to create directory: {directory}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders directory creation failure with helpful guidance. '''
+        lines = [ "## Error: Directory Creation Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check directory permissions and available "
+            "disk space." )
+        return tuple( lines )
+
+
+class GlobalsPopulationFailure( Omnierror, OSError ):
+    ''' Global settings population failure. '''
+
+    def __init__( self, source: __.Path, target: __.Path ):
+        message = f"Failed to populate global file from {source} to {target}"
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders globals population failure with helpful guidance. '''
+        lines = [ "## Error: Globals Population Failed" ]
+        lines.append( f"**Message:** {self}" )
+        lines.append(
+            "**Suggestion:** Check file permissions and ensure source "
+            "file is valid." )
+        return tuple( lines )
 
 
 class MemoryFileAbsence( Omnierror, FileNotFoundError ):
@@ -131,30 +195,6 @@ class MemoryFileAbsence( Omnierror, FileNotFoundError ):
         return tuple( lines )
 
 
-class TemplateAbsence( Omnierror, FileNotFoundError ):
-    ''' Template file absence. '''
-
-    def __init__( self, template_type: str, coder: str ):
-        message = f"No template found for {coder} {template_type}"
-        super( ).__init__( message )
-
-
-class TemplateExtensionError( Omnierror, ValueError ):
-    ''' Template extension determination error. '''
-
-    def __init__( self, template_name: str ):
-        message = f"Cannot determine output extension for: {template_name}"
-        super( ).__init__( message )
-
-
-class CoderAbsence( Omnierror, ValueError ):
-    ''' Coder absence in registry. '''
-
-    def __init__( self, coder: str ):
-        message = f"Coder not found in registry: {coder}"
-        super( ).__init__( message )
-
-
 class TargetModeNoSupport( Omnierror, ValueError ):
     ''' Targeting mode lack of support. '''
 
@@ -180,64 +220,36 @@ class TargetModeNoSupport( Omnierror, ValueError ):
         return tuple( lines )
 
 
-class UnsupportedSourceError( Omnierror, ValueError ):
-    ''' Unsupported data source format error. '''
+class TemplateAbsence( Omnierror, FileNotFoundError ):
+    ''' Template file absence. '''
 
-    def __init__( self, source_spec: str ):
-        message = f"Unsupported source format: {source_spec}"
+    def __init__( self, template_type: str, coder: str ):
+        message = f"No template found for {coder} {template_type}"
         super( ).__init__( message )
 
 
-class DirectoryCreateFailure( Omnierror, OSError ):
-    ''' Directory create failure. '''
+class TemplateExtensionError( Omnierror, ValueError ):
+    ''' Template extension determination error. '''
 
-    def __init__( self, directory: __.Path ):
-        message = f"Failed to create directory: {directory}"
+    def __init__( self, template_name: str ):
+        message = f"Cannot determine output extension for: {template_name}"
         super( ).__init__( message )
 
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders directory creation failure with helpful guidance. '''
-        lines = [ "## Error: Directory Creation Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check directory permissions and available "
-            "disk space." )
-        return tuple( lines )
 
+class ToolSpecificationInvalidity( ConfigurationInvalidity ):
+    ''' Tool specification invalidity. '''
 
-class ContentUpdateFailure( Omnierror, OSError ):
-    ''' Content file update failure. '''
-
-    def __init__( self, file_path: __.Path ):
-        message = f"Failed to update content at: {file_path}"
+    def __init__( self, specification: __.typx.Any ):
+        message = f"Unrecognized tool specification: {specification}"
         super( ).__init__( message )
 
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders content update failure with helpful guidance. '''
-        lines = [ "## Error: Content Update Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check file permissions and ensure parent "
-            "directory exists." )
-        return tuple( lines )
 
+class ToolSpecificationTypeInvalidity( ConfigurationInvalidity ):
+    ''' Tool specification type invalidity. '''
 
-class GlobalsPopulationFailure( Omnierror, OSError ):
-    ''' Global settings population failure. '''
-
-    def __init__( self, source: __.Path, target: __.Path ):
-        message = f"Failed to populate global file from {source} to {target}"
+    def __init__( self, specification: __.typx.Any ):
+        specification_type = type( specification ).__name__
+        message = (
+            f"Tool specification must be string or dict, got: "
+            f"{specification_type}" )
         super( ).__init__( message )
-
-    def render_as_markdown( self ) -> tuple[ str, ... ]:
-        ''' Renders globals population failure with helpful guidance. '''
-        lines = [ "## Error: Globals Population Failed" ]
-        lines.append( f"**Message:** {self}" )
-        lines.append(
-            "**Suggestion:** Check file permissions and ensure source "
-            "file is valid." )
-        return tuple( lines )
-
-
-class ContentGenerationFailure( Omnierror, RuntimeError ):
-    ''' Content generation failure. '''

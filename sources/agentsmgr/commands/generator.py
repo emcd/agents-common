@@ -173,8 +173,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         try: toml_data: dict[ str, __.typx.Any ] = __.tomli.loads(
             toml_content.decode( 'utf-8' ) )
         except __.tomli.TOMLDecodeError as exception:
-            reason = __.ConfigurationInvalidity.TOML_DECODE_ERROR
-            raise __.ConfigurationInvalidity( reason ) from exception
+            raise __.ConfigurationInvalidity( exception ) from exception
         context = toml_data.get( 'context', { } )
         coders_list: list[ dict[ str, __.typx.Any ] ] = (
             toml_data.get( 'coders', [ ] ) )

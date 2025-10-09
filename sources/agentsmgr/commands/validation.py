@@ -102,7 +102,7 @@ class ValidateCommand( __.appcore_cli.Command ):
             configuration: _base.CoderConfiguration = (
                 _yaml.safe_load( content ) )
         except _yaml.YAMLError as exception:
-            raise __.ConfigurationInvalidity( ) from exception
+            raise __.ConfigurationInvalidity( exception ) from exception
         if not isinstance( configuration, __.cabc.Mapping ):
             raise __.ConfigurationInvalidity( )
         return __.immut.Dictionary( configuration )

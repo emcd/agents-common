@@ -108,11 +108,9 @@ def _map_tools_claude(
             elif spec.get( 'tool' ) == 'shell':
                 mapped.append( _map_shell_tool_claude( spec ) )
             else:
-                raise __.ConfigurationInvalidity(
-                    __.ConfigurationInvalidity.UNRECOGNIZED_TOOL_SPEC )
+                raise __.ToolSpecificationInvalidity( str( spec ) )
         else:
-            raise __.ConfigurationInvalidity(
-                __.ConfigurationInvalidity.TOOL_SPEC_TYPE_ERROR )
+            raise __.ToolSpecificationTypeInvalidity( type( spec ).__name__ )
     return sorted( mapped )
 
 
@@ -120,13 +118,10 @@ def _map_semantic_tool_claude( tool_name: str ) -> str:
     ''' Maps semantic tool name to Claude tool name.
 
         Uses lookup table for known semantic names.
-        Raises ConfigurationInvalidity for unknown tools.
+        Raises ToolSpecificationInvalidity for unknown tools.
     '''
     if tool_name not in _SEMANTIC_TOOLS_CLAUDE:
-        reason = (
-            f"{__.ConfigurationInvalidity.UNKNOWN_SEMANTIC_TOOL} "
-            f"'{tool_name}'" )
-        raise __.ConfigurationInvalidity( reason )
+        raise __.ToolSpecificationInvalidity( tool_name )
     return _SEMANTIC_TOOLS_CLAUDE[ tool_name ]
 
 

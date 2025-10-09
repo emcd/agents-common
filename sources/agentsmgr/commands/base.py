@@ -108,7 +108,7 @@ async def retrieve_configuration(
         configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
             _yaml.safe_load( content ) )
     except _yaml.YAMLError as exception:
-        raise __.ConfigurationInvalidity( ) from exception
+        raise __.ConfigurationInvalidity( exception ) from exception
     if not isinstance( configuration, __.cabc.Mapping ):
         raise __.ConfigurationInvalidity( )
     await validate_configuration( configuration )
@@ -133,7 +133,7 @@ def retrieve_data_location( source_spec: str ) -> __.Path:
     '''
     if not source_spec.startswith( ( 'http', 'git@', 'gh:' ) ):
         return __.Path( source_spec ).resolve( )
-    raise __.UnsupportedSourceError( source_spec )
+    raise __.DataSourceNoSupport( source_spec )
 
 
 def retrieve_variant_answers_file(
