@@ -44,6 +44,7 @@ The project implements the standard filesystem organization:
     ├── documentation/           # Sphinx documentation source
     ├── sources/                 # All source code
     ├── tests/                   # Test suites
+    ├── data/                    # Redistributable data resources
     ├── pyinstaller.spec         # Executable packaging configuration
     └── .auxiliary/              # Development workspace
 

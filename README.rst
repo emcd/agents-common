@@ -17,8 +17,16 @@
    +--------------------------------------------------------------------------+
 
 *******************************************************************************
-                               emcd-agents-common                              
+                                  emcd-agents                                  
 *******************************************************************************
+
+.. image:: https://img.shields.io/pypi/v/emcd-agents
+   :alt: Package Version
+   :target: https://pypi.org/project/emcd-agents/
+
+.. image:: https://img.shields.io/pypi/status/emcd-agents
+   :alt: PyPI - Status
+   :target: https://pypi.org/project/emcd-agents/
 
 .. image:: https://github.com/emcd/agents-common/actions/workflows/tester.yaml/badge.svg?branch=master&event=push
    :alt: Tests Status
@@ -31,6 +39,10 @@
 .. image:: https://img.shields.io/github/license/emcd/agents-common
    :alt: Project License
    :target: https://github.com/emcd/agents-common/blob/master/LICENSE.txt
+
+.. image:: https://img.shields.io/pypi/pyversions/emcd-agents
+   :alt: Python Versions
+   :target: https://pypi.org/project/emcd-agents/
 
 
 .. todo:: Provide project description and key features.
@@ -54,20 +66,20 @@ Install via the `uv <https://github.com/astral-sh/uv/blob/main/README.md>`_
 
 ::
 
-    uv tool install emcd-agents-common
+    uv tool install emcd-agents
 
 or, run directly with `uvx
 <https://github.com/astral-sh/uv/blob/main/README.md>`_:
 
 ::
 
-    uvx --from emcd-agents-common agentsmgr
+    uvx --from emcd-agents agentsmgr
 
 Or, install via `pipx <https://pipx.pypa.io/stable/installation/>`_:
 
 ::
 
-    pipx install emcd-agents-common
+    pipx install emcd-agents
 
 Method: Install Python Package
 -------------------------------------------------------------------------------
@@ -77,13 +89,13 @@ command:
 
 ::
 
-    uv pip install emcd-agents-common
+    uv pip install emcd-agents
 
 Or, install via ``pip``:
 
 ::
 
-    pip install emcd-agents-common
+    pip install emcd-agents
 
 
 .. todo:: Provide usage examples and additional content.
@@ -132,6 +144,14 @@ Additional Indicia
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
    :alt: Ruff
    :target: https://github.com/astral-sh/ruff
+
+.. image:: https://img.shields.io/pypi/implementation/emcd-agents
+   :alt: PyPI - Implementation
+   :target: https://pypi.org/project/emcd-agents/
+
+.. image:: https://img.shields.io/pypi/wheel/emcd-agents
+   :alt: PyPI - Wheel
+   :target: https://pypi.org/project/emcd-agents/
 
 
 Other Projects by This Author 🌟

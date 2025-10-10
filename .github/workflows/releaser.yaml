@@ -55,6 +55,31 @@ jobs:
       artifacts-path: '.auxiliary/artifacts/hatch-build' # TODO: Use environment.
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
 
+  publish-pypi:
+    if: ${{ inputs.which-pypi == 'testpypi' || startsWith(github.ref, 'refs/tags/') }}
+    needs: [initialize, package]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.which-pypi || 'pypi' }}
+      url: ${{ fromJSON(needs.initialize.outputs.pypi-package-urls)[inputs.which-pypi || 'pypi'] }}agentsmgr
+    permissions:
+      id-token: write  # Only needed for PyPI trusted publishing
+    steps:
+
+      - name: Restore Distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions--${{ github.run_id }}
+          path: ${{ env.DISTRIBUTIONS_PATH }}
+
+      - name: Publish Distributions
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.DISTRIBUTIONS_PATH }}
+          repository-url: ${{ fromJSON(needs.initialize.outputs.pypi-api-urls)[inputs.which-pypi || 'pypi'] }}
+          print-hash: true
+          skip-existing: ${{ inputs.which-pypi == 'testpypi' }}
+
   create-executables:
       needs: [initialize, package]
       strategy:
@@ -70,7 +95,7 @@ jobs:
               platform-name: macos-arm64
       runs-on: ${{ matrix.os }}
       env:
-        _PYI_EXECUTABLE_NAME: emcd-agents-common-${{ github.ref_name }}-${{ matrix.platform-name }}
+        _PYI_EXECUTABLE_NAME: emcd-agents-${{ github.ref_name }}-${{ matrix.platform-name }}
       steps:
         - name: Prepare Python
           uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
@@ -107,4 +132,79 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: executables--${{ matrix.platform-name }}--${{ github.run_id }}
-            path: .auxiliary/artifacts/pyinstaller/emcd-agents-common-*
+            path: .auxiliary/artifacts/pyinstaller/emcd-agents-*
+
+  publish-github:
+    needs:
+      - initialize
+      - package
+      - publish-pypi
+      # --- BEGIN: Injected by Copier ---
+      - create-executables
+      # --- END: Injected by Copier ---
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+
+      - name: Prepare Python
+        uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
+        with:
+          python-version: ${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}
+
+      - name: Restore Distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions--${{ github.run_id }}
+          path: ${{ env.DISTRIBUTIONS_PATH }}
+
+      - name: Restore Executables
+        uses: actions/download-artifact@v4
+        with:
+          pattern: executables--*--${{ github.run_id }}
+          path: ${{ env.DISTRIBUTIONS_PATH }}
+          merge-multiple: true
+
+      - name: Generate Integrity Check Values
+        run: |
+          set -eu -o pipefail
+          cd ${{ env.DISTRIBUTIONS_PATH }}
+          sha256sum emcd-agents-* >SHA256SUMS.txt
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            ${{ env.DISTRIBUTIONS_PATH }}/SHA256SUMS.txt
+            ${{ env.DISTRIBUTIONS_PATH }}/emcd-agents-*
+
+      - name: Generate Release Notes
+        run: |
+          set -eu -o pipefail
+          hatch --env develop run \
+            towncrier build --draft --version ${GITHUB_REF_NAME} \
+            >.auxiliary/artifacts/tc-release-notes.rst
+          cat \
+            documentation/executables.rst \
+            .auxiliary/artifacts/tc-release-notes.rst \
+            >.auxiliary/artifacts/release-notes.rst
+
+      - name: Create Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create '${{ github.ref_name }}' \
+            --repo '${{ github.repository }}' \
+            --notes-file .auxiliary/artifacts/release-notes.rst
+
+      - name: Publish Artifacts
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload '${{ github.ref_name }}' \
+            ${{ env.DISTRIBUTIONS_PATH }}/** \
+            --repo '${{ github.repository }}'

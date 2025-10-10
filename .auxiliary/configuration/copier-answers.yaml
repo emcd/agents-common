@@ -5,14 +5,14 @@ author_email: emcd@users.noreply.github.com
 author_name: Eric McDonald
 description: Common collection of AI agents configuration and data.
 development_status: 3 - Alpha
-distribution_name: emcd-agents-common
+distribution_name: emcd-agents
 enable_cli: true
 enable_executables: true
 enable_property_tests: false
-enable_publication: false
+enable_publication: true
 enable_rust_extension: false
 gh_owner: emcd
-include_data_resources: false
+include_data_resources: true
 inject_exceptions: true
 inject_foundations: true
 package_name: agentsmgr

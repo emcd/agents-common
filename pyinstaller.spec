@@ -9,7 +9,7 @@ from PyInstaller.utils.hooks import copy_metadata
 datas = [ ]
 # Example: datas += copy_metadata( 'readchar', recursive=True )
 
-name = os.environ.get( '_PYI_EXECUTABLE_NAME', 'emcd-agents-common' )
+name = os.environ.get( '_PYI_EXECUTABLE_NAME', 'emcd-agents' )
 block_cipher = None
 
 
@@ -21,7 +21,7 @@ a = Analysis(
         *datas,
         ('pyproject.toml', '.'),
         # --- BEGIN: Injected by Copier ---
-        
+        ('data', 'data'),
         # --- END: Injected by Copier ---
     ],
     hiddenimports = [ ],
