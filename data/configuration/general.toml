@@ -1,0 +1,25 @@
+format-version = 1
+
+maintenance-mode = false
+
+[locations]
+cache = '{user_cache}'
+data = '{user_data}'
+state = '{user_state}'
+environment = '{user_configuration}/environment'
+
+## Agent Content Generation Configuration
+
+# Coder fallback mappings for content compatibility.
+[content.fallbacks]
+opencode = 'claude'
+
+## Data Source Configuration
+
+[sources]
+# Default source when not specified via CLI or environment
+default = 'github://emcd/agents-common/tree/main/defaults'
+
+# Examples for alternative default sources:
+#default = 'file:///path/to/custom/agents'
+#default = '/home/user/my-custom-agents'

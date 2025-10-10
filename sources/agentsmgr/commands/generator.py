@@ -33,7 +33,16 @@ from . import base as _base
 from . import context as _context
 
 
+CoderFallbackMap: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
+PluralMappings: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
+
 _TEMPLATE_PARTS_MINIMUM = 3
+
+_PLURAL_TO_SINGULAR_MAP: PluralMappings = __.immut.Dictionary( {
+    'commands': 'command',
+    'agents': 'agent',
+} )
+
 
 _scribe = __.provide_scribe( __name__ )
 
@@ -64,6 +73,13 @@ class ContentGenerator( __.immut.DataclassObject ):
     def __post_init__( self ) -> None:
         self.jinja_environment = (  # pyright: ignore[reportAttributeAccessIssue]
             self._produce_jinja_environment( ) )
+
+
+    def _retrieve_fallback_mappings( self ) -> CoderFallbackMap:
+        ''' Retrieves coder fallback mappings from configuration. '''
+        content_config = self.application_configuration.get( 'content', { } )
+        fallbacks = content_config.get( 'fallbacks', { } )
+        return __.immut.Dictionary( fallbacks )
 
     def render_single_item(
         self, item_type: str, item_name: str, coder: str, target: __.Path
@@ -113,27 +129,27 @@ class ContentGenerator( __.immut.DataclassObject ):
             Surveys template directory for files matching item type pattern.
         '''
         directory = self.location / "templates"
-        singular_type = item_type.rstrip( 's' )
+        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
+        except KeyError as exception:
+            raise __.ConfigurationInvalidity( item_type ) from exception
         pattern = f"{singular_type}.*.jinja"
         return [ p.name for p in directory.glob( pattern ) ]
 
     def _retrieve_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
     ) -> str:
-        ''' Retrieves content with Claude↔OpenCode fallback logic.
+        ''' Retrieves content with fallback logic for compatible coders.
 
             Attempts to read content from coder-specific location first,
             then falls back to compatible coder if content is missing.
-            Claude and OpenCode share compatible syntax and can use each
-            other's content files.
         '''
         primary_path = (
             self.location / "contents" / item_type / coder /
             f"{item_name}.md" )
         if primary_path.exists( ):
             return primary_path.read_text( encoding = 'utf-8' )
-        fallback_map = { "claude": "opencode", "opencode": "claude" }
-        fallback_coder = fallback_map.get( coder )
+        fallback_mappings = self._retrieve_fallback_mappings( )
+        fallback_coder = fallback_mappings.get( coder )
         if fallback_coder:
             fallback_path = (
                 self.location / "contents" / item_type /
@@ -210,7 +226,9 @@ class ContentGenerator( __.immut.DataclassObject ):
             use markdown templates, while Gemini uses TOML templates.
         '''
         available = self._survey_available_templates( item_type )
-        singular_type = item_type.rstrip( 's' )
+        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
+        except KeyError as exception:
+            raise __.ConfigurationInvalidity( item_type ) from exception
         preferences = {
             "claude": [ f"{singular_type}.md.jinja" ],
             "opencode": [ f"{singular_type}.md.jinja" ],
