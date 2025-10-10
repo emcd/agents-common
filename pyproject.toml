@@ -19,6 +19,7 @@ dependencies = [
   'PyYAML',
   'absence~=1.1',
   'accretive~=4.2',
+  'dulwich',
   'emcd-appcore[cli]~=1.6',
   'frigid~=4.2',
   'typing-extensions',

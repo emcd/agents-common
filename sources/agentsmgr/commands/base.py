@@ -128,12 +128,12 @@ async def validate_configuration(
 def retrieve_data_location( source_spec: str ) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 
-        Currently supports local paths only. Git URLs and remote sources
-        will raise UnsupportedSourceError.
+        Supports local paths, Git repositories, and remote sources through
+        pluggable source handlers. Uses registered handlers to resolve
+        various URL schemes to local filesystem paths.
     '''
-    if not source_spec.startswith( ( 'http', 'git@', 'gh:' ) ):
-        return __.Path( source_spec ).resolve( )
-    raise __.DataSourceNoSupport( source_spec )
+    from ..sources import resolve_source_location
+    return resolve_source_location( source_spec )
 
 
 def retrieve_variant_answers_file(
