@@ -34,7 +34,8 @@ class DetectCommand( __.appcore_cli.Command ):
     source: __.typx.Annotated[
         __.Path,
         __.tyro.conf.arg(
-            help = "Target directory to search for configuration." ),
+            help = "Target directory to search for configuration.",
+            prefix_name = False ),
     ] = __.dcls.field( default_factory = __.Path.cwd )
 
     @_base.intercept_errors( )
