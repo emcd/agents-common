@@ -37,27 +37,35 @@ class PopulateCommand( __.appcore_cli.Command ):
 
     source: __.typx.Annotated[
         str,
-        __.tyro.conf.arg( help = "Data source (local path or git URL)" ),
+        __.tyro.conf.arg(
+            help = "Data source (local path or git URL)",
+            prefix_name = False ),
     ] = '.'
     target: __.typx.Annotated[
         __.Path,
-        __.tyro.conf.arg( help = "Target directory for content generation" ),
+        __.tyro.conf.arg(
+            help = "Target directory for content generation",
+            prefix_name = False ),
     ] = __.dcls.field( default_factory = __.Path.cwd )
     simulate: __.typx.Annotated[
         bool,
-        __.tyro.conf.arg( help = "Dry run mode - show generated content" ),
-    ] = True
+        __.tyro.conf.arg(
+            help = "Dry run mode - show generated content",
+            prefix_name = False ),
+    ] = False
     mode: __.typx.Annotated[
         __.TargetMode,
         __.tyro.conf.arg(
             help = (
                 "Targeting mode: default (use coder defaults), per-user, "
-                "per-project, or nowhere (skip generation)" ) ),
+                "per-project, or nowhere (skip generation)" ),
+            prefix_name = False ),
     ] = 'default'
     update_globals: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(
-            help = "Update per-user global files (orthogonal to mode)" ),
+            help = "Update per-user global files (orthogonal to mode)",
+            prefix_name = False ),
     ] = False
 
     @_base.intercept_errors( )
