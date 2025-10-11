@@ -44,6 +44,7 @@ import accretive as         accret
 import                      appcore
 import                      appcore.exceptions
 import                      appcore.state
+import dynadoc as           ddoc
 import frigid as            immut
 import                      tomli
 import typing_extensions as typx

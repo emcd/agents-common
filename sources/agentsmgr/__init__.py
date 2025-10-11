@@ -25,6 +25,7 @@ from . import __
 # --- BEGIN: Injected by Copier ---
 from . import exceptions
 # --- END: Injected by Copier ---
+from . import sources
 
 
 __version__ = '1.0a0'

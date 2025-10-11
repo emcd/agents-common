@@ -132,8 +132,7 @@ def retrieve_data_location( source_spec: str ) -> __.Path:
         pluggable source handlers. Uses registered handlers to resolve
         various URL schemes to local filesystem paths.
     '''
-    from ..sources import resolve_source_location
-    return resolve_source_location( source_spec )
+    return __.resolve_source_location( source_spec )
 
 
 def retrieve_variant_answers_file(

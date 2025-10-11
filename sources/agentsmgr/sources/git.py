@@ -28,10 +28,10 @@
 import dulwich.porcelain as _dulwich_porcelain
 
 from . import __
+from . import base as _base
 
 
-# Type aliases for Git source components
-class GitLocation( __.typx.NamedTuple ):
+class GitLocation( __.immut.DataclassObject ):
     ''' Git source location with URL and optional subdirectory. '''
     git_url: str
     subdir: __.typx.Optional[ str ]
@@ -59,22 +59,16 @@ class GitSubdirectoryAbsence( __.DataSourceNoSupport ):
         super( ).__init__( message )
 
 
+@_base.source_handler([
+    'github:', 'gitlab:', 'git+https:',
+    'https://github.com/', 'https://gitlab.com/', 'git@'
+])
 class GitSourceHandler:
     ''' Handles Git repository source resolution with Dulwich.
 
         Supports multiple URL schemes and converts them to Git URLs for
         cloning. Implements fragment syntax for subdirectory specification.
     '''
-
-    def can_handle( self, source_spec: str ) -> bool:
-        ''' Determines whether source specification is a Git URL.
-
-            Supports github:, git+https:, and full https://github.com URLs.
-        '''
-        return source_spec.startswith( (
-            'github:', 'gitlab:', 'git+https:', 'https://github.com/',
-            'https://gitlab.com/', 'git@'
-        ) )
 
     def resolve( self, source_spec: str ) -> __.Path:
         ''' Resolves Git source to local temporary directory.
@@ -115,7 +109,6 @@ class GitSourceHandler:
             url_part, subdir = source_spec.split( '#', 1 )
         else:
             url_part, subdir = source_spec, None
-
         # Map URL schemes to Git URLs
         if url_part.startswith( 'github:' ):
             repo_path = url_part[ len( 'github:' ): ]

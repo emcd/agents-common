@@ -14,3 +14,7 @@ environment             # unused parameter - will be used for env var resolution
 # --- BEGIN: Injected by Copier ---
 Omnierror              # unused base exception class for derivation
 # --- END: Injected by Copier ---
+
+# Source handlers register themselves via decorators (self-registration pattern)
+GitSourceHandler       # unused class - registers via @source_handler decorator
+LocalSourceHandler     # unused class - registers via @source_handler decorator

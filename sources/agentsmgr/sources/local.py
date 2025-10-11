@@ -27,8 +27,10 @@
 
 
 from . import __
+from . import base as _base
 
 
+@_base.source_handler(['/', './', '../', '~/', 'C:', 'D:'])
 class LocalSourceHandler:
     ''' Handles local filesystem path resolution.
 
@@ -36,14 +38,6 @@ class LocalSourceHandler:
         This maintains backward compatibility with existing local path
         usage patterns.
     '''
-
-    def can_handle( self, source_spec: str ) -> bool:
-        ''' Determines whether source specification is a local path.
-
-            Returns True for paths that do not start with remote URL prefixes.
-            This acts as the fallback handler for non-remote specifications.
-        '''
-        return not source_spec.startswith( ( 'http', 'git@', 'github:' ) )
 
     def resolve( self, source_spec: str ) -> __.Path:
         ''' Resolves local path specification to absolute path.

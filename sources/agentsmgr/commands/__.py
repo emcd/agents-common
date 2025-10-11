@@ -29,3 +29,4 @@ from ..core import *
 from ..exceptions import *
 from ..renderers import *
 from ..results import *
+from ..sources import *

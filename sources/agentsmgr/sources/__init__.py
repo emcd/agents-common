@@ -26,12 +26,12 @@
 '''
 
 
-from .base import (
-    AbstractSourceHandler, resolve_source_location, register_source_handler )
+from .base import AbstractSourceHandler
+from .base import resolve_source_location
+from .base import register_source_handler
+from .base import source_handler
 from .local import LocalSourceHandler
 from .git import GitSourceHandler
 
 
-# Register default source handlers in order (specific to general)
-register_source_handler( GitSourceHandler( ) )
-register_source_handler( LocalSourceHandler( ) )
+# Source handlers register themselves when their modules are imported

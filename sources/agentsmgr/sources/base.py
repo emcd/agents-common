@@ -28,7 +28,7 @@
 from . import __
 
 
-class AbstractSourceHandler( __.typx.Protocol ):
+class AbstractSourceHandler( __.immut.Protocol, __.typx.Protocol ):
     ''' Protocol for source handlers that resolve specifications to paths.
 
         Source handlers provide a pluggable way to resolve different types
@@ -36,10 +36,7 @@ class AbstractSourceHandler( __.typx.Protocol ):
         filesystem paths where the content can be accessed.
     '''
 
-    def can_handle( self, source_spec: str ) -> bool:
-        ''' Determines whether handler can process source specification. '''
-        ...
-
+    @__.abc.abstractmethod
     def resolve( self, source_spec: str ) -> __.Path:
         ''' Resolves source specification to local filesystem path.
 
@@ -47,30 +44,61 @@ class AbstractSourceHandler( __.typx.Protocol ):
             For remote sources, this may involve downloading or cloning to
             a temporary location.
         '''
-        ...
+        raise NotImplementedError
 
 
-# Private registry of source handlers
-_SOURCE_HANDLERS: list[ AbstractSourceHandler ] = [ ]
+# Private registry mapping URL schemes to source handlers
+_SCHEME_HANDLERS: __.accret.Dictionary[ str, AbstractSourceHandler ] = (
+    __.accret.Dictionary( ) )
 
 
-def register_source_handler( handler: AbstractSourceHandler ) -> None:
-    ''' Registers a source handler for use by resolve_source_location.
+def register_source_handler(
+    handler: __.typx.Annotated[
+        AbstractSourceHandler,
+        __.ddoc.Doc( ''' The source handler instance ''' )
+    ],
+    schemes: __.typx.Annotated[
+        __.cabc.Iterable[ str ],
+        __.ddoc.Doc( ''' URL schemes this handler supports
+            (e.g., ['github:', 'gitlab:']) ''' )
+    ]
+) -> None:
+    ''' Registers a source handler for specific URL schemes. '''
+    for scheme in schemes:
+        _SCHEME_HANDLERS[ scheme ] = handler
 
-        Handlers are checked in registration order, so register more
-        specific handlers before more general ones.
+
+def source_handler(
+    schemes: __.typx.Annotated[
+        __.cabc.Iterable[ str ],
+        __.ddoc.Doc( ''' URL schemes this handler supports
+            (e.g., ['github:', 'gitlab:']) ''' )
+    ]
+) -> __.cabc.Callable[
+    [ type[ AbstractSourceHandler ] ], type[ AbstractSourceHandler ]
+]:
+    ''' Decorator for automatic source handler registration.
+
+        Usage:
+            @source_handler(['github:', 'gitlab:'])
+            class GitSourceHandler:
+                ...
     '''
-    _SOURCE_HANDLERS.append( handler )
+    def decorator(
+        handler_class: type[ AbstractSourceHandler ]
+    ) -> type[ AbstractSourceHandler ]:
+        register_source_handler( handler_class( ), schemes )
+        return handler_class
+    return decorator
 
 
 def resolve_source_location( source_spec: str ) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 
-        Delegates to registered source handlers based on source specification
-        format. Raises DataSourceNoSupport if no handler can process the
-        specification.
+        Delegates to registered source handlers based on URL scheme.
+        Raises DataSourceNoSupport if no handler can process the specification.
     '''
-    for handler in _SOURCE_HANDLERS:
-        if handler.can_handle( source_spec ):
+    for scheme, handler in _SCHEME_HANDLERS.items( ):
+        if source_spec.startswith( scheme ):
             return handler.resolve( source_spec )
     raise __.DataSourceNoSupport( source_spec )
