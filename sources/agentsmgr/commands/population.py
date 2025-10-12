@@ -32,6 +32,51 @@ from . import userdata as _userdata
 _scribe = __.provide_scribe( __name__ )
 
 
+def _create_coder_directory_symlinks(
+    coders: __.cabc.Sequence[ str ],
+    target: __.Path,
+    renderers: __.cabc.Mapping[ str, __.typx.Any ],
+    simulate: bool = False,
+) -> tuple[ int, int ]:
+    ''' Creates symlinks from .{coder} to .auxiliary/configuration/coders/.
+
+        For per-project mode, creates symlinks that make coder directories
+        accessible at their expected locations (.claude, .opencode, etc.)
+        while keeping actual files organized under
+        .auxiliary/configuration/coders/.
+
+        Returns tuple of (attempted, created) counts.
+    '''
+    attempted = 0
+    created = 0
+    for coder_name in coders:
+        try: renderers[ coder_name ]
+        except KeyError as exception:
+            raise __.CoderAbsence( coder_name ) from exception
+
+        # Source: actual location under .auxiliary/configuration/coders/
+        source = (
+            target / '.auxiliary' / 'configuration' / 'coders' / coder_name )
+        # Link: expected location for coder (.claude, .opencode, etc.)
+        link_path = target / f'.{coder_name}'
+
+        attempted += 1
+        if _memorylinks.create_memory_symlink( source, link_path, simulate ):
+            created += 1
+
+        # Create .mcp.json symlink for Claude coder specifically
+        if coder_name == 'claude':
+            mcp_source = (
+                target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
+            mcp_link = target / '.mcp.json'
+            attempted += 1
+            if _memorylinks.create_memory_symlink(
+                mcp_source, mcp_link, simulate ):
+                created += 1
+
+    return ( attempted, created )
+
+
 class PopulateCommand( __.appcore_cli.Command ):
     ''' Generates dynamic agent content from data sources. '''
 
@@ -101,6 +146,19 @@ class PopulateCommand( __.appcore_cli.Command ):
                 _scribe.info(
                     f"Created {links_created}/{links_attempted} "
                     "memory symlinks" )
+            # Create coder directory symlinks for per-project mode
+            if self.mode == 'per-project':
+                coder_symlinks_attempted, coder_symlinks_created = (
+                    _create_coder_directory_symlinks(
+                        coders = configuration[ 'coders' ],
+                        target = self.target,
+                        renderers = __.RENDERERS,
+                        simulate = self.simulate,
+                    ) )
+                if coder_symlinks_created > 0:
+                    _scribe.info(
+                        f"Created {coder_symlinks_created}/"
+                        f"{coder_symlinks_attempted} coder directory symlinks")
         if self.update_globals:
             globals_attempted, globals_updated = (
                 _userdata.populate_globals(

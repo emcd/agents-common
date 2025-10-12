@@ -14,13 +14,13 @@
           {%- if "python" in languages %}
           {
             "type": "command",
-            "command": ".auxiliary/configuration/claude/scripts/pre-bash-python-check",
+            "command": ".claude/scripts/pre-bash-python-check",
             "timeout": 10
           },
           {%- endif %}
           {
             "type": "command",
-            "command": ".auxiliary/configuration/claude/scripts/pre-bash-git-commit-check",
+            "command": ".claude/scripts/pre-bash-git-commit-check",
             "timeout": 300
           }
         ]
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".auxiliary/configuration/claude/scripts/post-edit-linter",
+            "command": ".claude/scripts/post-edit-linter",
             "timeout": 60
           }
         ]

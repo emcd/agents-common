@@ -58,7 +58,7 @@ class OpencodeRenderer( RendererBase ):
         '''
         self.validate_mode( mode )
         if mode == 'per-project':
-            return target / ".opencode"
+            return target / ".auxiliary/configuration/coders/opencode"
         if mode == 'per-user':
             return self._resolve_user_directory( configuration, environment )
         raise __.TargetModeNoSupport( self.name, mode )
