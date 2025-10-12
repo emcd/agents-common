@@ -55,35 +55,40 @@ For detailed directory organization and file structure, see :doc:`filesystem`.
 
 * **Data-Driven Generation**: Structured TOML configurations drive content generation
 * **Clean Separation**: Source data, content bodies, and templates are distinctly organized
-* **Tool-Agnostic Sources**: Configurations work across multiple AI coding tools
-* **Semantic Tool Mapping**: allowed-tools specifications map to tool-specific syntax
-* **Content Fallback Strategy**: Claude ↔ Opencode compatibility, Gemini isolation
-* **Minimal Base Distribution**: Copier provides only essential templates and structure
+* **Hybrid Distribution**: Copier provides base templates, agentsmgr provides dynamic content
+* **Plugin Architecture**: Extensible source handlers and renderers via registration patterns
+* **Protocol-Based Design**: Clear contracts via AbstractSourceHandler and RendererBase
+* **Type Safety**: Comprehensive type annotations with third-party library type stubs
 
 Template-Based Content Generation System
 -------------------------------------------------------------------------------
 
 The system implements a template-of-templates architecture for dynamic content generation:
 
-**Source Data Structure** (``data/configurations/``):
+**Source Data Structure** (``defaults/configurations/``):
 - TOML files contain tool-agnostic metadata following project standards
-- Semantic allowed-tools specifications map to coder-specific syntax
-- Frontmatter fields support multiple AI tool format requirements
+- 25+ slash commands with comprehensive metadata definitions
+- Agent definitions with tool-specific rendering configuration
 
-**Content Bodies** (``data/contents/``):
+**Content Bodies** (``defaults/contents/``):
 - Coder-specific content without frontmatter for maximum reusability
-- Claude ↔ Opencode bidirectional fallback (compatible syntax)
-- Gemini isolation (incompatible syntax: {{args}} vs $ARGUMENTS)
+- Currently Claude-focused with extensive command library
+- Extensible structure for additional AI coding assistants
 
-**Generic Templates** (``data/templates/``):
+**Generic Templates** (``defaults/templates/``):
 - Jinja2 templates combine metadata + content for each tool format
 - Variable normalization: hyphen→underscore for template access
-- Coder objects provide dot-notation access (coder.name, coder.model)
+- Support for markdown and TOML output formats
+
+**Additional Configuration** (``data/``):
+- General configuration defaults and system-wide settings
+- Extensible for future configuration needs
 
 **Base Configuration Templates** (``template/``):
-- Minimal Copier template for settings.json.jinja and directory structure
+- Copier template for settings.json.jinja and directory structure
+- Hook scripts for pre/post tool use validation
 - .gitignore files prevent committing generated content
-- Hook scripts distributed via proven Copier mechanisms
+- Multi-coder support (Claude, Opencode, Gemini base templates)
 
 Hybrid Distribution Architecture
 -------------------------------------------------------------------------------
@@ -99,6 +104,7 @@ The system uses a hybrid approach combining Copier templates and dynamic generat
 - Minimal template provides base configuration and directory structure
 - Standard Copier workflows for multi-template projects
 - Base settings templates distributed via proven mechanisms
+- Hook scripts for pre/post tool use validation
 
 **Dynamic Content Generation**:
 - ``agentsmgr populate --source=agents-common@agents-N`` generates tool-specific content
@@ -106,10 +112,11 @@ The system uses a hybrid approach combining Copier templates and dynamic generat
 - Configuration detection from Copier answers or defaults
 - Generated content ignored via .gitignore (not committed)
 
-**GitHub Actions Workflow**:
-- Publishing workflow automatically validates and deploys tagged releases
-- Fast iteration: content changes don't require template commits
-- Supports standard git workflow practices and CI/CD pipelines
+**Plugin-Based Source Resolution**:
+- Git source handler supports full ``source@ref#subdir`` syntax
+- Local filesystem source handler for development workflows
+- Decorator-based registration system for extensible source types
+- Latest tag fallback when no explicit ref specified
 
 Component Relationships
 ===============================================================================
@@ -119,8 +126,8 @@ Hybrid Distribution Flow Architecture
 
 The system implements a dual-channel distribution model:
 
-1. **Source Data Repository** (agents-common): 
-   - Maintains structured data sources in ``data/`` directory
+1. **Source Data Repository** (agents-common):
+   - Maintains structured data sources in ``defaults/`` directory
    - Provides minimal Copier template for base configuration
    - Tags releases for atomic data source distribution
 
@@ -132,9 +139,14 @@ The system implements a dual-channel distribution model:
 3. **Dynamic Content Generation** (agentsmgr):
    - Fetches tagged data sources from git repositories
    - Generates tool-specific commands and agents in target projects
-   - Content fallback strategy handles tool compatibility
+   - Plugin-based source resolution with @ref syntax support
 
-4. **Target Projects**:
+4. **Coder-Specific Rendering** (agentsmgr.renderers):
+   - Claude renderer with per-user and per-project targeting
+   - Opencode and Codex renderers for multi-tool support
+   - Base renderer class defining target mode contracts
+
+5. **Target Projects**:
    - Base configuration from Copier template distribution
    - Dynamic content generated by agentsmgr populate command
    - Generated content ignored via .gitignore patterns
@@ -147,87 +159,89 @@ Data Flow Patterns
 
 .. code-block::
 
-    agents-common (data/) → Tag Release (agents-N) → 
-    agentsmgr populate → 
+    agents-common (defaults/) → Tag Release (agents-N) →
+    agentsmgr populate →
     Target Projects (.auxiliary/configuration/)
 
 **Base Template Distribution Flow**:
 
 .. code-block::
 
-    agents-common (template/) → Copier Distribution → 
+    agents-common (template/) → Copier Distribution →
     Target Projects (.auxiliary/configuration/)
 
 **Content Generation Flow**:
 
 .. code-block::
 
-    TOML Configuration (metadata) + 
-    Coder Content (body) + 
-    Generic Template (format) → 
-    agentsmgr populate → 
+    TOML Configuration (metadata) +
+    Coder Content (body) +
+    Generic Template (format) →
+    agentsmgr populate →
     Tool-Specific Files
 
 **Settings Generation Flow**:
 
 .. code-block::
 
-    Base Template (settings.json.jinja) + 
-    Copier Variables (project-specific) → 
-    Copier Rendering → 
+    Base Template (settings.json.jinja) +
+    Copier Variables (project-specific) →
+    Copier Rendering →
     Final Settings (settings.json)
 
 **Command Execution Flow**:
 
 .. code-block::
 
-    Slash Command → 
-    Generated File (.auxiliary/configuration/) → 
-    Hook Script (from Copier template) → 
+    Slash Command →
+    Generated File (.auxiliary/configuration/) →
+    Hook Script (from Copier template) →
     Execution
 
 Key Architectural Patterns
 ===============================================================================
 
-Separation of Concerns
+Plugin Architecture Pattern
 -------------------------------------------------------------------------------
 
-The architecture implements clear boundaries between different types of configuration:
+The architecture implements extensible plugin systems for core functionality:
 
-**Static Project Structure** (Copier Templates):
-- MCP server configurations (``mcp-servers.json.jinja``)
-- Project-specific settings variations
-- Conditional generation logic
+**Source Handler Plugins** (``agentsmgr.sources``):
+- Protocol-based AbstractSourceHandler contract
+- Decorator-based registration system (@source_handler)
+- Git handler with @ref syntax and latest tag fallback
+- Local filesystem handler for development workflows
 
-**Dynamic Agent Content** (agents-common):
-- Slash commands that evolve rapidly
-- Subagent definitions requiring iteration
-- Hook scripts with coordinated path references
-- Base settings templates
+**Renderer Plugins** (``agentsmgr.renderers``):
+- RendererBase class defining target mode contracts
+- Coder-specific rendering logic (Claude, Opencode, Codex)
+- Target mode validation and path resolution
+- Registry-based lookup and instantiation
 
-Template-Based Configuration Management
+Template-Based Content Generation
 -------------------------------------------------------------------------------
 
-The system employs template-based patterns for flexible configuration generation:
+The system employs sophisticated template patterns for dynamic content generation:
 
-**Base + Override Pattern**:
-- Base templates provide consistent foundation
-- Local overrides enable project-specific customization  
-- Rendering process combines both sources
+**Metadata + Content + Template Pattern**:
+- TOML configurations provide tool-agnostic metadata
+- Coder-specific content bodies maintain separation of concerns
+- Jinja2 templates combine metadata and content for target format
 
-**Path Abstraction Pattern**:
-- Templates use parameterized path references
-- CLI tooling resolves paths for target environment
-- Enables consistent deployment across different project structures
+**Variable Normalization Pattern**:
+- Hyphenated TOML keys → underscore template variables
+- Semantic tool mapping with coder object abstractions
+- Type-safe template rendering with comprehensive annotations
 
-Extensible Product Architecture
+Protocol-Based Design
 -------------------------------------------------------------------------------
 
-The product-focused organization supports clean extensibility:
+The architecture emphasizes clear contracts and type safety:
 
-**Product Isolation**: Each AI tool maintains independent directory structure
-**Shared Resources**: Common elements (MCP servers) available across products
-**Consistent Interface**: New tools follow established organizational patterns
+**Protocol Interfaces**: AbstractSourceHandler and RendererBase define clear contracts
+**Type Annotations**: Comprehensive type hints with third-party library stubs
+**Immutable Objects**: Extensive use of immutable dataclasses and protocols
+**Async Support**: Native async/await patterns throughout CLI and command implementations
 
 Deployment Architecture
 ===============================================================================

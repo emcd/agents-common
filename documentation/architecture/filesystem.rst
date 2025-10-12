@@ -59,21 +59,54 @@ The main Python package follows the standard ``sources/`` directory pattern:
 .. code-block::
 
     sources/
-    ├── agentsmgr/          # Main Python package
+    ├── agentsmgr/                   # Main Python package
     │   ├── __/                      # Centralized import hub
     │   │   ├── __init__.py          # Re-exports core utilities
     │   │   ├── imports.py           # External library imports
     │   │   └── nomina.py            # agents-common-specific naming constants
+    │   ├── _typedecls/              # Type declarations for third-party libraries
+    │   ├── commands/                # CLI command implementations subpackage
+    │   │   ├── __/                  # Subpackage import hub
+    │   │   ├── __.py                # Cascading imports from parent
+    │   │   ├── __init__.py          # Command exports
+    │   │   ├── base.py              # Base command abstractions
+    │   │   ├── detection.py         # Configuration detection logic
+    │   │   ├── population.py        # Content population from sources
+    │   │   ├── validation.py        # Configuration validation
+    │   │   ├── context.py           # Context management
+    │   │   ├── generator.py         # Template generation engine
+    │   │   ├── operations.py        # File operations
+    │   │   └── userdata.py          # User data management
+    │   ├── sources/                 # Pluggable source handler subpackage
+    │   │   ├── __/                  # Subpackage import hub
+    │   │   ├── __.py                # Cascading imports from parent
+    │   │   ├── __init__.py          # Source handler exports
+    │   │   ├── base.py              # Source handler protocol and registry
+    │   │   ├── local.py             # Local filesystem source handler
+    │   │   └── git.py               # Git repository source handler with dulwich
+    │   ├── renderers/               # Coder-specific renderer subpackage
+    │   │   ├── __/                  # Subpackage import hub
+    │   │   ├── __.py                # Cascading imports from parent
+    │   │   ├── __init__.py          # Renderer registry and exports
+    │   │   ├── base.py              # Renderer base class and target modes
+    │   │   ├── claude.py            # Claude-specific rendering logic
+    │   │   ├── opencode.py          # Opencode-specific rendering logic
+    │   │   └── codex.py             # Codex/generic rendering logic
     │   ├── __init__.py              # Package entry point
     │   ├── py.typed                 # Type checking marker
     │   ├── __main__.py              # CLI entry point for `python -m agentsmgr`
     │   ├── cli.py                   # Command-line interface implementation
     │   ├── exceptions.py            # Package exception hierarchy
-    │   └── [modules].py             # Feature-specific modules
+    │   ├── core.py                  # Core data structures and globals
+    │   └── results.py               # Result handling and data structures
 
 
-All package modules use the standard ``__`` import pattern as documented
-in the common architecture guide.
+**Architectural Patterns Implemented:**
+
+* **Cascading Subpackage Pattern**: Each subpackage (``commands/``, ``sources/``, ``renderers/``) implements the standard ``__`` import pattern with ``from ..__ import *`` inheritance
+* **Plugin Architecture**: Source handlers and renderers use decorator-based registration systems
+* **Protocol-Based Design**: AbstractSourceHandler and RendererBase define clear contracts
+* **Type Safety**: Comprehensive type annotations with third-party library type stubs
 
 AI Agent Configuration Structure
 ===============================================================================
@@ -88,58 +121,77 @@ directory, implementing a 3-tier separation for structured agent configurations:
 
     defaults/
     ├── configurations/            # Tool-agnostic TOML configurations
-    │   ├── commands/              # Command metadata
-    │   │   ├── cs-conform-python.toml
-    │   │   └── cs-release-final.toml
+    │   ├── commands/              # Command metadata (25+ slash commands)
+    │   │   ├── cs-conform-python.toml     # Python code conformance
+    │   │   ├── cs-release-final.toml      # Final release management
+    │   │   ├── cs-architect.toml          # Architecture documentation
+    │   │   ├── cs-code-python.toml        # Python implementation
+    │   │   ├── cs-design-python.toml      # Python API design
+    │   │   ├── cs-plan-pytests.toml       # Test planning
+    │   │   ├── cs-develop-pytests.toml    # Test implementation
+    │   │   ├── cs-manage-prd.toml         # Product requirements
+    │   │   ├── cs-copier-update.toml      # Template updates
+    │   │   ├── validate-custom-slash.toml # Slash command validation
+    │   │   └── [20+ additional commands]
     │   └── agents/                # Agent metadata
-    │       └── python-conformer.toml
+    │       └── python-conformer.toml      # Python code review agent
     ├── contents/                  # Coder-specific content bodies
     │   ├── commands/
-    │   │   ├── claude/            # Claude-specific content
-    │   │   │   ├── cs-conform-python.md
-    │   │   │   └── cs-release-final.md
-    │   │   ├── opencode/          # Falls back to/from claude/
-    │   │   └── gemini/            # No fallback - different syntax
+    │   │   └── claude/            # Claude-specific content (25+ files)
+    │   │       ├── cs-conform-python.md
+    │   │       ├── cs-release-final.md
+    │   │       ├── cs-architect.md
+    │   │       ├── cs-code-python.md
+    │   │       ├── cs-design-python.md
+    │   │       └── [20+ additional command contents]
     │   └── agents/
-    │       ├── claude/
-    │       │   └── python-conformer.md
-    │       ├── opencode/          # Falls back to/from claude/
-    │       └── gemini/            # No fallback - different syntax
-    ├── globals/                   # Per-user global files
-    │   ├── claude/
-    │   │   └── statusline.md
-    │   ├── opencode/
-    │   └── gemini/
-    └── templates/                 # Generic, reusable templates
-        ├── command.md.jinja       # For Claude/Opencode commands
-        ├── command.toml.jinja     # For Gemini commands
-        ├── agent.md.jinja         # For Claude/Opencode agents
-        └── agent.toml.jinja       # For Gemini agents
+    │       └── claude/
+    │           └── python-conformer.md
+    ├── globals/                   # Per-user global files (actual implementation)
+    │   └── claude/
+    │       ├── statusline.py      # Python-based statusline configuration
+    │       └── settings.json      # Base Claude settings
+    └── templates/                 # Generic, reusable Jinja2 templates
+        ├── command.md.jinja       # Markdown command template
+        ├── command.toml.jinja     # TOML command template (future)
+        ├── agent.md.jinja         # Markdown agent template
+        └── agent.toml.jinja       # TOML agent template (future)
 
-    template/                      # Minimal Copier template for base configuration
+    data/                          # Additional configuration data
+    └── configuration/
+        └── general.toml           # General configuration defaults
+
+    template/                      # Copier template for base configuration
     └── .auxiliary/configuration/
-        ├── claude/
-        │   ├── commands/.gitignore    # Ignore generated content
-        │   ├── agents/.gitignore
-        │   ├── scripts/              # Hook executables
-        │   └── settings.json.jinja   # Base template
-        ├── opencode/
-        │   ├── commands/.gitignore
-        │   └── agents/.gitignore
-        ├── gemini/
-        │   ├── commands/.gitignore
-        │   └── agents/.gitignore
-        └── mcp-servers.json.jinja     # Base MCP configuration
+        ├── coders/                # Coder-specific base templates
+        │   ├── claude/
+        │   │   ├── settings.json.jinja   # Claude base settings template
+        │   │   ├── .gitignore            # Ignore generated content
+        │   │   ├── scripts/              # Hook executables
+        │   │   │   ├── pre-bash-python-check
+        │   │   │   ├── post-edit-linter
+        │   │   │   └── pre-bash-git-commit-check
+        │   │   ├── commands/.gitignore   # Generated commands ignored
+        │   │   └── agents/.gitignore     # Generated agents ignored
+        │   ├── opencode/
+        │   │   ├── settings.jsonc.jinja  # Opencode base settings template
+        │   │   └── commands/.gitignore
+        │   └── gemini/
+        │       ├── settings.json.jinja   # Gemini base settings template
+        │       └── commands/.gitignore
+        ├── mcp-servers.json.jinja        # Base MCP configuration
+        └── {{ _copier_conf.answers_file }}.jinja  # Copier answers template
 
 **Design Principles:**
 
 * **Data-Driven Generation**: Structured TOML configurations drive content generation
 * **Clean Separation**: Source data, content bodies, and templates are distinctly organized
-* **Tool-Agnostic Sources**: Configurations work across multiple AI coding tools
-* **Content Fallback Strategy**: Claude ↔ Opencode compatibility, Gemini isolation
-* **Semantic Tool Mapping**: allowed-tools specifications map to tool-specific syntax
-* **Minimal Base Distribution**: Copier provides only essential templates and structure
-* **Global Per-User Files**: Direct coder-specific files (e.g., statusline configuration) populated only in per-user mode
+* **Plugin Architecture**: Extensible source handlers and renderers via registration patterns
+* **Protocol-Based Design**: Clear contracts via AbstractSourceHandler and RendererBase
+* **Type Safety**: Comprehensive type annotations with third-party library type stubs
+* **Content Specialization**: Currently Claude-focused with extensibility for additional coders
+* **Source Flexibility**: Support for local, Git (with @ref), and future source types
+* **Global Per-User Files**: Actual implementation includes Python-based statusline configuration
 
 Distribution and Integration Patterns
 -------------------------------------------------------------------------------
@@ -160,6 +212,7 @@ The system uses dual-channel distribution combining Copier templates and dynamic
     ↓ (agentsmgr populate --source=agents-common@agents-N)
     target-project/.auxiliary/configuration/[tool]/commands/
     target-project/.auxiliary/configuration/[tool]/agents/
+    target-project/.auxiliary/configuration/[tool]/globals/
 
 **Template-of-Templates Generation:**
 
@@ -205,32 +258,55 @@ Component Integration
 CLI Integration Patterns
 -------------------------------------------------------------------------------
 
-The ``agentsmgr`` package provides CLI tooling for dynamic content generation:
+The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable architecture:
+
+**Core Commands:**
+
+* ``agentsmgr detect``: Configuration detection and analysis
+* ``agentsmgr populate``: Dynamic content generation from sources
+* ``agentsmgr validate``: Configuration validation and diagnostics
+
+**Architecture Patterns:**
 
 .. code-block::
 
-    sources/agentsmgr/
-    ├── __/                         # Import hub following standard pattern
-    │   ├── __init__.py            # Re-exports core utilities
-    │   ├── imports.py             # External library imports
-    │   └── nomina.py              # Project-specific naming constants
-    ├── __init__.py                # Package entry point
-    ├── py.typed                   # Type checking marker
-    └── [modules].py               # CLI command implementations
+    CLI Architecture:
+    ├── cli.py                     # Tyro-based CLI with async support
+    ├── core.py                    # Global state and display options
+    ├── commands/                  # Command implementation subpackage
+    │   ├── base.py               # Abstract command protocols
+    │   ├── detection.py          # Configuration auto-detection
+    │   ├── population.py         # Source-to-target content generation
+    │   ├── validation.py         # Configuration validation
+    │   ├── context.py            # Context management and resolution
+    │   ├── generator.py          # Template generation engine
+    │   ├── operations.py         # File system operations
+    │   └── userdata.py           # User data management
+    ├── sources/                   # Pluggable source handlers
+    │   ├── base.py               # Source handler protocol and registry
+    │   ├── local.py              # Local filesystem sources
+    │   └── git.py                # Git repository sources (with @ref support)
+    └── renderers/                 # Coder-specific output formatting
+        ├── base.py               # Target mode management and path resolution
+        ├── claude.py             # Claude-specific rendering
+        ├── opencode.py           # Opencode-specific rendering
+        └── codex.py              # Generic/fallback rendering
 
-**Primary Integration Points:**
+**Key Integration Features:**
 
-* ``agentsmgr populate``: Dynamic content generation from git sources
-* Configuration detection: Copier answers file or default fallback
-* Template rendering: TOML metadata + content bodies + Jinja2 templates → tool-specific files
-* Content fallback: Claude ↔ Opencode compatibility, Gemini isolation
-* Semantic tool mapping: allowed-tools specifications → coder-specific syntax
+* **Git Source Resolution**: Full ``source@ref#subdir`` syntax with latest tag fallback
+* **Plugin Registration**: Decorator-based handler registration for extensibility
+* **Configuration Detection**: Automatic discovery of Copier answers and project settings
+* **Template System**: Jinja2-based rendering with metadata normalization
+* **Target Mode Support**: per-user, per-project targeting with environment overrides
+* **Type Safety**: Comprehensive type annotations with protocol-based design
 
 **Integration Workflows:**
 
-* **New Projects**: Copier template + automatic agentsmgr populate via hooks
-* **Agent Updates**: ``copier update`` + ``agentsmgr populate --source=agents-N``
-* **Manual Population**: ``agentsmgr populate`` (works in any project structure)
+* **Source Resolution**: ``github:org/repo@v1.0#subdir`` → local filesystem path
+* **Content Generation**: TOML metadata + markdown content + Jinja2 template → coder-specific files
+* **Configuration Management**: Auto-detection → validation → population → output
+* **Plugin Extension**: Custom sources and renderers via registration decorators
 
 Development Workspace Integration
 -------------------------------------------------------------------------------
