@@ -53,7 +53,7 @@ def populate_globals(
 
         Returns tuple of (files_attempted, files_updated) counts.
     '''
-    globals_directory = data_location / 'defaults' / 'globals'
+    globals_directory = data_location / 'globals'
     if not globals_directory.exists( ):
         return ( 0, 0 )
     files_attempted = 0
