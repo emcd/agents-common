@@ -32,9 +32,10 @@ from . import base as _base
 
 
 class GitLocation( __.immut.DataclassObject ):
-    ''' Git source location with URL and optional subdirectory. '''
+    ''' Git source location with URL, optional ref, and optional subdir. '''
     git_url: str
-    subdir: __.typx.Optional[ str ]
+    ref: __.typx.Optional[ str ] = None
+    subdir: __.typx.Optional[ str ] = None
 
 
 class GitCloneFailure( __.Omnierror, OSError ):
@@ -59,6 +60,16 @@ class GitSubdirectoryAbsence( __.DataSourceNoSupport ):
         super( ).__init__( message )
 
 
+class GitRefAbsence( __.DataSourceNoSupport ):
+    ''' Git reference absence in repository. '''
+
+    def __init__( self, ref: str, git_url: str ):
+        self.ref = ref
+        self.git_url = git_url
+        message = f"Git ref '{ref}' not found in repository: {git_url}"
+        super( ).__init__( message )
+
+
 @_base.source_handler([
     'github:', 'gitlab:', 'git+https:',
     'https://github.com/', 'https://gitlab.com/', 'git@'
@@ -79,7 +90,7 @@ class GitSourceHandler:
         location = self._parse_git_url( source_spec )
         temp_dir = self._create_temp_directory( )
         try:
-            self._clone_repository( location.git_url, temp_dir )
+            self._clone_repository( location, temp_dir )
             if location.subdir:
                 subdir_path = temp_dir / location.subdir
                 if not subdir_path.exists( ):
@@ -99,16 +110,18 @@ class GitSourceHandler:
             return result_path
 
     def _parse_git_url( self, source_spec: str ) -> GitLocation:
-        ''' Parses source specification into Git URL and subdirectory.
+        ''' Parses source specification into Git URL, ref, and subdirectory.
 
             Supports URL scheme mapping and fragment syntax for subdirectory
-            specification.
+            specification. Also supports @ref syntax for Git references.
         '''
-        # Extract fragment (subdirectory) if present
-        if '#' in source_spec:
-            url_part, subdir = source_spec.split( '#', 1 )
-        else:
-            url_part, subdir = source_spec, None
+        url_part = source_spec
+        ref = None
+        subdir = None
+        if '#' in url_part:
+            url_part, subdir = url_part.split( '#', 1 )
+        if '@' in url_part:
+            url_part, ref = url_part.split( '@', 1 )
         # Map URL schemes to Git URLs
         if url_part.startswith( 'github:' ):
             repo_path = url_part[ len( 'github:' ): ]
@@ -134,27 +147,102 @@ class GitSourceHandler:
             # Direct git URLs (git@github.com:user/repo.git)
             git_url = url_part
 
-        return GitLocation( git_url = git_url, subdir = subdir )
+        return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
 
     def _create_temp_directory( self ) -> __.Path:
         ''' Creates temporary directory for repository cloning. '''
         temp_dir = __.tempfile.mkdtemp( prefix = 'agentsmgr-git-' )
         return __.Path( temp_dir )
 
-    def _clone_repository( self, git_url: str, target_dir: __.Path ) -> None:
+    def _clone_repository(
+        self, location: GitLocation, target_dir: __.Path
+    ) -> None:
         ''' Clones Git repository using Dulwich.
 
-            Performs shallow clone for efficiency with depth=1.
+            Performs shallow clone for default branch or full clone for refs,
+            then checks out the specified reference if provided.
         '''
         try:
             _dulwich_porcelain.clone(
-                git_url,
+                location.git_url,
                 str( target_dir ),
                 bare = False,
-                depth = 1,  # Shallow clone for efficiency
+                depth = None,
             )
+            if location.ref is None:
+                latest_tag = self._get_latest_tag( target_dir )
+                if latest_tag:
+                    self._checkout_ref( target_dir, latest_tag )
+            else:
+                # Checkout specified ref
+                self._checkout_ref( target_dir, location.ref )
         except Exception as exception:
-            raise GitCloneFailure( git_url, str( exception ) ) from exception
+            error_msg = str( exception ).lower( )
+            if location.ref is not None and (
+                'not found' in error_msg or 'does not exist' in error_msg
+            ):
+                raise GitRefAbsence(
+                    location.ref, location.git_url ) from exception
+            raise GitCloneFailure(
+                location.git_url, str( exception ) ) from exception
+
+    def _get_latest_tag( self, repo_dir: __.Path ) -> __.typx.Optional[ str ]:
+        ''' Gets the latest tag from the repository by commit date. '''
+        from dulwich.repo import Repo
+        try:
+            repo = Repo( str( repo_dir ) )
+        except Exception:
+            return None
+        try:
+            tag_refs = repo.refs.as_dict( b"refs/tags" )
+        except Exception:
+            return None
+        if not tag_refs:
+            return None
+        tag_times: list[ tuple[ int, str ] ] = [ ]
+        for tag_name_bytes, commit_sha in tag_refs.items( ):
+            commit = self._get_tag_commit( repo, commit_sha )
+            if commit is not None:
+                tag_name = tag_name_bytes.decode( 'utf-8' )
+                tag_times.append( ( commit.commit_time, tag_name ) )
+        if not tag_times:
+            return None
+        tag_times.sort( reverse = True )
+        return tag_times[ 0 ][ 1 ]
+
+    def _get_tag_commit(
+        self, repo: __.typx.Any, commit_sha: bytes
+    ) -> __.typx.Any:
+        ''' Gets commit object for a tag, handling annotated tags. '''
+        try:
+            commit = repo[ commit_sha ]
+            while hasattr( commit, 'object' ):
+                commit = repo[ commit.object ]
+        except Exception:
+            return None
+        else:
+            return commit
+
+    def _checkout_ref( self, repo_dir: __.Path, ref: str ) -> None:
+        ''' Checks out a specific reference by cloning with branch param. '''
+        from dulwich.repo import Repo
+        try:
+            repo = Repo( str( repo_dir ) )
+        except Exception as exception:
+            raise GitRefAbsence( ref, str( repo_dir ) ) from exception
+        ref_bytes = ref.encode( )
+        tag_ref = f"refs/tags/{ref}".encode( )
+        branch_ref = f"refs/heads/{ref}".encode( )
+        if tag_ref in repo.refs or branch_ref in repo.refs:
+            return
+        try:
+            repo[ ref_bytes ]
+        except KeyError:
+            self._raise_ref_not_found( ref, str( repo_dir ) )
+
+    def _raise_ref_not_found( self, ref: str, repo_dir: str ) -> None:
+        ''' Raises GitRefAbsence for invalid reference. '''
+        raise GitRefAbsence( ref, repo_dir )
 
     def _raise_subdir_not_found( self, subdir: str, source_spec: str ) -> None:
         ''' Raises GitSubdirectoryAbsence for missing subdirectory. '''
