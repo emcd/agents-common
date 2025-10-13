@@ -28,7 +28,7 @@ from . import exceptions
 from . import sources
 
 
-__version__ = '1.0a0'
+__version__ = '1.0a1'
 
 
 def main( ):

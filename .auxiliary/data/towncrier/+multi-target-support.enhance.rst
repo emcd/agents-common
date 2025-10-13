@@ -1,1 +1,0 @@
-CLI: Add multi-target support with per-user and per-project targeting modes, including intelligent symlink management for seamless AI tool integration.
