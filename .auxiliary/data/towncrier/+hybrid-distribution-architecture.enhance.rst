@@ -1,0 +1,1 @@
+Hybrid distribution architecture combines Copier templates for base configuration with agentsmgr CLI for dynamic content generation from structured data sources.

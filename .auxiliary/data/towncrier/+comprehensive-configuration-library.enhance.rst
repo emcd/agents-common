@@ -1,0 +1,1 @@
+Comprehensive slash command and agent configuration library for Python development, releases, architecture documentation, and project management.

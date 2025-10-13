@@ -1,0 +1,1 @@
+CLI: Add agentsmgr command-line tool with detect, populate, and validate subcommands for managing AI agent configurations.
