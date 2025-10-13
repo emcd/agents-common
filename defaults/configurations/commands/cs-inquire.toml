@@ -1,0 +1,13 @@
+[context]
+name = 'cs-inquire'
+description = 'Provide analytical responses and technical opinions without making code changes'
+allowed-tools = [
+    # Built-in tools (semantic names)
+    'read',
+    'list-directory',
+    'glob',
+    'grep',
+    'web-fetch',
+    'web-search',
+]
+permissions = ['read']

@@ -1,0 +1,20 @@
+[context]
+name = 'validate-custom-slash'
+description = 'Validate custom slash command functionality with context and permissions'
+allowed-tools = [
+    # Shell commands - exact match
+    { tool = 'shell', arguments = 'git status' },
+    { tool = 'shell', arguments = 'pwd' },
+
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'git branch', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git log', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'hatch version', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'echo', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'ls', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'list-directory',
+    'read',
+]
+permissions = ['read']

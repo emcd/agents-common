@@ -1,0 +1,7 @@
+coders:
+- claude
+- opencode
+- gemini
+languages:
+- python
+- rust

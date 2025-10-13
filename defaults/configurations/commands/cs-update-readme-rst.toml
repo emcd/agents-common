@@ -1,0 +1,4 @@
+[context]
+name = 'cs-update-readme-rst'
+description = 'Analyze current project state and refresh manually-maintained sections of README.rst while preserving template content'
+permissions = ['read', 'write']

@@ -1,0 +1,9 @@
+# Changes here will be overwritten by Copier
+_commit: 2a39110
+_src_path: .
+coders:
+- claude
+- opencode
+languages:
+- python
+project_name: agents-common

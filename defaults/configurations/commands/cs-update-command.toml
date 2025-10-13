@@ -1,0 +1,14 @@
+[context]
+name = 'cs-update-command'
+description = 'Update existing slash command with missing instructions or reinforced guidance'
+allowed-tools = [
+    # Built-in tools (semantic names)
+    'read',
+    'write',
+    'edit',
+    'multi-edit',
+    'list-directory',
+    'glob',
+    'grep',
+]
+permissions = ['read', 'write']

@@ -1,0 +1,17 @@
+[context]
+name = 'cs-conform-toml'
+description = 'Systematically conform TOML files to project style and practice standards'
+allowed-tools = [
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'git', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'list-directory',
+    'read',
+    'glob',
+    'grep',
+    'edit',
+    'multi-edit',
+    'write',
+]
+permissions = ['read', 'write']

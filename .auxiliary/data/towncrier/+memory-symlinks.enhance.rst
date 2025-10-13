@@ -1,0 +1,1 @@
+CLI: Add automatic memory file symlink creation for coder-specific filenames (CLAUDE.md, AGENTS.md) pointing to shared project conventions.

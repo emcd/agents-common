@@ -1,0 +1,26 @@
+[context]
+name = 'cs-excise-python'
+description = 'Analyze Vulture dead code findings and remediate through selective removal or vulturefood.py whitelisting'
+allowed-tools = [
+    # Shell commands - exact match
+    { tool = 'shell', arguments = 'git status' },
+    { tool = 'shell', arguments = 'git diff' },
+
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'hatch --env develop run', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'read',
+    'write',
+    'edit',
+    'multi-edit',
+    'list-directory',
+    'glob',
+    'grep',
+
+    # MCP tools
+    { server = 'pyright', tool = 'references' },
+    { server = 'pyright', tool = 'hover' },
+    { server = 'pyright', tool = 'diagnostics' },
+]
+permissions = ['read', 'write']

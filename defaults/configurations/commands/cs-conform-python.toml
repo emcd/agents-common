@@ -1,0 +1,5 @@
+[context]
+name = 'cs-conform-python'
+description = 'Systematically conform Python code to project style and practice standards'
+color = 'green'
+permissions = ['read', 'write']

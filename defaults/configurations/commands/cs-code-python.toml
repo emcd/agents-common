@@ -1,0 +1,4 @@
+[context]
+name = 'cs-code-python'
+description = 'Python implementation following established patterns and practices'
+permissions = ['read', 'write']

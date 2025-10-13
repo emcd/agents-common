@@ -1,0 +1,4 @@
+[context]
+name = 'cs-document-examples-rst'
+description = 'Creates practical, testable examples documentation'
+permissions = ['read', 'write']

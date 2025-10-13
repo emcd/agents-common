@@ -1,0 +1,26 @@
+[context]
+name = 'cs-copier-update'
+description = 'Synchronize project with Copier template updates, intelligently resolving merge conflicts'
+allowed-tools = [
+    # Shell commands - exact match
+    { tool = 'shell', arguments = 'git status' },
+    { tool = 'shell', arguments = 'hatch --env develop run make-all' },
+
+    # Shell commands - with extra arguments allowed
+    { tool = 'shell', arguments = 'copier', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git add', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'git rm', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'rg', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'grep', allow-extra-arguments = true },
+
+    # Built-in tools (semantic names)
+    'read',
+    'write',
+    'edit',
+    'multi-edit',
+    'list-directory',
+    'glob',
+    'grep',
+    'todo-write',
+]
+permissions = ['read', 'write']

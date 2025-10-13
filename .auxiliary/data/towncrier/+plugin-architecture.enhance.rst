@@ -1,0 +1,1 @@
+Plugin architecture with extensible source handlers (git, local) and renderers (Claude, Opencode, Codex) using decorator-based registration system.

@@ -1,0 +1,22 @@
+---
+{%- if coder.name == 'claude' %}
+name: {{ context.name }}
+{%- endif %}
+description: |
+{{ context.description | indent(2, True) }}
+{%- if coder.name == 'claude' and coder.model is defined %}
+model: {{ coder.model }}
+{%- elif coder.name == 'opencode' %}
+{%- if coder.mode is defined %}
+mode: {{ coder.mode }}
+{%- endif %}
+{%- if coder.model is defined %}
+model: {{ coder.model }}
+{%- endif %}
+{%- endif %}
+{%- if context.color is defined %}
+color: {{ context.color }}
+{%- endif %}
+---
+
+{{ content }}

@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    {%- if "rust" in languages %}
+    "rust-analyzer": {
+      "command": "mcp-language-server",
+      "args": [
+        "--lsp",
+        "rust-analyzer",
+        "--workspace",
+        "."
+      ],
+    },
+    {%- endif %}
+    "context7": {
+      "command": "npx",
+      "args": [ "-y", "@upstash/context7-mcp" ]
+    },
+    "librovore": {
+      "command": "uvx",
+      "args": [ "librovore", "serve" ]
+    }{%- if "python" in languages %},
+    "pyright": {
+      "command": "mcp-language-server",
+      "args": [
+        "--lsp",
+        "pyright-langserver",
+        "--workspace",
+        ".",
+        "--",
+        "--stdio"
+      ]
+    }
+    {%- endif %}
+  }
+}
