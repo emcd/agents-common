@@ -6,6 +6,8 @@
 
 - [ ] **Implement source precedence hierarchy**: Extend source resolution to follow CLI → environment → configuration precedence. Currently CLI only supports explicit `--source` parameter. Add environment variable support (e.g., `AGENTSMGR_SOURCE`) and configuration file fallback using `sources.default` from `data/configuration/general.toml`. Update `retrieve_data_location()` in `sources/agentsmgr/commands/base.py` to implement this precedence chain.
 
+- [ ] Automatic Git ignore additions. (`.git/info/exclude`)
+
 ## Documentation
 
 ## Testing

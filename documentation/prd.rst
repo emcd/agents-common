@@ -24,12 +24,14 @@ Product Requirements Document
 Executive Summary
 ===============================================================================
 
-The emcd-agents-common repository provides centralized, version-controlled 
-configurations for AI agent tools including Claude Code, Gemini CLI, and future 
-AI development environments. This repository enables rapid iteration on AI agent 
-configurations without heavyweight release processes, while maintaining 
-consistency across multiple project templates and ensuring clean separation 
-between project structure and evolving agent content.
+This repository provides centralized, version-controlled
+configurations for AI agent tools including Claude Code, Opencode, and future
+AI development environments. The system enables rapid iteration on AI agent
+configurations without heavyweight release processes, while maintaining
+consistency across multiple project templates and ensuring clean separation
+between project structure and evolving agent content. The system implements a
+hybrid distribution architecture combining Copier templates for base configuration
+with agentsmgr CLI tooling for dynamic content generation from structured data sources.
 
 Problem Statement
 ===============================================================================
@@ -52,9 +54,9 @@ distributed configurations and actual script locations, creating complex
 dependencies between repositories.
 
 **Multi-Tool Scaling Challenges**
-As additional AI tools (Gemini CLI, Opencode) require similar configuration 
-management, the current approach does not scale cleanly across multiple 
-AI development environments.
+As additional AI tools (Opencode, Codex, and future AI development environments) require similar configuration
+management, the current approach does not scale cleanly across multiple
+AI development environments without plugin-based extensibility.
 
 Goals and Objectives
 ===============================================================================
@@ -74,10 +76,12 @@ Goals and Objectives
 
 **Success Metrics**
 
-* Configuration updates deploy within hours rather than requiring full releases
+* Configuration updates deploy through automated tag-based workflows
 * Zero manual synchronization steps between template and production configurations
-* New AI tools integrate without restructuring existing content
+* New AI tools integrate without restructuring existing content through plugin architecture
 * Projects reference consistent, versioned configurations across all environments
+* Efficient CLI tooling for rapid configuration management
+* Comprehensive slash command and agent configuration support
 
 Target Users
 ===============================================================================
@@ -88,28 +92,30 @@ consistent, up-to-date agent configurations across all projects without manual
 synchronization overhead.
 
 **Secondary Users: AI Tool Contributors**
-Contributors who develop slash commands, subagents, and related tooling 
+Contributors who develop slash commands, subagents, and related tooling
 configurations and need rapid feedback cycles for testing and deployment.
 
 **Technical Requirements**
-* Familiarity with git tag-based workflows
-* Understanding of template-based configuration management
+* Familiarity with git tag-based workflows and source@ref syntax
+* Understanding of template-based configuration management and plugin architectures
 * Experience with AI development tool configuration (Claude Code settings, etc.)
+* Basic CLI proficiency for agentsmgr detect, populate, and validate commands
 
 Functional Requirements
 ===============================================================================
 
 **REQ-001: Data-Driven Repository Structure** (Priority: Critical)
-As a project maintainer, I want AI tool configurations organized as structured 
-data sources so that I can maintain tool-agnostic sources while generating 
+As a project maintainer, I want AI tool configurations organized as structured
+data sources so that I can maintain tool-agnostic sources while generating
 tool-specific outputs.
 
 Acceptance Criteria:
-- Repository uses ``data/`` directory with 3-tier separation (configurations/, contents/, templates/)
+- Repository uses ``defaults/`` directory with 3-tier separation (configurations/, contents/, templates/)
 - TOML configurations provide tool-agnostic metadata with semantic allowed-tools specifications
 - Coder-specific content bodies support fallback strategies (Claude ↔ Opencode, Gemini isolated)
 - Generic Jinja2 templates handle format differences across AI coding tools
 - Directory naming follows consistent terminology conventions
+- Support for comprehensive slash command and agent metadata definitions
 
 **REQ-002: Structured Source Data Management** (Priority: Critical)
 As a project maintainer, I want structured source data that generates 
@@ -124,30 +130,32 @@ Acceptance Criteria:
 - Single source of truth drives generation for all supported AI tools
 
 **REQ-003: Hybrid Distribution Architecture** (Priority: High)
-As a project maintainer, I want base configuration templates combined with 
-dynamic content generation so that I can maintain proven distribution for 
+As a project maintainer, I want base configuration templates combined with
+dynamic content generation so that I can maintain proven distribution for
 static templates while enabling fast iteration for dynamic content.
 
 Acceptance Criteria:
 - Minimal Copier template provides base settings templates and directory structure
-- agentsmgr populate command generates tool-specific content from structured sources
+- agentsmgr CLI with detect, populate, and validate commands generates tool-specific content
 - Base templates handle hook path references and MCP server configurations
 - Generated content ignored via .gitignore patterns (not committed)
 - Configuration detection from Copier answers files or defaults
+- Support for plugin-based source handlers (git, local filesystem) with extensible architecture
 
 **REQ-004: Tag-Based Release Distribution** (Priority: High)
-As a project maintainer, I want lightweight tag-based releases so that 
-I can get configuration updates quickly without waiting for heavyweight 
+As a project maintainer, I want lightweight tag-based releases so that
+I can get configuration updates quickly without waiting for heavyweight
 project releases.
 
 Acceptance Criteria:
-- Repository supports agents-N tag versioning scheme
-- CLI tooling can pull from specific tagged versions
+- Repository supports agents-N tag versioning scheme (agents-1, agents-2, etc.)
+- CLI tooling can pull from specific tagged versions with full source@ref#subdir syntax
 - Downstream projects can pin to known-good configuration versions
 - Publishing workflow automatically deploys tagged releases
+- Latest tag fallback when no explicit ref specified
 
 **REQ-005: Generated Content Path Compatibility** (Priority: Critical)
-As a project maintainer, I want generated content to reference correct paths 
+As a project maintainer, I want generated content to reference correct paths
 so that distributed configurations work correctly in downstream projects.
 
 Acceptance Criteria:
@@ -155,9 +163,10 @@ Acceptance Criteria:
 - Hook scripts distributed via Copier template function correctly when deployed
 - Generated content follows established project deployment patterns
 - Template references remain valid after agentsmgr populate generation
+- Support for per-user and per-project targeting modes with appropriate symlink management
 
 **REQ-006: Multi-Tool Content Generation** (Priority: Medium)
-As a project maintainer, I want extensible content generation for future AI tools 
+As a project maintainer, I want extensible content generation for future AI tools
 so that new tools can be added without restructuring existing data sources.
 
 Acceptance Criteria:
@@ -165,6 +174,20 @@ Acceptance Criteria:
 - Existing source data (configurations/, contents/) unaffected by new tool additions
 - Shared resources (MCP servers, base settings) available via Copier template
 - Consistent template patterns for tool-specific format generation
+- Plugin-based renderer architecture (Claude, Opencode, Codex) with extensible registration system
+
+**REQ-007: CLI Tool Capabilities** (Priority: High)
+As a project maintainer, I want comprehensive CLI tooling to manage agent
+configurations so that I can detect, validate, and populate configurations
+across different environments.
+
+Acceptance Criteria:
+- detect command for configuration analysis and project environment detection
+- populate command with targeting modes (default, per-user, per-project, nowhere)
+- validate command for configuration validation and diagnostics
+- Support for both local filesystem and git source resolution
+- Simulation mode for testing configuration changes before application
+- Global file management capabilities orthogonal to targeting modes
 
 Non-Functional Requirements
 ===============================================================================
