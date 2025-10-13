@@ -1,1 +1,0 @@
-Multi-AI tool support for Claude Code, Opencode, and future AI development environments with extensible configuration management.

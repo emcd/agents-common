@@ -1,1 +1,0 @@
-CLI: Add Git ref specification support with @ref syntax for targeting specific branches, tags, or commits, with automatic latest tag fallback.

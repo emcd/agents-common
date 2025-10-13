@@ -1,1 +1,0 @@
-CLI: Add Git source support with github:, gitlab:, and git+https: URL schemes for pulling agent configurations from remote repositories.

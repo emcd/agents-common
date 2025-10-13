@@ -1,1 +1,0 @@
-Tag-based release system enables rapid configuration distribution using agents-N versioning scheme for atomic, consistent deployment.
