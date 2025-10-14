@@ -22,10 +22,10 @@
 
 
 from . import __
+
 # --- BEGIN: Injected by Copier ---
 from . import exceptions
 # --- END: Injected by Copier ---
-from . import sources
 
 
 __version__ = '1.0a1'
@@ -37,4 +37,4 @@ def main( ):
     execute( )
 
 
-# TODO: Reclassify package modules as immutable and concealed.
+__.immut.finalize_module( __name__, recursive = True )
