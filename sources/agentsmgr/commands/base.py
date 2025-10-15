@@ -89,16 +89,20 @@ def intercept_errors( ) -> __.cabc.Callable[
 
 
 async def retrieve_configuration(
-    target: __.Path
+    target: __.Path,
+    profile: __.typx.Optional[ __.Path ] = None,
 ) -> __.cabc.Mapping[ str, __.typx.Any ]:
     ''' Loads and validates configuration from Copier answers file.
 
         Unified configuration loading used by multiple command
         implementations. Reads from standard Copier answers location
-        and validates required fields.
+        (or specified profile path) and validates required fields.
     '''
-    answers_file = (
-        target / ".auxiliary/configuration/copier-answers--agents.yaml" )
+    if profile is not None:
+        answers_file = profile
+    else:
+        answers_file = (
+            target / ".auxiliary/configuration/copier-answers--agents.yaml" )
     if not answers_file.exists( ):
         raise __.ConfigurationAbsence( target )
     try: content = answers_file.read_text( encoding = 'utf-8' )

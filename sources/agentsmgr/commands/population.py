@@ -32,6 +32,16 @@ from . import userdata as _userdata
 _scribe = __.provide_scribe( __name__ )
 
 
+SourceArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.tyro.conf.Positional[ str ],
+    __.tyro.conf.arg( help = "Data source (local path or git URL)" ),
+]
+TargetArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.tyro.conf.Positional[ __.Path ],
+    __.tyro.conf.arg( help = "Target directory for content generation" ),
+]
+
+
 def _create_all_symlinks(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     target: __.Path,
@@ -130,18 +140,16 @@ def _create_coder_directory_symlinks(
 class PopulateCommand( __.appcore_cli.Command ):
     ''' Generates dynamic agent content from data sources. '''
 
-    source: __.typx.Annotated[
-        str,
+    source: SourceArgument = '.'
+    target: TargetArgument = __.dcls.field( default_factory = __.Path.cwd )
+    profile: __.typx.Annotated[
+        __.typx.Optional[ __.Path ],
         __.tyro.conf.arg(
-            help = "Data source (local path or git URL)",
+            help = (
+                "Alternative Copier answers file (defaults to "
+                "auto-detected)" ),
             prefix_name = False ),
-    ] = '.'
-    target: __.typx.Annotated[
-        __.Path,
-        __.tyro.conf.arg(
-            help = "Target directory for content generation",
-            prefix_name = False ),
-    ] = __.dcls.field( default_factory = __.Path.cwd )
+    ] = None
     simulate: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(
@@ -170,7 +178,8 @@ class PopulateCommand( __.appcore_cli.Command ):
             raise __.ContextInvalidity
         _scribe.info(
             f"Populating agent content from {self.source} to {self.target}" )
-        configuration = await _base.retrieve_configuration( self.target )
+        configuration = await _base.retrieve_configuration(
+            self.target, self.profile )
         coder_count = len( configuration[ 'coders' ] )
         _scribe.debug( f"Detected configuration with {coder_count} coders" )
         _scribe.debug( f"Using {self.mode} targeting mode" )
