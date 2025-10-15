@@ -6,7 +6,14 @@
 
 - [ ] **Implement source precedence hierarchy**: Extend source resolution to follow CLI → environment → configuration precedence. Currently CLI only supports explicit `--source` parameter. Add environment variable support (e.g., `AGENTSMGR_SOURCE`) and configuration file fallback using `sources.default` from `data/configuration/general.toml`. Update `retrieve_data_location()` in `sources/agentsmgr/commands/base.py` to implement this precedence chain.
 
-- [ ] Automatic Git ignore additions. (`.git/info/exclude`)
+- [ ] Tag prefix support.
+
+- [ ] Review common templating for Gemini/Qwen3.
+
+- [ ] **GIT_DIR and worktree support**: Update git-related functionality to respect `GIT_DIR` environment variable and handle git worktrees (where `.git` is a file pointing to the actual git directory). This affects:
+  - `update_git_exclude()` in `sources/agentsmgr/commands/operations.py` (currently assumes `.git/info/exclude` path)
+  - `_detect_git_branch()` in `defaults/globals/claude/statusline.py` (currently assumes `.git/HEAD` path)
+  - Implementation should check `GIT_DIR` env var, parse `.git` file if it exists (worktree case), and gracefully handle edge cases
 
 ## Documentation
 
