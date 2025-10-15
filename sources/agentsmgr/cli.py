@@ -27,7 +27,7 @@ from . import core as _core
 
 
 class Application( __.appcore_cli.Application ):
-    ''' Agent configuration management CLI. '''
+    ''' Agents configuration management CLI. '''
 
     display: _core.DisplayOptions = __.dcls.field(
         default_factory = _core.DisplayOptions )
@@ -47,11 +47,9 @@ class Application( __.appcore_cli.Application ):
     ] = __.dcls.field( default_factory = _commands.DetectCommand )
 
     async def execute( self, auxdata: _core.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        ''' Executes the specified command. '''
         await self.command( auxdata )
 
     async def prepare( self, exits: __.ctxl.AsyncExitStack ) -> _core.Globals:
-        ''' Prepares agentsmgr-specific global state with display options. '''
         auxdata_base = await super( ).prepare( exits )
         nomargs = {
             field.name: getattr( auxdata_base, field.name )
