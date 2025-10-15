@@ -43,6 +43,14 @@ class CodexRenderer( RendererBase ):
     mode_default = 'per-user'
     memory_filename = 'AGENTS.md'
 
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor for Codex CLI.
+
+            Codex uses same markdown format as Claude for all item types,
+            so always returns 'claude' flavor.
+        '''
+        return 'claude'
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,

@@ -222,21 +222,23 @@ class ContentGenerator( __.immut.DataclassObject ):
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
         ''' Selects appropriate template based on coder capabilities.
 
-            Maps coder to preferred template format. Claude and OpenCode
-            use markdown templates, while Gemini uses TOML templates.
+            Uses renderer's get_template_flavor() method to determine
+            appropriate template flavor (pioneering coder name) for the
+            requested item type and coder. Constructs template name using
+            pattern: {item_type_singular}/{flavor}.{extension}.jinja
         '''
-        available = self._survey_available_templates( item_type )
+        try: renderer = __.RENDERERS[ coder ]
+        except KeyError as exception:
+            raise __.CoderAbsence( coder ) from exception
         try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
         except KeyError as exception:
             raise __.ConfigurationInvalidity( item_type ) from exception
-        preferences = {
-            "claude": [ f"{singular_type}.md.jinja" ],
-            "opencode": [ f"{singular_type}.md.jinja" ],
-            "gemini": [ f"{singular_type}.toml.jinja" ],
-        }
-        for preferred in preferences.get( coder, [ ] ):
-            if preferred in available:
-                return preferred
-        if coder not in preferences:
-            raise __.CoderAbsence( coder )
+        flavor = renderer.get_template_flavor( item_type )
+        available = self._survey_available_templates( item_type )
+        # Construct organized template path: {item_type}/{flavor}.{ext}.jinja
+        for extension in [ 'md', 'toml' ]:
+            organized_path = (
+                f"{singular_type}/{flavor}.{extension}.jinja" )
+            if organized_path in available:
+                return organized_path
         raise __.TemplateError.for_missing_template( coder, item_type )

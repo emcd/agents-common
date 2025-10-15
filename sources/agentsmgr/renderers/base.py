@@ -83,6 +83,16 @@ class RendererBase( __.immut.Object ):
         '''
         return item_type
 
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor (pioneering coder name) for item type.
+
+            Returns the name of the pioneering coder whose template format
+            should be used for this item type. For example, Claude pioneered
+            the markdown command format, Gemini pioneered the TOML format.
+            Each coder specifies which flavor it uses for each item type.
+        '''
+        return 'claude'
+
 
 RENDERERS: __.accret.Dictionary[ str, RendererBase ] = (
     __.accret.Dictionary( ) )

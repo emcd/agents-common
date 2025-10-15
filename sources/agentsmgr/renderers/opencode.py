@@ -42,6 +42,17 @@ class OpencodeRenderer( RendererBase ):
     mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
 
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor for OpenCode.
+
+            OpenCode shares markdown command format with Claude but uses
+            its own agent format, so returns 'claude' for commands and
+            'opencode' for agents.
+        '''
+        if item_type == 'commands':
+            return 'claude'
+        return 'opencode'
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,

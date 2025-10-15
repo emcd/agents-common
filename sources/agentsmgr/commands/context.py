@@ -45,6 +45,19 @@ _SEMANTIC_TOOLS_CLAUDE: dict[ str, str ] = {
     'web-search': 'WebSearch',
 }
 
+_SEMANTIC_TOOLS_QWEN: dict[ str, str ] = {
+    'read': 'read_file',
+    'edit': 'edit',
+    'multi-edit': 'edit',
+    'write': 'write_file',
+    'list-directory': 'list_directory',
+    'glob': 'glob',
+    'grep': 'search_file_content',
+    'todo-write': 'todo_write',
+    'web-fetch': 'web_fetch',
+    'web-search': 'web_search',
+}
+
 
 def normalize_render_context(
     context_data: __.cabc.Mapping[ str, __.typx.Any ],
@@ -79,10 +92,12 @@ def _map_tools_for_coder(
     ''' Maps tool specifications to coder-specific syntax.
 
         Dispatches to coder-specific mapping function based on coder name.
-        Currently supports Claude; extensible for other coders.
+        Returns empty list if coder is not supported.
     '''
     if coder_name == 'claude':
         return _map_tools_claude( tool_specs )
+    if coder_name == 'qwen':
+        return _map_tools_qwen( tool_specs )
     return [ ]
 
 
@@ -144,6 +159,74 @@ def _map_shell_tool_claude( spec: dict[ str, __.typx.Any ] ) -> str:
 
 def _map_mcp_tool_claude( spec: dict[ str, __.typx.Any ] ) -> str:
     ''' Maps MCP tool specification to Claude MCP tool syntax.
+
+        Format: { server = 'librovore', tool = 'query-inventory' }
+        → 'mcp__librovore__query_inventory'
+    '''
+    server = spec.get( 'server', '' )
+    tool = spec.get( 'tool', '' )
+    tool_normalized = tool.replace( '-', '_' )
+    return f"mcp__{server}__{tool_normalized}"
+
+
+def _map_tools_qwen(
+    tool_specs: __.cabc.Sequence[ ToolSpecification ]
+) -> list[ str ]:
+    ''' Maps tool specifications to Qwen-specific syntax.
+
+        Handles three specification types:
+        - String literals (semantic names): 'read' → 'read_file'
+        - Shell commands: { tool = 'shell', arguments, ... } →
+          'run_shell_command(...)' in coreTools (prefix matching)
+        - MCP tools: { server, tool } → 'mcp__server__tool'
+
+        Returns tools sorted alphabetically for consistent output.
+    '''
+    mapped: list[ str ] = [ ]
+    for spec in tool_specs:
+        if isinstance( spec, str ):
+            mapped.append( _map_semantic_tool_qwen( spec ) )
+        elif isinstance( spec, dict ):
+            if 'server' in spec:
+                mapped.append( _map_mcp_tool_qwen( spec ) )
+            elif spec.get( 'tool' ) == 'shell':
+                mapped.append( _map_shell_tool_qwen( spec ) )
+            else:
+                raise __.ToolSpecificationInvalidity( str( spec ) )
+        else:
+            raise __.ToolSpecificationTypeInvalidity( type( spec ).__name__ )
+    return sorted( mapped )
+
+
+def _map_semantic_tool_qwen( tool_name: str ) -> str:
+    ''' Maps semantic tool name to Qwen tool name.
+
+        Uses lookup table for known semantic names.
+        Raises ToolSpecificationInvalidity for unknown tools.
+    '''
+    if tool_name not in _SEMANTIC_TOOLS_QWEN:
+        raise __.ToolSpecificationInvalidity( tool_name )
+    return _SEMANTIC_TOOLS_QWEN[ tool_name ]
+
+
+def _map_shell_tool_qwen( spec: dict[ str, __.typx.Any ] ) -> str:
+    ''' Maps shell command specification to Qwen run_shell_command syntax.
+
+        Qwen uses prefix matching for shell commands - no wildcard needed.
+        Format: { tool = 'shell', arguments = 'git status' }
+        → 'run_shell_command(git status)'
+
+        allow-extra-arguments is implicit in Qwen's prefix matching.
+        Format: { tool = 'shell', arguments = 'git pull',
+                   allow-extra-arguments = true }
+        → 'run_shell_command(git pull)' (same as without extra-arguments)
+    '''
+    arguments = spec.get( 'arguments', '' )
+    return f"run_shell_command({arguments})"
+
+
+def _map_mcp_tool_qwen( spec: dict[ str, __.typx.Any ] ) -> str:
+    ''' Maps MCP tool specification to Qwen MCP tool syntax.
 
         Format: { server = 'librovore', tool = 'query-inventory' }
         → 'mcp__librovore__query_inventory'

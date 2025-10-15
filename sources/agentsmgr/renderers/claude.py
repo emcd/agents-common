@@ -42,6 +42,14 @@ class ClaudeRenderer( RendererBase ):
     mode_default = 'per-project'
     memory_filename = 'CLAUDE.md'
 
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor for Claude Code.
+
+            Claude uses markdown format for both commands and agents,
+            so always returns 'claude' flavor.
+        '''
+        return 'claude'
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,
