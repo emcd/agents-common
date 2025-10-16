@@ -21,16 +21,13 @@
 ''' Maintenance subpackage centralized import hub. '''
 
 
-from .. import commands  # noqa: F401
+from .. import cmdbase  # noqa: F401
 from .. import core  # noqa: F401
+from .. import generator  # noqa: F401
+from .. import operations  # noqa: F401
 from ..__ import *  # noqa: F403
-from ..commands import base as commands_base  # noqa: F401
-from ..commands import generator as commands_generator  # noqa: F401
-from ..commands import operations as commands_operations  # noqa: F401
-from ..core import (  # noqa: F401
-    Globals,
-    render_and_print_result,
-)
+from ..core import Globals  # noqa: F401
+from ..core import render_and_print_result  # noqa: F401
 from ..exceptions import (  # noqa: F401
     ConfigurationAbsence,
     ConfigurationInvalidity,

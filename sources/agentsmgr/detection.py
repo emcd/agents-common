@@ -22,7 +22,10 @@
 
 
 from . import __
-from . import base as _base
+from . import cmdbase as _cmdbase
+from . import core as _core
+from . import exceptions as _exceptions
+from . import results as _results
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -38,19 +41,19 @@ class DetectCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = __.dcls.field( default_factory = __.Path.cwd )
 
-    @_base.intercept_errors( )
+    @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Detects agent configuration and displays formatted result. '''
-        if not isinstance( auxdata, __.Globals ):  # pragma: no cover
-            raise __.ContextInvalidity
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info( f"Detecting agent configuration in {self.source}" )
-        configuration = await _base.retrieve_configuration( self.source )
+        configuration = await _cmdbase.retrieve_configuration( self.source )
         _scribe.debug( f"Found configuration: {configuration}" )
-        result = __.ConfigurationDetectionResult(
+        result = _results.ConfigurationDetectionResult(
             target = self.source,
             coders = tuple( configuration[ 'coders' ] ),
             languages = tuple( configuration[ 'languages' ] ),
             project_name = configuration.get( 'project_name' ),
         )
-        await __.render_and_print_result(
+        await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )

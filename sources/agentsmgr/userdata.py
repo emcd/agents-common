@@ -29,6 +29,8 @@
 import json as _json
 
 from . import __
+from . import exceptions as _exceptions
+from . import renderers as _renderers
 
 
 def _is_json_dict(
@@ -62,9 +64,9 @@ def populate_globals(
         coder_globals = globals_directory / coder
         if not coder_globals.exists( ):
             continue
-        try: renderer = __.RENDERERS[ coder ]
+        try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder ) from exception
+            raise _exceptions.CoderAbsence( coder ) from exception
         per_user_directory = renderer.resolve_base_directory(
             mode = 'per-user',
             target = __.Path.cwd( ),
@@ -115,7 +117,9 @@ def _copy_file_directly(
     target.parent.mkdir( parents = True, exist_ok = True )
     try: __.shutil.copy2( source, target )
     except ( OSError, IOError ) as exception:
-        raise __.GlobalsPopulationFailure( source, target ) from exception
+        raise _exceptions.GlobalsPopulationFailure(
+            source, target
+        ) from exception
     return True
 
 
@@ -149,15 +153,15 @@ def _load_json_file(
     '''
     try: content = filepath.read_text( encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.GlobalsPopulationFailure(
+        raise _exceptions.GlobalsPopulationFailure(
             filepath, target_context ) from exception
     try:
         loaded: __.typx.Any = _json.loads( content )
     except ValueError as exception:
-        raise __.GlobalsPopulationFailure(
+        raise _exceptions.GlobalsPopulationFailure(
             filepath, target_context ) from exception
     if not _is_json_dict( loaded ):
-        raise __.GlobalsPopulationFailure( filepath, target_context )
+        raise _exceptions.GlobalsPopulationFailure( filepath, target_context )
     return loaded
 
 
@@ -174,13 +178,15 @@ def _write_merged_settings(
         backup_path = target.with_suffix( '.json.backup' )
         try: __.shutil.copy2( target, backup_path )
         except ( OSError, IOError ) as exception:
-            raise __.GlobalsPopulationFailure(
+            raise _exceptions.GlobalsPopulationFailure(
                 target, target ) from exception
     try:
         target.write_text(
             _json.dumps( merged, indent = 2 ), encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.GlobalsPopulationFailure( target, target ) from exception
+        raise _exceptions.GlobalsPopulationFailure(
+            target, target
+        ) from exception
 
 
 def _deep_merge_settings(

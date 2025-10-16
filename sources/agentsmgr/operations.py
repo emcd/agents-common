@@ -27,6 +27,7 @@
 
 
 from . import __
+from . import exceptions as _exceptions
 from . import generator as _generator
 
 
@@ -94,11 +95,11 @@ def update_content(
     if simulate: return False
     try: location.parent.mkdir( parents = True, exist_ok = True )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             location.parent, "create directory" ) from exception
     try: location.write_text( content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             location, "update content" ) from exception
     return True
 
@@ -121,7 +122,7 @@ def update_git_exclude(
     if not exclude_file.exists( ): return 0
     try: content = exclude_file.read_text( encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             exclude_file, "read git exclude file" ) from exception
     existing_lines = content.splitlines( )
     existing_patterns = frozenset( existing_lines )
@@ -140,6 +141,6 @@ def update_git_exclude(
     if not new_content.endswith( '\n' ): new_content += '\n'
     try: exclude_file.write_text( new_content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             exclude_file, "update git exclude file" ) from exception
     return len( additions )

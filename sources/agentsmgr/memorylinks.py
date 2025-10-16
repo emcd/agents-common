@@ -27,6 +27,7 @@
 
 
 from . import __
+from . import exceptions as _exceptions
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -102,14 +103,14 @@ def create_memory_symlinks_for_coders(
     '''
     source = target / '.auxiliary' / 'configuration' / 'conventions.md'
     if not source.exists( ):
-        raise __.MemoryFileAbsence( source )
+        raise _exceptions.MemoryFileAbsence( source )
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
     for coder_name in coders:
         try: renderer = renderers[ coder_name ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder_name ) from exception
+            raise _exceptions.CoderAbsence( coder_name ) from exception
         link_path = target / renderer.memory_filename
         attempted += 1
         was_created, symlink_name = create_memory_symlink(

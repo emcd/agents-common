@@ -22,10 +22,14 @@
 
 
 from . import __
-from . import base as _base
+from . import cmdbase as _cmdbase
+from . import core as _core
+from . import exceptions as _exceptions
 from . import generator as _generator
 from . import memorylinks as _memorylinks
 from . import operations as _operations
+from . import renderers as _renderers
+from . import results as _results
 from . import userdata as _userdata
 
 
@@ -60,7 +64,7 @@ def _create_all_symlinks(
         _memorylinks.create_memory_symlinks_for_coders(
             coders = configuration[ 'coders' ],
             target = target,
-            renderers = __.RENDERERS,
+            renderers = _renderers.RENDERERS,
             simulate = simulate,
         ) )
     all_symlink_names.extend( symlink_names )
@@ -74,7 +78,7 @@ def _create_all_symlinks(
             _create_coder_directory_symlinks(
                 coders = configuration[ 'coders' ],
                 target = target,
-                renderers = __.RENDERERS,
+                renderers = _renderers.RENDERERS,
                 simulate = simulate,
             ) )
         all_symlink_names.extend( coder_symlink_names )
@@ -107,7 +111,7 @@ def _create_coder_directory_symlinks(
     for coder_name in coders:
         try: renderers[ coder_name ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder_name ) from exception
+            raise _exceptions.CoderAbsence( coder_name ) from exception
 
         # Source: actual location under .auxiliary/configuration/coders/
         source = (
@@ -157,7 +161,7 @@ class PopulateCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = False
     mode: __.typx.Annotated[
-        __.TargetMode,
+        _renderers.TargetMode,
         __.tyro.conf.arg(
             help = (
                 "Targeting mode: default (use coder defaults), per-user, "
@@ -171,19 +175,19 @@ class PopulateCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = False
 
-    @_base.intercept_errors( )
+    @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates content from data sources and displays result. '''
-        if not isinstance( auxdata, __.Globals ):  # pragma: no cover
-            raise __.ContextInvalidity
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info(
             f"Populating agent content from {self.source} to {self.target}" )
-        configuration = await _base.retrieve_configuration(
+        configuration = await _cmdbase.retrieve_configuration(
             self.target, self.profile )
         coder_count = len( configuration[ 'coders' ] )
         _scribe.debug( f"Detected configuration with {coder_count} coders" )
         _scribe.debug( f"Using {self.mode} targeting mode" )
-        location = _base.retrieve_data_location( self.source )
+        location = _cmdbase.retrieve_data_location( self.source )
         generator = _generator.ContentGenerator(
             location = location,
             configuration = configuration,
@@ -213,12 +217,12 @@ class PopulateCommand( __.appcore_cli.Command ):
                 _scribe.info(
                     f"Added {excludes_added} symlink names to "
                     ".git/info/exclude" )
-        result = __.ContentGenerationResult(
+        result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
             items_generated = items_generated,
         )
-        await __.render_and_print_result(
+        await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )

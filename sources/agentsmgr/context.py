@@ -26,6 +26,7 @@
 
 
 from . import __
+from . import exceptions as _exceptions
 
 
 ToolSpecification: __.typx.TypeAlias = (
@@ -123,9 +124,11 @@ def _map_tools_claude(
             elif spec.get( 'tool' ) == 'shell':
                 mapped.append( _map_shell_tool_claude( spec ) )
             else:
-                raise __.ToolSpecificationInvalidity( str( spec ) )
+                raise _exceptions.ToolSpecificationInvalidity( str( spec ) )
         else:
-            raise __.ToolSpecificationTypeInvalidity( type( spec ).__name__ )
+            raise _exceptions.ToolSpecificationTypeInvalidity(
+                type( spec ).__name__
+            )
     return sorted( mapped )
 
 
@@ -136,7 +139,7 @@ def _map_semantic_tool_claude( tool_name: str ) -> str:
         Raises ToolSpecificationInvalidity for unknown tools.
     '''
     if tool_name not in _SEMANTIC_TOOLS_CLAUDE:
-        raise __.ToolSpecificationInvalidity( tool_name )
+        raise _exceptions.ToolSpecificationInvalidity( tool_name )
     return _SEMANTIC_TOOLS_CLAUDE[ tool_name ]
 
 
@@ -192,9 +195,11 @@ def _map_tools_qwen(
             elif spec.get( 'tool' ) == 'shell':
                 mapped.append( _map_shell_tool_qwen( spec ) )
             else:
-                raise __.ToolSpecificationInvalidity( str( spec ) )
+                raise _exceptions.ToolSpecificationInvalidity( str( spec ) )
         else:
-            raise __.ToolSpecificationTypeInvalidity( type( spec ).__name__ )
+            raise _exceptions.ToolSpecificationTypeInvalidity(
+                type( spec ).__name__
+            )
     return sorted( mapped )
 
 
@@ -205,7 +210,7 @@ def _map_semantic_tool_qwen( tool_name: str ) -> str:
         Raises ToolSpecificationInvalidity for unknown tools.
     '''
     if tool_name not in _SEMANTIC_TOOLS_QWEN:
-        raise __.ToolSpecificationInvalidity( tool_name )
+        raise _exceptions.ToolSpecificationInvalidity( tool_name )
     return _SEMANTIC_TOOLS_QWEN[ tool_name ]
 
 

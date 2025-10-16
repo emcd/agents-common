@@ -34,7 +34,6 @@
 
 - [ ] Split `populate` into two subcommands: `project` and `userdata`.
 
-- [ ] Absorb `commands` package into main package.
 
 ## Documentation
 

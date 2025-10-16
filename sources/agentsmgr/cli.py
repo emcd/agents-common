@@ -22,8 +22,9 @@
 
 
 from . import __
-from . import commands as _commands
 from . import core as _core
+from . import detection as _detection
+from . import population as _population
 
 
 class Application( __.appcore_cli.Application ):
@@ -33,14 +34,14 @@ class Application( __.appcore_cli.Application ):
         default_factory = _core.DisplayOptions )
     command: __.typx.Union[
         __.typx.Annotated[
-            _commands.DetectCommand,
+            _detection.DetectCommand,
             __.tyro.conf.subcommand( 'detect', prefix_name = False ),
         ],
         __.typx.Annotated[
-            _commands.PopulateCommand,
+            _population.PopulateCommand,
             __.tyro.conf.subcommand( 'populate', prefix_name = False ),
         ],
-    ] = __.dcls.field( default_factory = _commands.DetectCommand )
+    ] = __.dcls.field( default_factory = _detection.DetectCommand )
 
     async def execute( self, auxdata: _core.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
