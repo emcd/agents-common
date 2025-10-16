@@ -32,6 +32,10 @@
   - Implementation should check `GIT_DIR` env var, parse `.git` file if it
     exists (worktree case), and gracefully handle edge cases
 
+- [ ] Split `populate` into two subcommands: `project` and `userdata`.
+
+- [ ] Absorb `commands` package into main package.
+
 ## Documentation
 
 ## Testing
