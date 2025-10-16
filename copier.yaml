@@ -28,6 +28,8 @@ coders:
         - claude
         - gemini
         - opencode
+        - qwen
     default:
         - claude
         - opencode
+        - qwen
