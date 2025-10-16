@@ -74,14 +74,19 @@ class RendererBase( __.immut.Object ):
         '''
         raise NotImplementedError
 
-    def produce_output_structure( self, item_type: str ) -> str:
+    def produce_output_structure(
+        self, item_type: str, category: __.Absential[ str ] = __.absent
+    ) -> str:
         ''' Produces subdirectory structure for item type.
 
             Translates generic item type to coder-specific directory
-            structure. Most coders use same structure, but some may
-            have different conventions.
+            structure with optional category-based organization. Most
+            coders use same structure, but some may have different
+            conventions. Category enables hierarchical organization
+            (e.g., commands/deploy/kubernetes for nested structure).
         '''
-        return item_type
+        if __.is_absent( category ): return item_type
+        return f"{item_type}/{category}"
 
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor (pioneering coder name) for item type.

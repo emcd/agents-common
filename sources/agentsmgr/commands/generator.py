@@ -119,7 +119,8 @@ class ContentGenerator( __.immut.DataclassObject ):
             configuration = self.application_configuration,
             environment = __.os.environ,
         )
-        dirname = renderer.produce_output_structure( item_type )
+        category = metadata[ 'context' ].get( 'category' )
+        dirname = renderer.produce_output_structure( item_type, category )
         location = base_directory / dirname / f"{item_name}.{extension}"
         return RenderedItem( content = content, location = location )
 

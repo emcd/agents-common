@@ -448,112 +448,45 @@ Both Claude and Qwen support granular shell command permissions!
 - Document that path override is configuration-only for Qwen
 - Accept `~/.qwen/` as the standard per-user location
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 0: Template System Restructuring
+### ✅ Phase 0: Template System Restructuring - COMPLETE
 
-**Foundation Work:**
+**Delivered:**
+- Restructured template system with pioneer-named template flavors
+- Template organization: `defaults/templates/{item_type}/{flavor}.{ext}.jinja`
+- Updated RendererBase with `get_template_flavor()` method
+- All existing renderers (Claude, Opencode, Codex) updated
+- Qwen tool mapping infrastructure implemented in `context.py`
+- Template path resolution updated in generator
+- All existing tests passing, no regressions
 
-Restructure template system to support pioneer-named flavors:
+**Commit:** d86ba11
 
-1. **Migrate and split existing templates**
-   - Move `defaults/templates/command.md.jinja` → `defaults/templates/commands/claude.md.jinja`
-   - Split `defaults/templates/agent.md.jinja` into separate coder-specific templates:
-     - `defaults/templates/agents/claude.md.jinja` (name, description, model, color fields)
-     - `defaults/templates/agents/opencode.md.jinja` (description, mode, model, color fields)
-   - Remove conditional logic from templates - each template is clean and focused
-   - Update existing TOML templates (if any) to new structure
+### ✅ Phase 1: Minimal Viable Support - COMPLETE
 
-2. **Update RendererBase protocol**
-   - Add `get_template_flavor(item_type: str) -> str` method to base class
-   - Default implementation returns 'claude' for backward compatibility
-   - Document template flavor selection contract
+**Delivered:**
+- QwenRenderer class with per-user and per-project path resolution
+- Qwen-specific templates: `agents/qwen.md.jinja` with YAML frontmatter
+- Qwen agent content: `defaults/contents/agents/qwen/python-conformer.md`
+- Copier templates: `template/.auxiliary/configuration/coders/qwen/settings.json.jinja`
+- Registry integration: QwenRenderer registered and self-initializing
+- Documentation updates: README.rst, architecture/summary.rst, architecture/filesystem.rst
+- Tool name mapping fully implemented for all semantic tools
+- All quality gates passing (linters, type checker, tests)
 
-3. **Update generator template resolution**
-   - Modify template lookup to check `defaults/templates/{item_type}/{flavor}.{ext}.jinja`
-   - Call renderer's `get_template_flavor()` to determine which template to use
-   - Remove any hardcoded template path assumptions
+**Commit:** 8514891
 
-4. **Update existing renderers**
-   - Implement `get_template_flavor()` in ClaudeRenderer (returns 'claude' for all item types)
-   - Implement `get_template_flavor()` in OpencodeRenderer (returns 'claude' for commands, 'opencode' for agents)
-   - Implement `get_template_flavor()` in CodexRenderer (returns 'claude' for all item types)
+### ✅ Phase 2 Checkpoint 1: Hierarchical Command Organization - COMPLETE
 
-5. **Implement tool mapping infrastructure**
-   - Add `_map_tools_qwen()` function to `sources/agentsmgr/commands/context.py`
-   - Update `_map_tools_for_coder()` to dispatch to Qwen mapper
-   - Implement semantic → Qwen tool name translation (see mapping table)
-   - Shell command mapping:
-     - Map `{ tool = 'shell', arguments = 'git add', allow-extra-arguments = true }` → `run_shell_command(git add)`
-     - Strip Claude's `:*` suffix since Qwen uses prefix matching
-     - Preserve command prefix for granular permissions
-   - MCP tool mapping (verify format matches Claude's pattern)
-   - Add tests for Qwen tool mapping including shell commands
+**Delivered:**
+- Added optional `category` parameter to `RendererBase.produce_output_structure()`
+- Updated ContentGenerator to extract and pass category from metadata
+- Support for nested command paths: `commands/{category}/{command_name}`
+- Full backward compatibility: commands without category use flat structure
+- All quality gates passing (linters, type checker, tests)
 
-6. **Test template migration and tool mapping**
-   - Verify existing content generation still works
-   - Ensure no regressions in Claude/Opencode/Codex output
-   - Validate template path resolution logic
-   - Test Qwen tool name mapping with sample configurations
-
-**Deliverables:**
-- Restructured template system ready for new flavors
-- All existing coders working with new structure
-- Qwen tool name mapping implemented and tested
-- Foundation for Qwen-specific templates
-
-### Phase 1: Minimal Viable Support
-
-**Core Implementation:**
-1. Implement `QwenRenderer` class
-   - Basic path resolution (per-user: `~/.qwen/`, per-project: `.auxiliary/configuration/coders/qwen/`)
-   - Configuration file directory override support
-   - Memory filename: `QWEN.md`
-   - Template flavor selection: 'gemini' for commands, 'qwen' for agents
-
-2. Template creation
-   - Create `defaults/templates/commands/gemini.toml.jinja` for Qwen/Gemini commands
-   - Create `defaults/templates/agents/qwen.md.jinja` with YAML frontmatter rendering
-   - Verify template variable access and normalization
-
-3. Content creation
-   - **Commands:** Can reuse Gemini command content (TOML format with `{{args}}`)
-     - No new content needed - Qwen uses same format as Gemini
-     - If Gemini content exists, Qwen can use it directly
-     - If not, can defer command content until Gemini support added
-   - Create `defaults/contents/agents/qwen/` directory
-   - Adapt agent definitions (content only, YAML frontmatter comes from template)
-   - Apply tool name mapping in agent TOML configurations
-
-4. Copier template files
-   - Create base directory structure in `template/.auxiliary/configuration/coders/qwen/`
-   - Add `settings.json.jinja` for base Qwen settings
-   - Add `.gitignore` files for generated content
-   - Consider whether to include `qwen-extension.json.jinja`
-
-5. Registry integration
-   - Add qwen import to `renderers/__init__.py`
-   - Register renderer via module import
-
-6. Documentation
-   - Update README.rst with Qwen Code support
-   - Update architecture documentation
-   - Document pioneer-named template flavor system
-
-**Deliverables:**
-- Functional Qwen Code agent support
-- Qwen commands use Gemini TOML format (shared content)
-- Content generation via `agentsmgr populate --coder=qwen`
-- Generated agent files compatible with Qwen Code CLI
-- Base Copier template integration
-- Tool name mapping implemented in `context.py`
-
-**Scope:**
-- ✓ Commands supported via Gemini TOML format
-- ✓ Agents with YAML frontmatter
-- ✓ Tool name mapping for all semantic tools
-- ⚠️ Command content can reuse Gemini content when available
-- ⚠️ Extension system not implemented (not required for basic functionality)
+**Commit:** f322cdf
 
 ### Phase 2: Enhanced Features
 
