@@ -488,34 +488,49 @@ Both Claude and Qwen support granular shell command permissions!
 
 **Commit:** f322cdf
 
-### Phase 2: Enhanced Features
+### ✅ Phase 2 Checkpoint 1: Hierarchical Command Organization - COMPLETE
 
-**Advanced Capabilities:**
-1. Hierarchical command organization
+(See earlier in this document for full details. Commit: f322cdf)
+
+### Phase 2: Enhanced Features - DEFERRED
+
+**Advanced Capabilities (Deferred pending business decision):**
+1. Hierarchical command organization - ✅ DONE
    - Support for `category` field in TOML configs
    - Nested directory generation in `commands/`
    - Documentation for command organization patterns
 
-2. Tool specification management
-   - Define standard tool groups in configuration
-   - Template helpers for common tool sets
-   - Validation of tool names against known Qwen tools
+2. **Qwen Command Content Porting** - DECISION PENDING
+   - Currently only python-conformer agent is ported to Qwen
+   - ~22 Claude command files need conversion to Qwen format (TOML with `{{args}}` interpolation)
+   - Same Gemini/Qwen TOML format can be reused, only content body adaptation needed
+   - **Decision Required:** Is Qwen Code worth the investment of porting all command content files?
+   - If YES: Plan content porting strategy and schedule
+   - If DEFERRED: Keep minimal viable support (agent-only) for now
 
-3. Extension-based organization
+3. Tool specification management - MOVED TO TODO
+   - Moved to `.auxiliary/notes/todo.md` as out-of-scope enhancement
+   - Define standard tool groups in configuration (low priority enhancement)
+   - Template helpers for common tool sets (low priority enhancement)
+   - Validation of tool names against known Qwen tools (nice-to-have)
+
+4. Extension-based organization - DEFERRED
    - Support generating commands as Qwen extensions
    - Extension namespace configuration
    - Extension conflict detection and resolution
+   - (Not required for basic functionality; can add later if users request it)
 
-4. Hook scripts
-   - Qwen-specific pre/post tool use hooks (if needed)
-   - Script distribution via Copier template
-   - Integration with Qwen's tool execution lifecycle
+5. Hook scripts - N/A
+   - Qwen does not have pre/post tool use hooks (unlike Claude)
+   - No hook system to integrate with
+   - Removed from Phase 2 deliverables
 
-**Deliverables:**
-- Advanced organizational patterns
-- Rich tool management capabilities
-- Extension system integration
-- Complete hook script infrastructure
+**Current Deliverables (Completed):**
+- ✅ Hierarchical command organization support
+- ✅ Qwen renderer with path resolution and template flavor selection
+- ✅ Qwen-specific agent template with YAML frontmatter
+- ✅ Qwen settings.json Copier template with MCP server configuration
+- ✅ Tool name mapping verified and documented
 
 ### Phase 3: Cross-Coder Harmonization
 
@@ -786,9 +801,34 @@ defaults/templates/
 - Remove conditional logic - each template handles one coder's format
 - Migrate existing templates to new structure (Phase 0)
 
+## Verification Notes
+
+### ✅ Verified (Session: c621f96+)
+
+- ✅ Qwen Code installed and functioning correctly
+- ✅ Copier template applied successfully (`.auxiliary/configuration/copier-answers--agents.yaml`)
+- ✅ MCP servers configured and detected by Qwen Code:
+  - context7: Recognized and available
+  - pyright: Recognized and available
+  - librovore: Recognized and available
+- ✅ Qwen renderer functional and integrated
+- ✅ Settings template generates valid `settings.json` with correct MCP configurations
+- ✅ MCP tool naming format confirmed: automatic prefixing with `serverName__toolName` for conflicts
+- ✅ YAML frontmatter rendering working correctly in `agents/qwen.md.jinja`
+
+### Known Limitations
+
+- Qwen does not have hook system (no pre/post tool use hooks)
+- No environment variable for user config path override (configuration file override supported)
+- Command content not yet ported (only agent content available at Phase 1)
+
 ## References
 
 - Current source handlers: `sources/agentsmgr/sources/`
 - Current renderers: `sources/agentsmgr/renderers/`
 - Architecture documentation: `documentation/architecture/`
 - Filesystem organization: `documentation/architecture/filesystem.rst`
+- Qwen Code Documentation: https://qwenlm.github.io/qwen-code-docs/en/
+  - Tools: https://qwenlm.github.io/qwen-code-docs/en/tools/
+  - MCP Servers: https://qwenlm.github.io/qwen-code-docs/en/tools/mcp-server/
+  - CLI Configuration: https://qwenlm.github.io/qwen-code-docs/en/cli/configuration/

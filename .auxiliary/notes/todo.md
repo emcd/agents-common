@@ -10,6 +10,8 @@
 
 - [ ] Tag prefix support.
 
+- [ ] **Tool groups for common combinations**: Define standard tool groups in configuration (e.g., "file_operations", "shell_access"). Create template helpers for common tool sets. Validate tool names against known Qwen tools. (Related to Phase 2 enhancement features but deferred as not core to Qwen support.)
+
 - [ ] Review common templating for Gemini/Qwen3.
 
 - [ ] **GIT_DIR and worktree support**: Update git-related functionality to respect `GIT_DIR` environment variable and handle git worktrees (where `.git` is a file pointing to the actual git directory). This affects:
