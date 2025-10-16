@@ -651,12 +651,30 @@ Both Claude and Qwen support granular shell command permissions!
 - ✓ Draft Qwen settings.json template
 - ✓ Investigate command argument passing (uses `{{args}}` Gemini-style)
 - ✓ Determine command format (TOML, shared with Gemini)
+- ✓ MCP tool format verified - Qwen uses automatic conflict resolution with `serverAlias__toolName` format
 
 **Remaining:**
 - Investigate Qwen hook system (if any) - appears not to exist, needs confirmation
-- Test MCP tool format in Qwen (verify naming convention)
 - Verify Qwen accepts same MCP server configuration as Claude/Opencode
 - Test agent with tool specifications to verify YAML frontmatter format
+
+### MCP Tool Naming Resolution ✓ RESOLVED
+
+**Finding:** Qwen's documentation confirms MCP tool naming:
+- Tools are registered using their original server tool names
+- When multiple servers expose tools with the same name, automatic prefixing applies
+- **First registration wins:** First server to register a tool gets unprefixed name
+- **Conflict resolution:** Subsequent servers get prefixed names: `serverName__toolName`
+- **Name sanitization:** Tool names cleaned for API compatibility
+  - Invalid characters (non-alphanumeric, underscore, dot, hyphen) replaced with underscores
+  - Names longer than 63 characters truncated with middle replacement
+- **Tool filtering:** Reference sanitized tool names in `coreTools`/`excludeTools` configuration
+- **Precedence:** `excludeTools` takes precedence over `coreTools` if tool appears in both
+
+**Implementation Implication:**
+- MCP tools in agent YAML frontmatter should use sanitized names
+- In settings.json `coreTools` list, reference tools as `serverAlias__toolName` if there are conflicts
+- For context7, pyright, librovore MCP servers, no naming conflicts expected with built-in tools
 
 ## Design Discussion: Whitelist vs Blacklist Tool Specification
 
