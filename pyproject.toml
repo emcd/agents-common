@@ -49,6 +49,7 @@ name = 'Eric McDonald'
 email = 'emcd@users.noreply.github.com'
 [project.scripts]
 agentsmgr = 'agentsmgr:main'
+agentsmgr-maintain = 'agentsmgr.maintenance:main'
 [project.urls]
 'Homepage' = 'https://github.com/emcd/agents-common'
 'Documentation' = 'https://emcd.github.io/agents-common'

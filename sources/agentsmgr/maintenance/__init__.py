@@ -18,8 +18,10 @@
 #============================================================================#
 
 
-''' Command implementations for agentsmgr CLI. '''
+''' Maintainer-facing CLI subpackage. '''
 
 
-from .detection import DetectCommand
-from .population import PopulateCommand
+def main( ):
+    ''' Maintainer-facing CLI entrypoint. '''
+    from .cli import execute
+    execute( )

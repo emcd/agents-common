@@ -32,7 +32,7 @@ __version__ = '1.0a1'
 
 
 def main( ):
-    ''' Entrypoint. '''
+    ''' User-facing CLI entrypoint. '''
     from .cli import execute
     execute( )
 

@@ -18,46 +18,43 @@
 #============================================================================#
 
 
-''' Command-line interface. '''
+''' Maintainer-facing command-line interface with validate command. '''
 
 
 from . import __
-from . import commands as _commands
-from . import core as _core
+from .validation import ValidateCommand as _ValidateCommand
 
 
-class Application( __.appcore_cli.Application ):
-    ''' Agents configuration management CLI. '''
+class MaintainerApplication( __.appcore_cli.Application ):
+    ''' Maintainer-facing agents configuration management CLI. '''
 
-    display: _core.DisplayOptions = __.dcls.field(
-        default_factory = _core.DisplayOptions )
-    command: __.typx.Union[
-        __.typx.Annotated[
-            _commands.DetectCommand,
-            __.tyro.conf.subcommand( 'detect', prefix_name = False ),
-        ],
-        __.typx.Annotated[
-            _commands.PopulateCommand,
-            __.tyro.conf.subcommand( 'populate', prefix_name = False ),
-        ],
-    ] = __.dcls.field( default_factory = _commands.DetectCommand )
+    display: __.core.DisplayOptions = __.dcls.field(
+        default_factory = __.core.DisplayOptions )
+    command: __.typx.Annotated[
+        _ValidateCommand,
+        __.tyro.conf.subcommand( 'validate', prefix_name = False ),
+    ] = __.dcls.field( default_factory = _ValidateCommand )
 
-    async def execute( self, auxdata: _core.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def execute( self, auxdata: __.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
 
-    async def prepare( self, exits: __.ctxl.AsyncExitStack ) -> _core.Globals:
+    async def prepare(
+        self, exits: __.ctxl.AsyncExitStack
+    ) -> __.Globals:
         auxdata_base = await super( ).prepare( exits )
         nomargs = {
             field.name: getattr( auxdata_base, field.name )
             for field in __.dcls.fields( auxdata_base )
             if not field.name.startswith( '_' ) }
-        return _core.Globals( display = self.display, **nomargs )
+        return __.Globals( display = self.display, **nomargs )
 
 
 def execute( ) -> None:
-    ''' Entrypoint for CLI execution. '''
+    ''' Entrypoint for maintainer-facing CLI execution. '''
     config = ( __.tyro.conf.HelptextFromCommentsOff, )
-    try: __.asyncio.run( __.tyro.cli( Application, config = config )( ) )
+    try:
+        __.asyncio.run(
+            __.tyro.cli( MaintainerApplication, config = config )( ) )
     except SystemExit: raise
     except BaseException:
         # TODO: Log exception.
