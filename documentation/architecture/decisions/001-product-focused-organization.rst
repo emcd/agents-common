@@ -57,7 +57,7 @@ The implemented structure:
             │   ├── scripts/
             │   └── settings.json.jinja
             ├── opencode/   # Generated Opencode configurations  
-            │   └── commands/
+            │   └── command/    # Singular directory name
             └── gemini/     # Generated Gemini configurations
                 ├── commands/
                 └── settings.json.jinja

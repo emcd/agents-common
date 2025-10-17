@@ -184,8 +184,8 @@ directory, implementing a 3-tier separation for structured agent configurations:
         │   ├── opencode/
         │   │   ├── settings.jsonc.jinja  # Opencode base settings template
         │   │   ├── .gitignore
-        │   │   ├── commands/.gitignore
-        │   │   └── agents/.gitignore
+        │   │   ├── command/.gitignore   # Singular directory name
+        │   │   └── agent/.gitignore     # Singular directory name
         │   ├── gemini/
         │   │   ├── settings.json.jinja   # Gemini base settings template
         │   │   ├── .gitignore
