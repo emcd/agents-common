@@ -47,7 +47,7 @@ class OpencodeRenderer( RendererBase ):
         'commands': 'command',
     } )
 
-    def _calculate_directory_location( self, item_type: str ) -> str:
+    def calculate_directory_location( self, item_type: str ) -> str:
         ''' Returns singular directory names for OpenCode configuration.
         
             OpenCode expects singular directory names (agent, command) rather

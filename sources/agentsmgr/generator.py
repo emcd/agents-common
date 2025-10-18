@@ -122,23 +122,35 @@ class ContentGenerator( __.immut.DataclassObject ):
             environment = __.os.environ,
         )
         category = metadata[ 'context' ].get( 'category' )
+        if category is None:
+            category = __.absent
         dirname = renderer.produce_output_structure( item_type, category )
         location = base_directory / dirname / f"{item_name}.{extension}"
         return RenderedItem( content = content, location = location )
 
-    def _survey_available_templates( self, item_type: str ) -> list[ str ]:
-        ''' Lists available templates for item type.
-
-            Surveys template directory for files matching item type pattern.
-        '''
+    def _survey_available_templates(
+        self, item_type: str, coder: str
+    ) -> list[ str ]:
         directory = self.location / "templates"
-        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
+        try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
-            raise _exceptions.ConfigurationInvalidity(
-                item_type
-            ) from exception
-        pattern = f"{singular_type}.*.jinja"
-        return [ p.name for p in directory.glob( pattern ) ]
+            raise _exceptions.CoderAbsence( coder ) from exception
+        target_dir_name = renderer.calculate_directory_location( item_type )
+        # Always plural (e.g., commands, agents)
+        source_dir = directory / item_type
+        if not source_dir.exists():
+            raise _exceptions.TemplateError.for_missing_template(
+                coder, item_type
+            )
+        templates = [
+            f"{target_dir_name}/{p.name}"
+            for p in source_dir.glob( "*.jinja" )
+        ]
+        if not templates:
+            raise _exceptions.TemplateError.for_missing_template(
+                coder, item_type
+            )
+        return templates
 
     def _retrieve_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
@@ -227,27 +239,15 @@ class ContentGenerator( __.immut.DataclassObject ):
 
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
-        ''' Selects appropriate template based on coder capabilities.
-
-            Uses renderer's get_template_flavor() method to determine
-            appropriate template flavor (pioneering coder name) for the
-            requested item type and coder. Constructs template name using
-            pattern: {item_type_singular}/{flavor}.{extension}.jinja
-        '''
         try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder ) from exception
-        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
-        except KeyError as exception:
-            raise _exceptions.ConfigurationInvalidity(
-                item_type
-            ) from exception
         flavor = renderer.get_template_flavor( item_type )
-        available = self._survey_available_templates( item_type )
-        # Construct organized template path: {item_type}/{flavor}.{ext}.jinja
+        available = self._survey_available_templates( item_type, coder )
+        directory_name = renderer.calculate_directory_location( item_type )
         for extension in [ 'md', 'toml' ]:
             organized_path = (
-                f"{singular_type}/{flavor}.{extension}.jinja" )
+                f"{directory_name}/{flavor}.{extension}.jinja" )
             if organized_path in available:
                 return organized_path
         raise _exceptions.TemplateError.for_missing_template(

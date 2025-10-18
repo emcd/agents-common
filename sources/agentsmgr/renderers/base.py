@@ -85,11 +85,11 @@ class RendererBase( __.immut.Object ):
             conventions. Category enables hierarchical organization
             (e.g., commands/deploy/kubernetes for nested structure).
         '''
-        dirname = self._calculate_directory_location( item_type )
+        dirname = self.calculate_directory_location( item_type )
         if __.is_absent( category ): return dirname
         return f"{dirname}/{category}"
 
-    def _calculate_directory_location( self, item_type: str ) -> str:
+    def calculate_directory_location( self, item_type: str ) -> str:
         ''' Returns directory name for item type. Override in subclasses. '''
         return item_type
 
