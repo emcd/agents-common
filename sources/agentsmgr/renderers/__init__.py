@@ -29,4 +29,4 @@
 from .base import RENDERERS, RendererBase, TargetMode
 
 # Import renderer modules to populate registry
-from . import claude, codex, opencode, qwen
+from . import claude, codex, gemini, opencode, qwen
