@@ -1,6 +1,4 @@
 {
-  "contextFileName": "QWEN.md",
-
   "mcpServers": {
     {%- if "rust" in languages %}
     "rust-analyzer": {
@@ -84,14 +82,7 @@
     {%- endif %}
   ],
 
-  "excludeTools": [],
-
-  "fileFiltering": {
-    "respectGitIgnore": true,
-    "enableRecursiveFileSearch": true
-  },
-
-  "autoAccept": false,
-  "checkpointing": true,
+  "approvalMode": "auto-edit",
+  "autoAccept": true,
   "showLineNumbers": true
 }
