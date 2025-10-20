@@ -4,14 +4,6 @@
 
 ## Features
 
-- [ ] **Implement source precedence hierarchy**: Extend source resolution to
-  follow CLI → environment → configuration precedence. Currently CLI only
-  supports explicit `--source` parameter. Add environment variable support
-  (e.g., `AGENTSMGR_SOURCE`) and configuration file fallback using
-  `sources.default` from `data/configuration/general.toml`. Update
-  `retrieve_data_location()` in `sources/agentsmgr/commands/base.py` to
-  implement this precedence chain.
-
 - [ ] Tag prefix support.
 
 - [ ] **Tool groups for common combinations**: Define standard tool groups in
@@ -19,8 +11,6 @@
   helpers for common tool sets. Validate tool names against known Qwen tools.
   (Related to Phase 2 enhancement features but deferred as not core to Qwen
   support.)
-
-- [ ] Review common templating for Gemini/Qwen3.
 
 - [ ] **GIT_DIR and worktree support**: Update git-related functionality to
   respect `GIT_DIR` environment variable and handle git worktrees (where `.git`
