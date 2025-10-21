@@ -31,6 +31,9 @@ from . import __
 from . import base as _base
 
 
+_scribe = __.provide_scribe( __name__ )
+
+
 class GitLocation( __.immut.DataclassObject ):
     ''' Git source location with URL, optional ref, and optional subdir. '''
     git_url: str
@@ -81,7 +84,18 @@ class GitSourceHandler:
         cloning. Implements fragment syntax for subdirectory specification.
     '''
 
-    def resolve( self, source_spec: str ) -> __.Path:
+    def resolve(
+        self,
+        source_spec: str,
+        tag_prefix: __.typx.Annotated[
+            __.Absential[ str ],
+            __.ddoc.Doc(
+                "Prefix for filtering version tags when no explicit ref "
+                "is specified. Only tags starting with this prefix will be "
+                "considered, and the prefix will be stripped before version "
+                "parsing." ),
+        ] = __.absent,
+    ) -> __.Path:
         ''' Resolves Git source to local temporary directory.
 
             Clones the repository to a temporary location and returns the
@@ -90,7 +104,7 @@ class GitSourceHandler:
         location = self._parse_git_url( source_spec )
         temp_dir = self._create_temp_directory( )
         try:
-            self._clone_repository( location, temp_dir )
+            self._clone_repository( location, temp_dir, tag_prefix )
             if location.subdir:
                 subdir_path = temp_dir / location.subdir
                 if not subdir_path.exists( ):
@@ -155,7 +169,10 @@ class GitSourceHandler:
         return __.Path( temp_dir )
 
     def _clone_repository(
-        self, location: GitLocation, target_dir: __.Path
+        self,
+        location: GitLocation,
+        target_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
     ) -> None:
         ''' Clones Git repository using Dulwich.
 
@@ -163,18 +180,31 @@ class GitSourceHandler:
             then checks out the specified reference if provided.
         '''
         try:
-            _dulwich_porcelain.clone(
-                location.git_url,
-                str( target_dir ),
-                bare = False,
-                depth = None,
-            )
+            # Suppress Dulwich progress output by redirecting errstream
+            with open( __.os.devnull, 'wb' ) as devnull:
+                _dulwich_porcelain.clone(
+                    location.git_url,
+                    str( target_dir ),
+                    bare = False,
+                    depth = None,
+                    errstream = devnull,
+                )
             if location.ref is None:
-                latest_tag = self._get_latest_tag( target_dir )
+                latest_tag = self._get_latest_tag( target_dir, tag_prefix )
                 if latest_tag:
+                    _scribe.info(
+                        f"Selected latest tag '{latest_tag}' for repository: "
+                        f"{location.git_url}" )
                     self._checkout_ref( target_dir, latest_tag )
+                else:
+                    _scribe.info(
+                        f"No version tags found, using default branch for "
+                        f"repository: {location.git_url}" )
             else:
                 # Checkout specified ref
+                _scribe.info(
+                    f"Using explicit ref '{location.ref}' for repository: "
+                    f"{location.git_url}" )
                 self._checkout_ref( target_dir, location.ref )
         except Exception as exception:
             error_msg = str( exception ).lower( )
@@ -186,8 +216,40 @@ class GitSourceHandler:
             raise GitCloneFailure(
                 location.git_url, str( exception ) ) from exception
 
-    def _get_latest_tag( self, repo_dir: __.Path ) -> __.typx.Optional[ str ]:
-        ''' Gets the latest tag from the repository by commit date. '''
+    def _extract_version(
+        self,
+        tag_name: str,
+        prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ __.Version ]:
+        ''' Extracts and parses semantic version from tag name.
+
+            If prefix is provided, only processes tags that start with the
+            prefix and strips it before parsing. If prefix is absent, tries
+            parsing the tag name directly. Returns None if tag cannot be
+            parsed as a valid semantic version.
+        '''
+        version_string = tag_name
+        if not __.is_absent( prefix ):
+            if not tag_name.startswith( prefix ):
+                return None
+            version_string = tag_name[ len( prefix ): ]
+        try:
+            return __.Version( version_string )
+        except __.InvalidVersion:
+            return None
+
+    def _get_latest_tag(
+        self,
+        repo_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ str ]:
+        ''' Gets the latest tag from the repository by semantic version.
+
+            Optionally filters tags by prefix before selecting latest.
+            Uses packaging.version.Version for semantic comparison. If no
+            tags can be parsed as versions, returns None (falls back to
+            default branch).
+        '''
         from dulwich.repo import Repo
         try:
             repo = Repo( str( repo_dir ) )
@@ -199,16 +261,18 @@ class GitSourceHandler:
             return None
         if not tag_refs:
             return None
-        tag_times: list[ tuple[ int, str ] ] = [ ]
+        versioned_tags: list[ tuple[ __.Version, str ] ] = [ ]
         for tag_name_bytes, commit_sha in tag_refs.items( ):
             commit = self._get_tag_commit( repo, commit_sha )
             if commit is not None:
                 tag_name = tag_name_bytes.decode( 'utf-8' )
-                tag_times.append( ( commit.commit_time, tag_name ) )
-        if not tag_times:
-            return None
-        tag_times.sort( reverse = True )
-        return tag_times[ 0 ][ 1 ]
+                version = self._extract_version( tag_name, tag_prefix )
+                if version is not None:
+                    versioned_tags.append( ( version, tag_name ) )
+        if versioned_tags:
+            versioned_tags.sort( reverse = True )
+            return versioned_tags[ 0 ][ 1 ]
+        return None
 
     def _get_tag_commit(
         self, repo: __.typx.Any, commit_sha: bytes
@@ -217,7 +281,8 @@ class GitSourceHandler:
         try:
             commit = repo[ commit_sha ]
             while hasattr( commit, 'object' ):
-                commit = repo[ commit.object ]
+                # object attribute is a tuple (class, sha)
+                commit = repo[ commit.object[ 1 ] ]
         except Exception:
             return None
         else:

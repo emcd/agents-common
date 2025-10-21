@@ -36,7 +36,10 @@ import                      sys
 import                      tempfile
 import                      types
 
+from fnmatch import fnmatch
+
 from logging import getLogger as provide_scribe
+from packaging.version import InvalidVersion, Version
 from pathlib import Path
 
 

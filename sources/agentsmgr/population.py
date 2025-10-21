@@ -174,6 +174,15 @@ class PopulateCommand( __.appcore_cli.Command ):
             help = "Update per-user global files (orthogonal to mode)",
             prefix_name = False ),
     ] = False
+    tag_prefix: __.typx.Annotated[
+        __.typx.Optional[ str ],
+        __.tyro.conf.arg(
+            help = (
+                "Prefix for version tags (e.g., 'v', 'stable-', 'prod-'); "
+                "only tags with this prefix are considered and the prefix "
+                "is stripped before version parsing" ),
+            prefix_name = False ),
+    ] = None
 
     @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -187,7 +196,10 @@ class PopulateCommand( __.appcore_cli.Command ):
         coder_count = len( configuration[ 'coders' ] )
         _scribe.debug( f"Detected configuration with {coder_count} coders" )
         _scribe.debug( f"Using {self.mode} targeting mode" )
-        location = _cmdbase.retrieve_data_location( self.source )
+        prefix = (
+            __.absent if self.tag_prefix is None
+            else self.tag_prefix )
+        location = _cmdbase.retrieve_data_location( self.source, prefix )
         generator = _generator.ContentGenerator(
             location = location,
             configuration = configuration,

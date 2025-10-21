@@ -39,7 +39,16 @@ class LocalSourceHandler:
         usage patterns.
     '''
 
-    def resolve( self, source_spec: str ) -> __.Path:
+    def resolve(
+        self,
+        source_spec: str,
+        tag_prefix: __.typx.Annotated[
+            __.Absential[ str ],
+            __.ddoc.Doc(
+                "Tag prefix for filtering version tags; ignored for local "
+                "sources." ),
+        ] = __.absent,
+    ) -> __.Path:
         ''' Resolves local path specification to absolute path.
 
             Converts relative paths to absolute paths and validates that
