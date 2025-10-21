@@ -1,4 +1,6 @@
 {
+  "contextFileName": "QWEN.md",
+
   "mcpServers": {
     "context7": {
       "command": "npx",
@@ -61,7 +63,14 @@
     "mcp__pyright__rename_symbol"
   ],
 
-  "approvalMode": "auto-edit",
-  "autoAccept": true,
+  "excludeTools": [],
+
+  "fileFiltering": {
+    "respectGitIgnore": true,
+    "enableRecursiveFileSearch": true
+  },
+
+  "autoAccept": false,
+  "checkpointing": true,
   "showLineNumbers": true
 }
