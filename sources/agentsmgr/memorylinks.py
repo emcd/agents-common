@@ -27,6 +27,7 @@
 
 
 from . import __
+from . import exceptions as _exceptions
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -36,7 +37,7 @@ def create_memory_symlink(
     source: __.Path,
     link_path: __.Path,
     simulate: bool = False,
-) -> bool:
+) -> tuple[ bool, str ]:
     ''' Creates symlink from coder memory file to project conventions.
 
         Follows patterns from .auxiliary/scripts/prepare-agents:
@@ -46,8 +47,11 @@ def create_memory_symlink(
         - If link is regular file/directory: Warn and skip
         - If link doesn't exist: Create symlink
 
-        Returns True if symlink created/updated, False if skipped.
+        Returns tuple of (created, symlink_name) where created indicates
+        if symlink was created/updated and symlink_name is the name
+        relative to parent directory.
     '''
+    symlink_name = link_path.name
     try:
         relative_source = __.os.path.relpath(
             source, start = link_path.parent )
@@ -58,9 +62,9 @@ def create_memory_symlink(
         except OSError as exception:
             _scribe.warning(
                 f"Cannot read symlink {link_path}: {exception}." )
-            return False
+            return ( False, symlink_name )
         if current_target == relative_source:
-            return False
+            return ( False, symlink_name )
         _scribe.info(
             f"Updating symlink {link_path.name}: "
             f"{current_target} → {relative_source}" )
@@ -68,7 +72,7 @@ def create_memory_symlink(
     elif link_path.exists( ):
         _scribe.warning(
             f"File or directory already exists at {link_path}. Skipping." )
-        return False
+        return ( False, symlink_name )
     elif not link_path.exists( ) and link_path.is_symlink( ):
         _scribe.info( f"Fixing broken symlink: {link_path.name}" )
         if not simulate: link_path.unlink( )
@@ -79,7 +83,7 @@ def create_memory_symlink(
         _scribe.info(
             f"[SIMULATE] Would create symlink: "
             f"{link_path.name} → {relative_source}" )
-    return True
+    return ( True, symlink_name )
 
 
 def create_memory_symlinks_for_coders(
@@ -87,26 +91,31 @@ def create_memory_symlinks_for_coders(
     target: __.Path,
     renderers: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool = False,
-) -> tuple[ int, int ]:
+) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Creates memory symlinks for all configured coders.
 
         Memory symlinks are always created at project root, pointing to
         project-specific conventions file. They are created regardless
         of targeting mode since memory files are project-specific.
 
-        Returns tuple of (attempted, created) counts.
+        Returns tuple of (attempted, created, symlink_names) where
+        symlink_names contains names of all created symlinks.
     '''
     source = target / '.auxiliary' / 'configuration' / 'conventions.md'
     if not source.exists( ):
-        raise __.MemoryFileAbsence( source )
+        raise _exceptions.MemoryFileAbsence( source )
     attempted = 0
     created = 0
+    symlink_names: list[ str ] = [ ]
     for coder_name in coders:
         try: renderer = renderers[ coder_name ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder_name ) from exception
+            raise _exceptions.CoderAbsence( coder_name ) from exception
         link_path = target / renderer.memory_filename
         attempted += 1
-        if create_memory_symlink( source, link_path, simulate ):
+        was_created, symlink_name = create_memory_symlink(
+            source, link_path, simulate )
+        if was_created:
             created += 1
-    return ( attempted, created )
+            symlink_names.append( symlink_name )
+    return ( attempted, created, tuple( symlink_names ) )

@@ -71,7 +71,7 @@ Key Features ⭐
 
 🔌 **Plugin Architecture**
   Extensible source handlers (git, local) and renderers (Claude, Opencode,
-  Codex) with decorator-based registration system.
+  Codex, Qwen) with decorator-based registration system.
 
 🎯 **Multi-Target Support**
   Per-user and per-project targeting modes with intelligent symlink management
@@ -181,7 +181,7 @@ Use Cases
 * **Project Templates**: Distribute consistent AI agent configurations across multiple project templates
 * **Development Teams**: Maintain synchronized agent configurations across team members
 * **Configuration Evolution**: Rapidly iterate on slash commands and agent definitions
-* **Multi-Tool Support**: Support Claude Code, Opencode, and future AI development environments
+* **Multi-Tool Support**: Support Claude Code, Opencode, Codex, Qwen Code, and future AI development environments
 
 
 Contribution 🤝

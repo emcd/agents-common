@@ -42,6 +42,30 @@ class OpencodeRenderer( RendererBase ):
     mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
 
+    _LOCATIONS_MAP = __.immut.Dictionary( {
+        'agents': 'agent',
+        'commands': 'command',
+    } )
+
+    def calculate_directory_location( self, item_type: str ) -> str:
+        ''' Returns singular directory names for OpenCode configuration.
+        
+            OpenCode expects singular directory names (agent, command) rather
+            than the plural forms used by other coders.
+        '''
+        return self._LOCATIONS_MAP.get( item_type, item_type )
+
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor for OpenCode.
+
+            OpenCode shares markdown command format with Claude but uses
+            its own agent format, so returns 'claude' for commands and
+            'opencode' for agents.
+        '''
+        if item_type == 'commands':
+            return 'claude'
+        return 'opencode'
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,

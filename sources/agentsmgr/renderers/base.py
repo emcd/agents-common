@@ -74,14 +74,34 @@ class RendererBase( __.immut.Object ):
         '''
         raise NotImplementedError
 
-    def produce_output_structure( self, item_type: str ) -> str:
+    def produce_output_structure(
+        self, item_type: str, category: __.Absential[ str ] = __.absent
+    ) -> str:
         ''' Produces subdirectory structure for item type.
 
             Translates generic item type to coder-specific directory
-            structure. Most coders use same structure, but some may
-            have different conventions.
+            structure with optional category-based organization. Most
+            coders use same structure, but some may have different
+            conventions. Category enables hierarchical organization
+            (e.g., commands/deploy/kubernetes for nested structure).
         '''
+        dirname = self.calculate_directory_location( item_type )
+        if __.is_absent( category ): return dirname
+        return f"{dirname}/{category}"
+
+    def calculate_directory_location( self, item_type: str ) -> str:
+        ''' Returns directory name for item type. Override in subclasses. '''
         return item_type
+
+    def get_template_flavor( self, item_type: str ) -> str:
+        ''' Determines template flavor (pioneering coder name) for item type.
+
+            Returns the name of the pioneering coder whose template format
+            should be used for this item type. For example, Claude pioneered
+            the markdown command format, Gemini pioneered the TOML format.
+            Each coder specifies which flavor it uses for each item type.
+        '''
+        return 'claude'
 
 
 RENDERERS: __.accret.Dictionary[ str, RendererBase ] = (

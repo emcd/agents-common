@@ -22,14 +22,71 @@
 
 
 from . import __
-from . import base as _base
+from . import cmdbase as _cmdbase
+from . import core as _core
+from . import exceptions as _exceptions
 from . import generator as _generator
 from . import memorylinks as _memorylinks
 from . import operations as _operations
+from . import renderers as _renderers
+from . import results as _results
 from . import userdata as _userdata
 
 
 _scribe = __.provide_scribe( __name__ )
+
+
+SourceArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.tyro.conf.Positional[ str ],
+    __.tyro.conf.arg( help = "Data source (local path or git URL)" ),
+]
+TargetArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.tyro.conf.Positional[ __.Path ],
+    __.tyro.conf.arg( help = "Target directory for content generation" ),
+]
+
+
+def _create_all_symlinks(
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    target: __.Path,
+    mode: str,
+    simulate: bool,
+) -> tuple[ str, ... ]:
+    ''' Creates all symlinks and returns their names for git exclude.
+
+        Creates memory symlinks for all coders and coder directory
+        symlinks for per-project mode. Returns tuple of all created
+        symlink names.
+    '''
+    all_symlink_names: list[ str ] = [ ]
+    if mode == 'nowhere': return tuple( all_symlink_names )
+    links_attempted, links_created, symlink_names = (
+        _memorylinks.create_memory_symlinks_for_coders(
+            coders = configuration[ 'coders' ],
+            target = target,
+            renderers = _renderers.RENDERERS,
+            simulate = simulate,
+        ) )
+    all_symlink_names.extend( symlink_names )
+    if links_created > 0:
+        _scribe.info(
+            f"Created {links_created}/{links_attempted} memory symlinks" )
+    if mode == 'per-project':
+        (   coder_symlinks_attempted,
+            coder_symlinks_created,
+            coder_symlink_names ) = (
+            _create_coder_directory_symlinks(
+                coders = configuration[ 'coders' ],
+                target = target,
+                renderers = _renderers.RENDERERS,
+                simulate = simulate,
+            ) )
+        all_symlink_names.extend( coder_symlink_names )
+        if coder_symlinks_created > 0:
+            _scribe.info(
+                f"Created {coder_symlinks_created}/"
+                f"{coder_symlinks_attempted} coder directory symlinks" )
+    return tuple( all_symlink_names )
 
 
 def _create_coder_directory_symlinks(
@@ -37,7 +94,7 @@ def _create_coder_directory_symlinks(
     target: __.Path,
     renderers: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool = False,
-) -> tuple[ int, int ]:
+) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Creates symlinks from .{coder} to .auxiliary/configuration/coders/.
 
         For per-project mode, creates symlinks that make coder directories
@@ -45,14 +102,16 @@ def _create_coder_directory_symlinks(
         while keeping actual files organized under
         .auxiliary/configuration/coders/.
 
-        Returns tuple of (attempted, created) counts.
+        Returns tuple of (attempted, created, symlink_names) where
+        symlink_names contains names of all created symlinks.
     '''
     attempted = 0
     created = 0
+    symlink_names: list[ str ] = [ ]
     for coder_name in coders:
         try: renderers[ coder_name ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder_name ) from exception
+            raise _exceptions.CoderAbsence( coder_name ) from exception
 
         # Source: actual location under .auxiliary/configuration/coders/
         source = (
@@ -61,8 +120,11 @@ def _create_coder_directory_symlinks(
         link_path = target / f'.{coder_name}'
 
         attempted += 1
-        if _memorylinks.create_memory_symlink( source, link_path, simulate ):
+        was_created, symlink_name = _memorylinks.create_memory_symlink(
+            source, link_path, simulate )
+        if was_created:
             created += 1
+            symlink_names.append( symlink_name )
 
         # Create .mcp.json symlink for Claude coder specifically
         if coder_name == 'claude':
@@ -70,28 +132,28 @@ def _create_coder_directory_symlinks(
                 target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
             mcp_link = target / '.mcp.json'
             attempted += 1
-            if _memorylinks.create_memory_symlink(
-                mcp_source, mcp_link, simulate ):
+            was_created, symlink_name = _memorylinks.create_memory_symlink(
+                mcp_source, mcp_link, simulate )
+            if was_created:
                 created += 1
+                symlink_names.append( symlink_name )
 
-    return ( attempted, created )
+    return ( attempted, created, tuple( symlink_names ) )
 
 
 class PopulateCommand( __.appcore_cli.Command ):
     ''' Generates dynamic agent content from data sources. '''
 
-    source: __.typx.Annotated[
-        str,
+    source: SourceArgument = '.'
+    target: TargetArgument = __.dcls.field( default_factory = __.Path.cwd )
+    profile: __.typx.Annotated[
+        __.typx.Optional[ __.Path ],
         __.tyro.conf.arg(
-            help = "Data source (local path or git URL)",
+            help = (
+                "Alternative Copier answers file (defaults to "
+                "auto-detected)" ),
             prefix_name = False ),
-    ] = '.'
-    target: __.typx.Annotated[
-        __.Path,
-        __.tyro.conf.arg(
-            help = "Target directory for content generation",
-            prefix_name = False ),
-    ] = __.dcls.field( default_factory = __.Path.cwd )
+    ] = None
     simulate: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(
@@ -99,7 +161,7 @@ class PopulateCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = False
     mode: __.typx.Annotated[
-        __.TargetMode,
+        _renderers.TargetMode,
         __.tyro.conf.arg(
             help = (
                 "Targeting mode: default (use coder defaults), per-user, "
@@ -113,18 +175,19 @@ class PopulateCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = False
 
-    @_base.intercept_errors( )
+    @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates content from data sources and displays result. '''
-        if not isinstance( auxdata, __.Globals ):  # pragma: no cover
-            raise __.ContextInvalidity
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
         _scribe.info(
             f"Populating agent content from {self.source} to {self.target}" )
-        configuration = await _base.retrieve_configuration( self.target )
+        configuration = await _cmdbase.retrieve_configuration(
+            self.target, self.profile )
         coder_count = len( configuration[ 'coders' ] )
         _scribe.debug( f"Detected configuration with {coder_count} coders" )
         _scribe.debug( f"Using {self.mode} targeting mode" )
-        location = _base.retrieve_data_location( self.source )
+        location = _cmdbase.retrieve_data_location( self.source )
         generator = _generator.ContentGenerator(
             location = location,
             configuration = configuration,
@@ -134,31 +197,8 @@ class PopulateCommand( __.appcore_cli.Command ):
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
-        if self.mode != 'nowhere':
-            links_attempted, links_created = (
-                _memorylinks.create_memory_symlinks_for_coders(
-                    coders = configuration[ 'coders' ],
-                    target = self.target,
-                    renderers = __.RENDERERS,
-                    simulate = self.simulate,
-                ) )
-            if links_created > 0:
-                _scribe.info(
-                    f"Created {links_created}/{links_attempted} "
-                    "memory symlinks" )
-            # Create coder directory symlinks for per-project mode
-            if self.mode == 'per-project':
-                coder_symlinks_attempted, coder_symlinks_created = (
-                    _create_coder_directory_symlinks(
-                        coders = configuration[ 'coders' ],
-                        target = self.target,
-                        renderers = __.RENDERERS,
-                        simulate = self.simulate,
-                    ) )
-                if coder_symlinks_created > 0:
-                    _scribe.info(
-                        f"Created {coder_symlinks_created}/"
-                        f"{coder_symlinks_attempted} coder directory symlinks")
+        all_symlink_names = _create_all_symlinks(
+            configuration, self.target, self.mode, self.simulate )
         if self.update_globals:
             globals_attempted, globals_updated = (
                 _userdata.populate_globals(
@@ -170,12 +210,19 @@ class PopulateCommand( __.appcore_cli.Command ):
             _scribe.info(
                 f"Updated {globals_updated}/{globals_attempted} "
                 "global files" )
-        result = __.ContentGenerationResult(
+        if all_symlink_names:
+            excludes_added = _operations.update_git_exclude(
+                self.target, all_symlink_names, self.simulate )
+            if excludes_added > 0:
+                _scribe.info(
+                    f"Added {excludes_added} symlink names to "
+                    ".git/info/exclude" )
+        result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
             items_generated = items_generated,
         )
-        await __.render_and_print_result(
+        await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )

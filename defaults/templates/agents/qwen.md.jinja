@@ -1,0 +1,10 @@
+---
+name: {{ context.name }}
+description: |
+{{ context.description | indent(2, True) }}
+{%- if context.tools is defined %}
+tools: {{ context.tools | join(', ') }}
+{%- endif %}
+---
+
+{{ content }}

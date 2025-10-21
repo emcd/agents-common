@@ -29,6 +29,9 @@
 import yaml as _yaml
 
 from . import __
+from . import core as _core
+from . import exceptions as _exceptions
+from . import sources as _sources
 
 
 CoderConfiguration: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
@@ -76,9 +79,9 @@ def intercept_errors( ) -> __.cabc.Callable[
             **nomargs: __.typx.Any,
         ) -> None:
             try: return await function( self, auxdata, *posargs, **nomargs )
-            except __.Omnierror as exception:
-                if isinstance( auxdata, __.Globals ):
-                    await __.render_and_print_result(
+            except _exceptions.Omnierror as exception:
+                if isinstance( auxdata, _core.Globals ):
+                    await _core.render_and_print_result(
                         exception, auxdata.display, auxdata.exits )
                 else:
                     for line in exception.render_as_markdown( ):
@@ -89,28 +92,32 @@ def intercept_errors( ) -> __.cabc.Callable[
 
 
 async def retrieve_configuration(
-    target: __.Path
+    target: __.Path,
+    profile: __.typx.Optional[ __.Path ] = None,
 ) -> __.cabc.Mapping[ str, __.typx.Any ]:
     ''' Loads and validates configuration from Copier answers file.
 
         Unified configuration loading used by multiple command
         implementations. Reads from standard Copier answers location
-        and validates required fields.
+        (or specified profile path) and validates required fields.
     '''
-    answers_file = (
-        target / ".auxiliary/configuration/copier-answers--agents.yaml" )
+    if profile is not None:
+        answers_file = profile
+    else:
+        answers_file = (
+            target / ".auxiliary/configuration/copier-answers--agents.yaml" )
     if not answers_file.exists( ):
-        raise __.ConfigurationAbsence( target )
+        raise _exceptions.ConfigurationAbsence( target )
     try: content = answers_file.read_text( encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.ConfigurationAbsence( ) from exception
+        raise _exceptions.ConfigurationAbsence( ) from exception
     try:
         configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
             _yaml.safe_load( content ) )
     except _yaml.YAMLError as exception:
-        raise __.ConfigurationInvalidity( exception ) from exception
+        raise _exceptions.ConfigurationInvalidity( exception ) from exception
     if not isinstance( configuration, __.cabc.Mapping ):
-        raise __.ConfigurationInvalidity( )
+        raise _exceptions.ConfigurationInvalidity( )
     await validate_configuration( configuration )
     return configuration
 
@@ -120,9 +127,9 @@ async def validate_configuration(
 ) -> None:
     ''' Validates required configuration fields are present and non-empty. '''
     if not configuration.get( 'coders' ):
-        raise __.ConfigurationInvalidity( )
+        raise _exceptions.ConfigurationInvalidity( )
     if not configuration.get( 'languages' ):
-        raise __.ConfigurationInvalidity( )
+        raise _exceptions.ConfigurationInvalidity( )
 
 
 def retrieve_data_location( source_spec: str ) -> __.Path:
@@ -132,11 +139,11 @@ def retrieve_data_location( source_spec: str ) -> __.Path:
         pluggable source handlers. Uses registered handlers to resolve
         various URL schemes to local filesystem paths.
     '''
-    return __.resolve_source_location( source_spec )
+    return _sources.resolve_source_location( source_spec )
 
 
 def retrieve_variant_answers_file(
-    auxdata: __.Globals, variant: str
+    auxdata: _core.Globals, variant: str
 ) -> __.Path:
     ''' Retrieves path to variant answers file in test data directory.
 
@@ -149,5 +156,5 @@ def retrieve_variant_answers_file(
         project_root / 'tests' / 'data' / 'profiles'
         / f"answers-{variant}.yaml" )
     if not answers_file.exists( ):
-        raise __.ConfigurationAbsence( )
+        raise _exceptions.ConfigurationAbsence( )
     return answers_file

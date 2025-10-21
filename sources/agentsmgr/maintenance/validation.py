@@ -24,9 +24,6 @@
 import yaml as _yaml
 
 from . import __
-from . import base as _base
-from . import generator as _generator
-from . import operations as _operations
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -48,7 +45,7 @@ class ValidateCommand( __.appcore_cli.Command ):
             prefix_name = False ),
     ] = False
 
-    @_base.intercept_errors( )
+    @__.cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Validates template generation and displays result. '''
         if not isinstance( auxdata, __.Globals ):  # pragma: no cover
@@ -63,11 +60,12 @@ class ValidateCommand( __.appcore_cli.Command ):
         _scribe.debug( f"Created temporary directory: {temporary_directory}" )
         try:
             configuration = self._produce_test_configuration( auxdata )
-            location = _base.retrieve_data_location( "defaults" )
-            generator = _generator.ContentGenerator(
+            location = __.cmdbase.retrieve_data_location( "defaults" )
+            generator = __.generator.ContentGenerator(
                 location = location, configuration = configuration )
-            items_attempted, items_generated = _operations.populate_directory(
-                generator, temporary_directory, simulate = False )
+            items_attempted, items_generated = (
+                __.operations.populate_directory(
+                    generator, temporary_directory, simulate = False ) )
             _scribe.info(
                 f"Generated {items_generated}/{items_attempted} items" )
         finally:
@@ -88,19 +86,19 @@ class ValidateCommand( __.appcore_cli.Command ):
 
     def _produce_test_configuration(
         self, auxdata: __.Globals
-    ) -> _base.CoderConfiguration:
+    ) -> __.cmdbase.CoderConfiguration:
         ''' Produces test configuration for specified variant.
 
             Creates configuration by loading variant answers file from
             data directory.
         '''
-        answers_file = _base.retrieve_variant_answers_file(
+        answers_file = __.cmdbase.retrieve_variant_answers_file(
             auxdata, self.variant )
         try: content = answers_file.read_text( encoding = 'utf-8' )
         except ( OSError, IOError ) as exception:
             raise __.ConfigurationAbsence( ) from exception
         try:
-            configuration: _base.CoderConfiguration = (
+            configuration: __.cmdbase.CoderConfiguration = (
                 _yaml.safe_load( content ) )
         except _yaml.YAMLError as exception:
             raise __.ConfigurationInvalidity( exception ) from exception

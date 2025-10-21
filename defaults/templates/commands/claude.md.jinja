@@ -1,5 +1,5 @@
 ---
-{%- if coder.name == 'claude' and context.allowed_tools is defined %}
+{%- if context.allowed_tools is defined %}
 allowed-tools: {{ context.allowed_tools | join(', ') }}
 {%- endif %}
 description: {{ context.description }}

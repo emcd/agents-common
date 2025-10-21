@@ -29,8 +29,10 @@
 import jinja2 as _jinja2
 
 from . import __
-from . import base as _base
+from . import cmdbase as _cmdbase
 from . import context as _context
+from . import exceptions as _exceptions
+from . import renderers as _renderers
 
 
 CoderFallbackMap: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
@@ -63,11 +65,11 @@ class ContentGenerator( __.immut.DataclassObject ):
     '''
 
     location: __.Path
-    configuration: _base.CoderConfiguration
+    configuration: _cmdbase.CoderConfiguration
     application_configuration: __.cabc.Mapping[ str, __.typx.Any ] = (
         __.dcls.field(
             default_factory = __.immut.Dictionary[ str, __.typx.Any ] ) )
-    mode: __.TargetMode = 'per-project'
+    mode: _renderers.TargetMode = 'per-project'
     jinja_environment: _jinja2.Environment = __.dcls.field( init = False )
 
     def __post_init__( self ) -> None:
@@ -90,16 +92,16 @@ class ContentGenerator( __.immut.DataclassObject ):
             final coder-specific file. Returns RenderedItem with content
             and location.
         '''
-        try: renderer = __.RENDERERS[ coder ]
+        try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
-            raise __.CoderAbsence( coder ) from exception
+            raise _exceptions.CoderAbsence( coder ) from exception
         if self.mode == 'default':
             actual_mode = renderer.mode_default
         elif self.mode in ( 'per-user', 'per-project' ):
             actual_mode = self.mode
             renderer.validate_mode( actual_mode )
         else:
-            raise __.TargetModeNoSupport( coder, self.mode )
+            raise _exceptions.TargetModeNoSupport( coder, self.mode )
         body = self._retrieve_content_with_fallback(
             item_type, item_name, coder )
         metadata = self._load_item_metadata( item_type, item_name, coder )
@@ -119,21 +121,36 @@ class ContentGenerator( __.immut.DataclassObject ):
             configuration = self.application_configuration,
             environment = __.os.environ,
         )
-        dirname = renderer.produce_output_structure( item_type )
+        category = metadata[ 'context' ].get( 'category' )
+        if category is None:
+            category = __.absent
+        dirname = renderer.produce_output_structure( item_type, category )
         location = base_directory / dirname / f"{item_name}.{extension}"
         return RenderedItem( content = content, location = location )
 
-    def _survey_available_templates( self, item_type: str ) -> list[ str ]:
-        ''' Lists available templates for item type.
-
-            Surveys template directory for files matching item type pattern.
-        '''
+    def _survey_available_templates(
+        self, item_type: str, coder: str
+    ) -> list[ str ]:
         directory = self.location / "templates"
-        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
+        try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
-            raise __.ConfigurationInvalidity( item_type ) from exception
-        pattern = f"{singular_type}.*.jinja"
-        return [ p.name for p in directory.glob( pattern ) ]
+            raise _exceptions.CoderAbsence( coder ) from exception
+        target_dir_name = renderer.calculate_directory_location( item_type )
+        # Always plural (e.g., commands, agents)
+        source_dir = directory / item_type
+        if not source_dir.exists():
+            raise _exceptions.TemplateError.for_missing_template(
+                coder, item_type
+            )
+        templates = [
+            f"{target_dir_name}/{p.name}"
+            for p in source_dir.glob( "*.jinja" )
+        ]
+        if not templates:
+            raise _exceptions.TemplateError.for_missing_template(
+                coder, item_type
+            )
+        return templates
 
     def _retrieve_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
@@ -157,7 +174,7 @@ class ContentGenerator( __.immut.DataclassObject ):
             if fallback_path.exists( ):
                 _scribe.debug( f"Using {fallback_coder} content for {coder}" )
                 return fallback_path.read_text( encoding = 'utf-8' )
-        raise __.ContentAbsence( item_type, item_name, coder )
+        raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
     def _parse_template_extension( self, template_name: str ) -> str:
         ''' Extracts output extension from template filename.
@@ -168,7 +185,7 @@ class ContentGenerator( __.immut.DataclassObject ):
         parts = template_name.split( '.' )
         if len( parts ) >= _TEMPLATE_PARTS_MINIMUM and parts[ -1 ] == 'jinja':
             return parts[ -2 ]
-        raise __.TemplateError.for_extension_parse( template_name )
+        raise _exceptions.TemplateError.for_extension_parse( template_name )
 
     def _load_item_metadata(
         self, item_type: str, item_name: str, coder: str
@@ -182,14 +199,16 @@ class ContentGenerator( __.immut.DataclassObject ):
             self.location / 'configurations' / item_type
             / f"{item_name}.toml" )
         if not configuration_file.exists( ):
-            raise __.ConfigurationAbsence( configuration_file )
+            raise _exceptions.ConfigurationAbsence( configuration_file )
         try: toml_content = configuration_file.read_bytes( )
         except ( OSError, IOError ) as exception:
-            raise __.ConfigurationAbsence( ) from exception
+            raise _exceptions.ConfigurationAbsence( ) from exception
         try: toml_data: dict[ str, __.typx.Any ] = __.tomli.loads(
             toml_content.decode( 'utf-8' ) )
         except __.tomli.TOMLDecodeError as exception:
-            raise __.ConfigurationInvalidity( exception ) from exception
+            raise _exceptions.ConfigurationInvalidity(
+                exception
+            ) from exception
         context = toml_data.get( 'context', { } )
         coders_list: list[ dict[ str, __.typx.Any ] ] = (
             toml_data.get( 'coders', [ ] ) )
@@ -220,23 +239,17 @@ class ContentGenerator( __.immut.DataclassObject ):
 
 
     def _select_template_for_coder( self, item_type: str, coder: str ) -> str:
-        ''' Selects appropriate template based on coder capabilities.
-
-            Maps coder to preferred template format. Claude and OpenCode
-            use markdown templates, while Gemini uses TOML templates.
-        '''
-        available = self._survey_available_templates( item_type )
-        try: singular_type = _PLURAL_TO_SINGULAR_MAP[ item_type ]
+        try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
-            raise __.ConfigurationInvalidity( item_type ) from exception
-        preferences = {
-            "claude": [ f"{singular_type}.md.jinja" ],
-            "opencode": [ f"{singular_type}.md.jinja" ],
-            "gemini": [ f"{singular_type}.toml.jinja" ],
-        }
-        for preferred in preferences.get( coder, [ ] ):
-            if preferred in available:
-                return preferred
-        if coder not in preferences:
-            raise __.CoderAbsence( coder )
-        raise __.TemplateError.for_missing_template( coder, item_type )
+            raise _exceptions.CoderAbsence( coder ) from exception
+        flavor = renderer.get_template_flavor( item_type )
+        available = self._survey_available_templates( item_type, coder )
+        directory_name = renderer.calculate_directory_location( item_type )
+        for extension in [ 'md', 'toml' ]:
+            organized_path = (
+                f"{directory_name}/{flavor}.{extension}.jinja" )
+            if organized_path in available:
+                return organized_path
+        raise _exceptions.TemplateError.for_missing_template(
+            coder, item_type
+        )

@@ -18,55 +18,58 @@
 #============================================================================#
 
 
-''' Claude Code renderer implementation.
+''' Gemini CLI renderer implementation.
 
-    Provides path resolution and targeting mode validation for Claude Code,
+    Provides path resolution and targeting mode validation for Gemini CLI,
     which supports both per-user and per-project configuration.
 '''
 
 
 from . import __
-from .base import RENDERERS, ExplicitTargetMode, RendererBase
+from . import base as _base
 
 
-class ClaudeRenderer( RendererBase ):
-    ''' Renderer for Claude Code coder.
+class GeminiRenderer( _base.RendererBase ):
+    ''' Renderer for Gemini CLI coder.
 
         Supports both per-user and per-project configuration modes.
-        Per-user mode respects CLAUDE_CONFIG_DIR environment variable
-        with fallback to configuration overrides and default location.
+        Per-user mode defaults to ~/.gemini/ with configuration file
+        override support via directory field in coder config.
     '''
 
-    name = 'claude'
+    name = 'gemini'
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
-    memory_filename = 'CLAUDE.md'
+    memory_filename = 'GEMINI.md'
 
     def get_template_flavor( self, item_type: str ) -> str:
-        ''' Determines template flavor for Claude Code.
+        ''' Determines template flavor for Gemini CLI.
 
-            Claude uses markdown format for both commands and agents,
-            so always returns 'claude' flavor.
+            Gemini shares TOML command format with Qwen
+            (via gemini.toml.jinja for TOML). Gemini CLI does not
+            support agents/subagents, only commands.
         '''
-        return 'claude'
+        if item_type == 'commands':
+            return 'gemini'
+        # Gemini CLI does not support agents/subagents
+        error_message = f"Gemini CLI does not support {item_type} generation"
+        raise __.Omnierror( error_message )
 
     def resolve_base_directory(
         self,
-        mode: ExplicitTargetMode,
+        mode: _base.ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],
     ) -> __.Path:
-        ''' Resolves base output directory for Claude Code.
+        ''' Resolves base output directory for Gemini CLI.
 
-            For per-project mode, returns .claude in project root.
-            For per-user mode, respects precedence: CLAUDE_CONFIG_DIR
-            environment variable, configuration file override, or default
-            ~/.claude location.
+            Per-project: .auxiliary/configuration/coders/gemini/
+            Per-user: ~/.gemini/ with configuration file overrides.
         '''
         self.validate_mode( mode )
         if mode == 'per-project':
-            return target / ".auxiliary/configuration/coders/claude"
+            return target / ".auxiliary/configuration/coders/gemini"
         if mode == 'per-user':
             return self._resolve_user_directory( configuration, environment )
         raise __.TargetModeNoSupport( self.name, mode )
@@ -79,19 +82,18 @@ class ClaudeRenderer( RendererBase ):
         ''' Resolves per-user directory following precedence rules.
 
             Precedence order:
-            1. CLAUDE_CONFIG_DIR environment variable
-            2. Configuration file override (directory for this coder)
-            3. Default ~/.claude location
+            1. Configuration file override (directory field for this coder)
+            2. Default ~/.gemini/ location
+
+            Note: Gemini does not provide environment variable override
+            for user config path (unlike Claude's CLAUDE_CONFIG_DIR).
         '''
-        if 'CLAUDE_CONFIG_DIR' in environment:
-            directory = __.Path( environment[ 'CLAUDE_CONFIG_DIR' ] )
-            return directory.expanduser( )
         coder_configuration = self._extract_coder_configuration(
             configuration )
         if 'directory' in coder_configuration:
             directory = __.Path( coder_configuration[ 'directory' ] )
             return directory.expanduser( )
-        return __.Path.home( ) / '.claude'
+        return __.Path.home( ) / '.gemini'
 
     def _extract_coder_configuration(
         self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
@@ -107,4 +109,4 @@ class ClaudeRenderer( RendererBase ):
         return { }
 
 
-RENDERERS[ 'claude' ] = ClaudeRenderer( )
+_base.RENDERERS[ 'gemini' ] = GeminiRenderer( )

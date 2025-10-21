@@ -27,6 +27,7 @@
 
 
 from . import __
+from . import exceptions as _exceptions
 from . import generator as _generator
 
 
@@ -94,10 +95,52 @@ def update_content(
     if simulate: return False
     try: location.parent.mkdir( parents = True, exist_ok = True )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             location.parent, "create directory" ) from exception
     try: location.write_text( content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
-        raise __.FileOperationFailure(
+        raise _exceptions.FileOperationFailure(
             location, "update content" ) from exception
     return True
+
+
+def update_git_exclude(
+    target: __.Path,
+    symlinks: __.cabc.Sequence[ str ],
+    simulate: bool = False
+) -> int:
+    ''' Updates .git/info/exclude with symlink names if not already present.
+
+        Adds symlink names to git exclude file to prevent accidental
+        commits of generated symlinks. Processes file line-by-line to
+        preserve existing content and avoid duplicates.
+
+        Returns count of symlink names added to exclude file.
+    '''
+    if simulate or not symlinks: return 0
+    exclude_file = target / '.git' / 'info' / 'exclude'
+    if not exclude_file.exists( ): return 0
+    try: content = exclude_file.read_text( encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.FileOperationFailure(
+            exclude_file, "read git exclude file" ) from exception
+    existing_lines = content.splitlines( )
+    existing_patterns = frozenset( existing_lines )
+    additions = [
+        symlink for symlink in symlinks
+        if symlink not in existing_patterns
+    ]
+    if not additions: return 0
+    new_content_lines = existing_lines.copy( )
+    if new_content_lines and not new_content_lines[ -1 ].strip( ):
+        new_content_lines.extend( additions )
+    else:
+        new_content_lines.append( '' )
+        new_content_lines.extend( additions )
+    new_content = '\n'.join( new_content_lines )
+    if not new_content.endswith( '\n' ): new_content += '\n'
+    try: exclude_file.write_text( new_content, encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.FileOperationFailure(
+            exclude_file, "update git exclude file" ) from exception
+    return len( additions )

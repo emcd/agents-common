@@ -1,0 +1,13 @@
+---
+name: {{ context.name }}
+description: |
+{{ context.description | indent(2, True) }}
+{%- if coder.model is defined %}
+model: {{ coder.model }}
+{%- endif %}
+{%- if context.color is defined %}
+color: {{ context.color }}
+{%- endif %}
+---
+
+{{ content }}

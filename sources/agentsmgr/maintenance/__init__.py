@@ -18,15 +18,10 @@
 #============================================================================#
 
 
-''' Centralized imports for commands subpackage. '''
+''' Maintainer-facing CLI subpackage. '''
 
 
-# ruff: noqa: F403
-
-
-from ..__ import *
-from ..core import *
-from ..exceptions import *
-from ..renderers import *
-from ..results import *
-from ..sources import *
+def main( ):
+    ''' Maintainer-facing CLI entrypoint. '''
+    from .cli import execute
+    execute( )

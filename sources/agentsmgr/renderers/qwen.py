@@ -18,55 +18,57 @@
 #============================================================================#
 
 
-''' Claude Code renderer implementation.
+''' Qwen Code renderer implementation.
 
-    Provides path resolution and targeting mode validation for Claude Code,
+    Provides path resolution and targeting mode validation for Qwen Code,
     which supports both per-user and per-project configuration.
 '''
 
 
 from . import __
-from .base import RENDERERS, ExplicitTargetMode, RendererBase
+from . import base as _base
 
 
-class ClaudeRenderer( RendererBase ):
-    ''' Renderer for Claude Code coder.
+class QwenRenderer( _base.RendererBase ):
+    ''' Renderer for Qwen Code coder.
 
         Supports both per-user and per-project configuration modes.
-        Per-user mode respects CLAUDE_CONFIG_DIR environment variable
-        with fallback to configuration overrides and default location.
+        Per-user mode defaults to ~/.qwen/ with configuration file
+        override support via directory field in coder config.
     '''
 
-    name = 'claude'
+    name = 'qwen'
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
-    memory_filename = 'CLAUDE.md'
+    memory_filename = 'QWEN.md'
 
     def get_template_flavor( self, item_type: str ) -> str:
-        ''' Determines template flavor for Claude Code.
+        ''' Determines template flavor for Qwen Code.
 
-            Claude uses markdown format for both commands and agents,
-            so always returns 'claude' flavor.
+            Qwen shares markdown command format with Claude/Gemini
+            (via gemini.toml.jinja for TOML) but uses own agent format
+            with YAML frontmatter, so returns 'gemini' for commands
+            and 'qwen' for agents.
         '''
-        return 'claude'
+        if item_type == 'commands':
+            return 'gemini'
+        return 'qwen'
 
     def resolve_base_directory(
         self,
-        mode: ExplicitTargetMode,
+        mode: _base.ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],
     ) -> __.Path:
-        ''' Resolves base output directory for Claude Code.
+        ''' Resolves base output directory for Qwen Code.
 
-            For per-project mode, returns .claude in project root.
-            For per-user mode, respects precedence: CLAUDE_CONFIG_DIR
-            environment variable, configuration file override, or default
-            ~/.claude location.
+            Per-project: .auxiliary/configuration/coders/qwen/
+            Per-user: ~/.qwen/ with configuration file overrides.
         '''
         self.validate_mode( mode )
         if mode == 'per-project':
-            return target / ".auxiliary/configuration/coders/claude"
+            return target / ".auxiliary/configuration/coders/qwen"
         if mode == 'per-user':
             return self._resolve_user_directory( configuration, environment )
         raise __.TargetModeNoSupport( self.name, mode )
@@ -79,19 +81,18 @@ class ClaudeRenderer( RendererBase ):
         ''' Resolves per-user directory following precedence rules.
 
             Precedence order:
-            1. CLAUDE_CONFIG_DIR environment variable
-            2. Configuration file override (directory for this coder)
-            3. Default ~/.claude location
+            1. Configuration file override (directory field for this coder)
+            2. Default ~/.qwen/ location
+
+            Note: Qwen does not provide environment variable override
+            for user config path (unlike Claude's CLAUDE_CONFIG_DIR).
         '''
-        if 'CLAUDE_CONFIG_DIR' in environment:
-            directory = __.Path( environment[ 'CLAUDE_CONFIG_DIR' ] )
-            return directory.expanduser( )
         coder_configuration = self._extract_coder_configuration(
             configuration )
         if 'directory' in coder_configuration:
             directory = __.Path( coder_configuration[ 'directory' ] )
             return directory.expanduser( )
-        return __.Path.home( ) / '.claude'
+        return __.Path.home( ) / '.qwen'
 
     def _extract_coder_configuration(
         self, configuration: __.cabc.Mapping[ str, __.typx.Any ]
@@ -107,4 +108,4 @@ class ClaudeRenderer( RendererBase ):
         return { }
 
 
-RENDERERS[ 'claude' ] = ClaudeRenderer( )
+_base.RENDERERS[ 'qwen' ] = QwenRenderer( )
