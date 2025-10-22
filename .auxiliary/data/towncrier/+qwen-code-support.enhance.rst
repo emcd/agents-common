@@ -1,1 +1,0 @@
-CLI: Add support for Qwen Code as a target coder, including agent and command generation with YAML frontmatter templates and MCP server configuration.

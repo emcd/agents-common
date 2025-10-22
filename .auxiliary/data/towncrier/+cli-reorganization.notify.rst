@@ -1,1 +1,0 @@
-CLI: Split command-line interface into user-facing (agentsmgr) and maintainer-facing (agentsmgr-maintain) tools. The validate command is now available via agentsmgr-maintain.

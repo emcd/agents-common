@@ -1,1 +1,0 @@
-Performance: Optimize GitHub and GitLab repository processing with API-based tag resolution and shallow cloning, providing 3-50x speedup for population operations.
