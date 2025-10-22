@@ -23,6 +23,7 @@ dependencies = [
   'dynadoc~=1.4',
   'emcd-appcore[cli]~=1.6',
   'frigid~=4.2',
+  'packaging',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
   'tyro',
