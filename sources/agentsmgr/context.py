@@ -209,6 +209,9 @@ def _map_semantic_tool_qwen( tool_name: str ) -> str:
         Uses lookup table for known semantic names.
         Raises ToolSpecificationInvalidity for unknown tools.
     '''
+    # TODO: Verify semantic tool mappings are correct for Qwen coder.
+    # The structure is identical to Claude version, but tool names differ.
+    # Keep implementations separate since each coder has its own tool names.
     if tool_name not in _SEMANTIC_TOOLS_QWEN:
         raise _exceptions.ToolSpecificationInvalidity( tool_name )
     return _SEMANTIC_TOOLS_QWEN[ tool_name ]
@@ -236,6 +239,9 @@ def _map_mcp_tool_qwen( spec: dict[ str, __.typx.Any ] ) -> str:
         Format: { server = 'librovore', tool = 'query-inventory' }
         → 'mcp__librovore__query_inventory'
     '''
+    # TODO: Verify this implementation is correct for Qwen coder.
+    # Once verified, consider whether consolidation with Claude version
+    # is appropriate or if they should remain separate.
     server = spec.get( 'server', '' )
     tool = spec.get( 'tool', '' )
     tool_normalized = tool.replace( '-', '_' )

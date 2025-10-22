@@ -25,6 +25,7 @@
 '''
 
 
+from .. import nomina as _nomina
 from . import __
 
 
@@ -40,14 +41,7 @@ class AbstractSourceHandler( __.immut.Protocol, __.typx.Protocol ):
     def resolve(
         self,
         source_spec: str,
-        tag_prefix: __.typx.Annotated[
-            __.Absential[ str ],
-            __.ddoc.Doc(
-                "Prefix for filtering version tags when no explicit ref "
-                "is specified. Only tags starting with this prefix will be "
-                "considered, and the prefix will be stripped before version "
-                "parsing." ),
-        ] = __.absent,
+        tag_prefix: _nomina.TagPrefixArgument = __.absent,
     ) -> __.Path:
         ''' Resolves source specification to local filesystem path.
 
@@ -105,14 +99,7 @@ def source_handler(
 
 def resolve_source_location(
     source_spec: str,
-    tag_prefix: __.typx.Annotated[
-        __.Absential[ str ],
-        __.ddoc.Doc(
-            "Prefix for filtering version tags when no explicit ref "
-            "is specified. Only tags starting with this prefix will be "
-            "considered, and the prefix will be stripped before version "
-            "parsing." ),
-    ] = __.absent,
+    tag_prefix: _nomina.TagPrefixArgument = __.absent,
 ) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 

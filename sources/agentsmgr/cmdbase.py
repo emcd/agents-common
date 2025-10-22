@@ -31,6 +31,7 @@ import yaml as _yaml
 from . import __
 from . import core as _core
 from . import exceptions as _exceptions
+from . import nomina as _nomina
 from . import sources as _sources
 
 
@@ -134,14 +135,7 @@ async def validate_configuration(
 
 def retrieve_data_location(
     source_spec: str,
-    tag_prefix: __.typx.Annotated[
-        __.Absential[ str ],
-        __.ddoc.Doc(
-            "Prefix for filtering version tags when no explicit ref "
-            "is specified. Only tags starting with this prefix will be "
-            "considered, and the prefix will be stripped before version "
-            "parsing." ),
-    ] = __.absent,
+    tag_prefix: _nomina.TagPrefixArgument = __.absent,
 ) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 
