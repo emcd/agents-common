@@ -30,7 +30,7 @@ from . import __
 from . import base as _base
 
 
-@_base.source_handler(['/', './', '../', '~/', 'C:', 'D:'])
+@_base.source_handler(['', 'file'])
 class LocalSourceHandler:
     ''' Handles local filesystem path resolution.
 

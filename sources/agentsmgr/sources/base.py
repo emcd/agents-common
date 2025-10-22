@@ -104,9 +104,17 @@ def resolve_source_location(
     ''' Resolves data source specification to local filesystem path.
 
         Delegates to registered source handlers based on URL scheme.
+        Uses urlparse to extract the scheme from the specification.
+
         Raises DataSourceNoSupport if no handler can process the specification.
     '''
-    for scheme, handler in _SCHEME_HANDLERS.items( ):
-        if source_spec.startswith( scheme ):
-            return handler.resolve( source_spec, tag_prefix )
+    if source_spec.startswith( 'git@' ):
+        if 'git@' in _SCHEME_HANDLERS:
+            return _SCHEME_HANDLERS[ 'git@' ].resolve(
+                source_spec, tag_prefix )
+        raise __.DataSourceNoSupport( source_spec )
+    parsed = __.urlparse.urlparse( source_spec )
+    if parsed.scheme in _SCHEME_HANDLERS:
+        return _SCHEME_HANDLERS[ parsed.scheme ].resolve(
+            source_spec, tag_prefix )
     raise __.DataSourceNoSupport( source_spec )
