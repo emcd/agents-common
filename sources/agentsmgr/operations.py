@@ -115,10 +115,16 @@ def update_git_exclude(
         commits of generated symlinks. Processes file line-by-line to
         preserve existing content and avoid duplicates.
 
+        Handles GIT_DIR environment variable and git worktrees by
+        resolving the actual git directory location and using the common
+        git directory for shared resources.
+
         Returns count of symlink names added to exclude file.
     '''
     if simulate or not symlinks: return 0
-    exclude_file = target / '.git' / 'info' / 'exclude'
+    git_dir = _resolve_git_directory( target )
+    if not git_dir: return 0
+    exclude_file = git_dir / 'info' / 'exclude'
     if not exclude_file.exists( ): return 0
     try: content = exclude_file.read_text( encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
@@ -144,3 +150,40 @@ def update_git_exclude(
         raise _exceptions.FileOperationFailure(
             exclude_file, "update git exclude file" ) from exception
     return len( additions )
+
+
+def _resolve_git_directory(
+    start_path: __.Path
+) -> __.typx.Optional[ __.Path ]:
+    ''' Resolves git directory location, handling GIT_DIR and worktrees.
+
+        Checks GIT_DIR environment variable first, then uses Dulwich to
+        discover repository. Returns common git directory (shared across
+        worktrees) for access to shared resources like info/exclude.
+
+        Returns None if not in a git repository or on error.
+    '''
+    from dulwich.repo import Repo
+    git_dir_env = __.os.environ.get( 'GIT_DIR' )
+    if git_dir_env:
+        git_dir_path = __.Path( git_dir_env )
+        if git_dir_path.exists( ) and git_dir_path.is_dir( ):
+            return _get_common_git_dir( git_dir_path )
+    try: repo = Repo.discover( str( start_path ) )
+    except Exception: return None
+    git_dir_path = __.Path( repo.controldir( ) )
+    return _get_common_git_dir( git_dir_path )
+
+
+def _get_common_git_dir( git_dir: __.Path ) -> __.Path:
+    ''' Gets common git directory, handling worktree commondir.
+
+        For worktrees, reads commondir file to find shared resources.
+        For standard repos, returns git_dir unchanged.
+    '''
+    commondir_file = git_dir / 'commondir'
+    if not commondir_file.exists( ):
+        return git_dir
+    try: common_path = commondir_file.read_text( encoding = 'utf-8' ).strip( )
+    except ( OSError, IOError ): return git_dir
+    return ( git_dir / common_path ).resolve( )
