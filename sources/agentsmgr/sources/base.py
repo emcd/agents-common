@@ -37,7 +37,18 @@ class AbstractSourceHandler( __.immut.Protocol, __.typx.Protocol ):
     '''
 
     @__.abc.abstractmethod
-    def resolve( self, source_spec: str ) -> __.Path:
+    def resolve(
+        self,
+        source_spec: str,
+        tag_prefix: __.typx.Annotated[
+            __.Absential[ str ],
+            __.ddoc.Doc(
+                "Prefix for filtering version tags when no explicit ref "
+                "is specified. Only tags starting with this prefix will be "
+                "considered, and the prefix will be stripped before version "
+                "parsing." ),
+        ] = __.absent,
+    ) -> __.Path:
         ''' Resolves source specification to local filesystem path.
 
             Returns path to directory containing the resolved source content.
@@ -92,7 +103,17 @@ def source_handler(
     return decorator
 
 
-def resolve_source_location( source_spec: str ) -> __.Path:
+def resolve_source_location(
+    source_spec: str,
+    tag_prefix: __.typx.Annotated[
+        __.Absential[ str ],
+        __.ddoc.Doc(
+            "Prefix for filtering version tags when no explicit ref "
+            "is specified. Only tags starting with this prefix will be "
+            "considered, and the prefix will be stripped before version "
+            "parsing." ),
+    ] = __.absent,
+) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 
         Delegates to registered source handlers based on URL scheme.
@@ -100,5 +121,5 @@ def resolve_source_location( source_spec: str ) -> __.Path:
     '''
     for scheme, handler in _SCHEME_HANDLERS.items( ):
         if source_spec.startswith( scheme ):
-            return handler.resolve( source_spec )
+            return handler.resolve( source_spec, tag_prefix )
     raise __.DataSourceNoSupport( source_spec )

@@ -132,14 +132,24 @@ async def validate_configuration(
         raise _exceptions.ConfigurationInvalidity( )
 
 
-def retrieve_data_location( source_spec: str ) -> __.Path:
+def retrieve_data_location(
+    source_spec: str,
+    tag_prefix: __.typx.Annotated[
+        __.Absential[ str ],
+        __.ddoc.Doc(
+            "Prefix for filtering version tags when no explicit ref "
+            "is specified. Only tags starting with this prefix will be "
+            "considered, and the prefix will be stripped before version "
+            "parsing." ),
+    ] = __.absent,
+) -> __.Path:
     ''' Resolves data source specification to local filesystem path.
 
         Supports local paths, Git repositories, and remote sources through
         pluggable source handlers. Uses registered handlers to resolve
         various URL schemes to local filesystem paths.
     '''
-    return _sources.resolve_source_location( source_spec )
+    return _sources.resolve_source_location( source_spec, tag_prefix )
 
 
 def retrieve_variant_answers_file(

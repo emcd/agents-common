@@ -31,6 +31,12 @@ from . import __
 from . import base as _base
 
 
+GitApiTag: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
+
+
+_scribe = __.provide_scribe( __name__ )
+
+
 class GitLocation( __.immut.DataclassObject ):
     ''' Git source location with URL, optional ref, and optional subdir. '''
     git_url: str
@@ -81,7 +87,18 @@ class GitSourceHandler:
         cloning. Implements fragment syntax for subdirectory specification.
     '''
 
-    def resolve( self, source_spec: str ) -> __.Path:
+    def resolve(
+        self,
+        source_spec: str,
+        tag_prefix: __.typx.Annotated[
+            __.Absential[ str ],
+            __.ddoc.Doc(
+                "Prefix for filtering version tags when no explicit ref "
+                "is specified. Only tags starting with this prefix will be "
+                "considered, and the prefix will be stripped before version "
+                "parsing." ),
+        ] = __.absent,
+    ) -> __.Path:
         ''' Resolves Git source to local temporary directory.
 
             Clones the repository to a temporary location and returns the
@@ -90,7 +107,7 @@ class GitSourceHandler:
         location = self._parse_git_url( source_spec )
         temp_dir = self._create_temp_directory( )
         try:
-            self._clone_repository( location, temp_dir )
+            self._clone_repository( location, temp_dir, tag_prefix )
             if location.subdir:
                 subdir_path = temp_dir / location.subdir
                 if not subdir_path.exists( ):
@@ -155,27 +172,23 @@ class GitSourceHandler:
         return __.Path( temp_dir )
 
     def _clone_repository(
-        self, location: GitLocation, target_dir: __.Path
+        self,
+        location: GitLocation,
+        target_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
     ) -> None:
-        ''' Clones Git repository using Dulwich.
+        ''' Clones Git repository using Dulwich with optimizations.
 
-            Performs shallow clone for default branch or full clone for refs,
-            then checks out the specified reference if provided.
+            For GitHub/GitLab repositories without explicit ref, attempts
+            API-based tag resolution followed by shallow clone. Falls back
+            to standard full clone on any failure.
         '''
         try:
-            _dulwich_porcelain.clone(
-                location.git_url,
-                str( target_dir ),
-                bare = False,
-                depth = None,
-            )
             if location.ref is None:
-                latest_tag = self._get_latest_tag( target_dir )
-                if latest_tag:
-                    self._checkout_ref( target_dir, latest_tag )
-            else:
-                # Checkout specified ref
-                self._checkout_ref( target_dir, location.ref )
+                cloned = self._attempt_optimized_clone(
+                    location, target_dir, tag_prefix )
+                if cloned: return
+            self._perform_standard_clone( location, target_dir, tag_prefix )
         except Exception as exception:
             error_msg = str( exception ).lower( )
             if location.ref is not None and (
@@ -186,8 +199,124 @@ class GitSourceHandler:
             raise GitCloneFailure(
                 location.git_url, str( exception ) ) from exception
 
-    def _get_latest_tag( self, repo_dir: __.Path ) -> __.typx.Optional[ str ]:
-        ''' Gets the latest tag from the repository by commit date. '''
+    def _attempt_optimized_clone(
+        self,
+        location: GitLocation,
+        target_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> bool:
+        ''' Attempts optimized clone using API and shallow clone.
+
+            Returns True if successful, False if optimization should fall
+            back to standard clone.
+        '''
+        latest_tag = self._resolve_latest_tag_via_api(
+            location.git_url, tag_prefix )
+        if latest_tag is None: return False
+        _scribe.info(
+            f"Resolved latest tag '{latest_tag}' via API for repository: "
+            f"{location.git_url}" )
+        try:
+            self._perform_shallow_clone(
+                location.git_url, target_dir, latest_tag )
+        except Exception:
+            _scribe.info(
+                f"Shallow clone failed, falling back to standard clone for "
+                f"repository: {location.git_url}" )
+            return False
+        else:
+            _scribe.info(
+                f"Performed shallow clone for tag '{latest_tag}' in "
+                f"repository: {location.git_url}" )
+            return True
+
+    def _perform_shallow_clone(
+        self, git_url: str, target_dir: __.Path, ref: str
+    ) -> None:
+        ''' Performs shallow clone of specific ref using Dulwich.
+
+            Uses depth=1 and branch parameters for efficient cloning.
+        '''
+        with open( __.os.devnull, 'wb' ) as devnull:
+            _dulwich_porcelain.clone(
+                git_url,
+                str( target_dir ),
+                bare = False,
+                depth = 1,
+                branch = ref.encode( ),
+                errstream = devnull,
+            )
+
+    def _perform_standard_clone(
+        self,
+        location: GitLocation,
+        target_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> None:
+        ''' Performs standard full clone with optional ref checkout.
+
+            This is the fallback path for repositories that cannot use
+            API optimization or when explicit ref is provided.
+        '''
+        with open( __.os.devnull, 'wb' ) as devnull:
+            _dulwich_porcelain.clone(
+                location.git_url,
+                str( target_dir ),
+                bare = False,
+                depth = None,
+                errstream = devnull,
+            )
+        if location.ref is None:
+            latest_tag = self._get_latest_tag( target_dir, tag_prefix )
+            if latest_tag:
+                _scribe.info(
+                    f"Selected latest tag '{latest_tag}' for repository: "
+                    f"{location.git_url}" )
+                self._checkout_ref( target_dir, latest_tag )
+            else:
+                _scribe.info(
+                    f"No version tags found, using default branch for "
+                    f"repository: {location.git_url}" )
+        else:
+            _scribe.info(
+                f"Using explicit ref '{location.ref}' for repository: "
+                f"{location.git_url}" )
+            self._checkout_ref( target_dir, location.ref )
+
+    def _extract_version(
+        self,
+        tag_name: str,
+        prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ __.Version ]:
+        ''' Extracts and parses semantic version from tag name.
+
+            If prefix is provided, only processes tags that start with the
+            prefix and strips it before parsing. If prefix is absent, tries
+            parsing the tag name directly. Returns None if tag cannot be
+            parsed as a valid semantic version.
+        '''
+        version_string = tag_name
+        if not __.is_absent( prefix ):
+            if not tag_name.startswith( prefix ):
+                return None
+            version_string = tag_name[ len( prefix ): ]
+        try:
+            return __.Version( version_string )
+        except __.InvalidVersion:
+            return None
+
+    def _get_latest_tag(
+        self,
+        repo_dir: __.Path,
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ str ]:
+        ''' Gets the latest tag from the repository by semantic version.
+
+            Optionally filters tags by prefix before selecting latest.
+            Uses packaging.version.Version for semantic comparison. If no
+            tags can be parsed as versions, returns None (falls back to
+            default branch).
+        '''
         from dulwich.repo import Repo
         try:
             repo = Repo( str( repo_dir ) )
@@ -199,16 +328,18 @@ class GitSourceHandler:
             return None
         if not tag_refs:
             return None
-        tag_times: list[ tuple[ int, str ] ] = [ ]
+        versioned_tags: list[ tuple[ __.Version, str ] ] = [ ]
         for tag_name_bytes, commit_sha in tag_refs.items( ):
             commit = self._get_tag_commit( repo, commit_sha )
             if commit is not None:
                 tag_name = tag_name_bytes.decode( 'utf-8' )
-                tag_times.append( ( commit.commit_time, tag_name ) )
-        if not tag_times:
-            return None
-        tag_times.sort( reverse = True )
-        return tag_times[ 0 ][ 1 ]
+                version = self._extract_version( tag_name, tag_prefix )
+                if version is not None:
+                    versioned_tags.append( ( version, tag_name ) )
+        if versioned_tags:
+            versioned_tags.sort( reverse = True )
+            return versioned_tags[ 0 ][ 1 ]
+        return None
 
     def _get_tag_commit(
         self, repo: __.typx.Any, commit_sha: bytes
@@ -217,7 +348,8 @@ class GitSourceHandler:
         try:
             commit = repo[ commit_sha ]
             while hasattr( commit, 'object' ):
-                commit = repo[ commit.object ]
+                # object attribute is a tuple (class, sha)
+                commit = repo[ commit.object[ 1 ] ]
         except Exception:
             return None
         else:
@@ -247,3 +379,168 @@ class GitSourceHandler:
     def _raise_subdir_not_found( self, subdir: str, source_spec: str ) -> None:
         ''' Raises GitSubdirectoryAbsence for missing subdirectory. '''
         raise GitSubdirectoryAbsence( subdir, source_spec )
+
+    def _detect_git_host( self, git_url: str ) -> __.typx.Optional[ str ]:
+        ''' Detects Git hosting provider from URL.
+
+            Returns 'github', 'gitlab', or None for other providers.
+        '''
+        if git_url.startswith( 'git@' ):
+            parts = git_url.split( '@', 1 )
+            if len( parts ) > 1:
+                host_part = parts[ 1 ].split( ':', 1 )[ 0 ]
+                if 'github.com' in host_part: return 'github'
+                if 'gitlab.com' in host_part: return 'gitlab'
+        else:
+            parsed = __.urlparse.urlparse( git_url )
+            hostname = parsed.netloc.lower( )
+            if 'github.com' in hostname: return 'github'
+            if 'gitlab.com' in hostname: return 'gitlab'
+        return None
+
+    def _acquire_github_authentication_token(
+        self
+    ) -> __.typx.Optional[ str ]:
+        ''' Acquires GitHub authentication token from environment or gh CLI.
+
+            Checks GITHUB_TOKEN environment variable first, then attempts
+            to retrieve token from gh CLI. Returns None if neither source
+            is available.
+        '''
+        token = __.os.environ.get( 'GITHUB_TOKEN' )
+        if token: return token
+        try:
+            result = __.subprocess.run(
+                [ 'gh', 'auth', 'token' ],
+                capture_output = True,
+                text = True,
+                timeout = 5,
+                check = False )
+            if result.returncode == 0:
+                return result.stdout.strip( )
+        except ( FileNotFoundError, __.subprocess.TimeoutExpired ):
+            pass
+        return None
+
+    def _acquire_gitlab_authentication_token(
+        self
+    ) -> __.typx.Optional[ str ]:
+        ''' Acquires GitLab authentication token from environment.
+
+            Checks GITLAB_TOKEN environment variable. Returns None if not
+            available.
+        '''
+        return __.os.environ.get( 'GITLAB_TOKEN' )
+
+    def _retrieve_github_tags(
+        self, owner: str, repository: str
+    ) -> __.typx.Optional[ list[ GitApiTag ] ]:
+        ''' Retrieves tags from GitHub API.
+
+            Returns list of tag dictionaries or None on failure. Each tag
+            contains 'name' and 'commit' fields.
+        '''
+        token = self._acquire_github_authentication_token( )
+        url = f"https://api.github.com/repos/{owner}/{repository}/tags"
+        request = __.urlreq.Request( url )
+        if token:
+            request.add_header( 'Authorization', f"token {token}" )
+        request.add_header( 'Accept', 'application/vnd.github.v3+json' )
+        try:
+            with __.urlreq.urlopen( request, timeout = 10 ) as response:
+                return __.json.loads( response.read( ) )
+        except ( __.urlerr.URLError, __.urlerr.HTTPError, Exception ):
+            return None
+
+    def _retrieve_gitlab_tags(
+        self, owner: str, repository: str
+    ) -> __.typx.Optional[ list[ GitApiTag ] ]:
+        ''' Retrieves tags from GitLab API.
+
+            Returns list of tag dictionaries or None on failure. Each tag
+            contains 'name' and 'commit' fields.
+        '''
+        token = self._acquire_gitlab_authentication_token( )
+        project_path = f"{owner}%2F{repository}"
+        url = (
+            f"https://gitlab.com/api/v4/projects/{project_path}/"
+            f"repository/tags" )
+        request = __.urlreq.Request( url )
+        if token:
+            request.add_header( 'PRIVATE-TOKEN', token )
+        try:
+            with __.urlreq.urlopen( request, timeout = 10 ) as response:
+                return __.json.loads( response.read( ) )
+        except ( __.urlerr.URLError, __.urlerr.HTTPError, Exception ):
+            return None
+
+    def _extract_repository_information(
+        self, git_url: str
+    ) -> __.typx.Optional[ tuple[ str, str ] ]:
+        ''' Extracts owner and repository name from Git URL.
+
+            Returns tuple of (owner, repository) or None if URL format is
+            not recognized. Handles both SSH (git@host:owner/repo) and
+            HTTPS (https://host/owner/repo) formats.
+        '''
+        host = self._detect_git_host( git_url )
+        if host is None: return None
+        path = None
+        if git_url.startswith( 'git@' ):
+            parts = git_url.split( ':', maxsplit = 1 )
+            path = parts[ 1 ] if len( parts ) > 1 else None
+        else:
+            parsed = __.urlparse.urlparse( git_url )
+            path = parsed.path.lstrip( '/' )
+        if path is None: return None
+        path = path.removesuffix( '.git' )
+        path_parts = path.split( '/', maxsplit = 1 )
+        if len( path_parts ) > 1:
+            return ( path_parts[ 0 ], path_parts[ 1 ] )
+        return None
+
+    def _select_latest_tag_from_api(
+        self,
+        tags: list[ GitApiTag ],
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ str ]:
+        ''' Selects latest tag from API results by semantic version.
+
+            Filters by tag prefix if provided, then selects tag with
+            highest semantic version. Returns None if no valid version
+            tags are found.
+        '''
+        versioned_tags: list[ tuple[ __.Version, str ] ] = [ ]
+        for tag in tags:
+            tag_name = tag[ 'name' ]
+            version = self._extract_version( tag_name, tag_prefix )
+            if version is not None:
+                versioned_tags.append( ( version, tag_name ) )
+        if versioned_tags:
+            versioned_tags.sort( reverse = True )
+            return versioned_tags[ 0 ][ 1 ]
+        return None
+
+    def _resolve_latest_tag_via_api(
+        self,
+        git_url: str,
+        tag_prefix: __.Absential[ str ] = __.absent,
+    ) -> __.typx.Optional[ str ]:
+        ''' Resolves latest tag using GitHub or GitLab API.
+
+            Returns tag name or None if API resolution fails or is not
+            applicable.
+        '''
+        host = self._detect_git_host( git_url )
+        if host is None: return None
+        repo_info = self._extract_repository_information( git_url )
+        if repo_info is None: return None
+        owner, repository = repo_info
+        if host == 'github':
+            tags = self._retrieve_github_tags( owner, repository )
+        elif host == 'gitlab':
+            tags = self._retrieve_gitlab_tags( owner, repository )
+        else:
+            return None
+        if tags is None: return None
+        return self._select_latest_tag_from_api( tags, tag_prefix )

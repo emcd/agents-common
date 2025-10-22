@@ -1,0 +1,1 @@
+Git: Automatically add generated symlink names to .git/info/exclude during populate command to prevent accidental commits of generated content.

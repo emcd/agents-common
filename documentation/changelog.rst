@@ -23,6 +23,27 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a1 (2025-10-21)
+============================
+
+Enhancements
+------------
+
+- CLI: Add --profile parameter to populate command for specifying alternative Copier answers file paths, enabling testing with different configurations.
+- CLI: Add --tag-prefix parameter to populate command for filtering Git version tags by prefix, with semantic version comparison for accurate tag selection.
+- CLI: Add support for Gemini CLI as a target coder for command generation (agent generation not supported by Gemini CLI).
+- CLI: Add support for Qwen Code as a target coder, including agent and command generation with YAML frontmatter templates and MCP server configuration.
+- Git: Automatically add generated symlink names to .git/info/exclude during populate command to prevent accidental commits of generated content.
+- Performance: Optimize GitHub and GitLab repository processing with API-based tag resolution and shallow cloning, providing 3-50x speedup for population operations.
+
+
+Notices
+-------
+
+- CLI: Change populate command to use positional arguments for source and target instead of --source and --target flags. This is a breaking change for existing scripts.
+- CLI: Split command-line interface into user-facing (agentsmgr) and maintainer-facing (agentsmgr-maintain) tools. The validate command is now available via agentsmgr-maintain.
+
+
 agentsmgr 1.0a0 (2025-10-12)
 ============================
 

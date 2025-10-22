@@ -1,0 +1,1 @@
+CLI: Add support for Gemini CLI as a target coder for command generation (agent generation not supported by Gemini CLI).

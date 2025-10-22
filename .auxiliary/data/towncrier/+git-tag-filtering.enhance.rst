@@ -1,0 +1,1 @@
+CLI: Add --tag-prefix parameter to populate command for filtering Git version tags by prefix, with semantic version comparison for accurate tag selection.
