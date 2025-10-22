@@ -4,8 +4,6 @@
 
 ## Features
 
-- [ ] Tag prefix support.
-
 - [ ] **Tool groups for common combinations**: Define standard tool groups in
   configuration (e.g., "file_operations", "shell_access"). Create template
   helpers for common tool sets. Validate tool names against known Qwen tools.
