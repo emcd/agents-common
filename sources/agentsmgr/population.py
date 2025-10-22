@@ -71,7 +71,12 @@ def _create_all_symlinks(
     if links_created > 0:
         _scribe.info(
             f"Created {links_created}/{links_attempted} memory symlinks" )
-    if mode == 'per-project':
+    needs_coder_symlinks = (
+        mode == 'per-project'
+        or ( mode == 'default' and any(
+            _renderers.RENDERERS[ coder ].mode_default == 'per-project'
+            for coder in configuration[ 'coders' ] ) ) )
+    if needs_coder_symlinks:
         (   coder_symlinks_attempted,
             coder_symlinks_created,
             coder_symlink_names ) = (
