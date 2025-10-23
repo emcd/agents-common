@@ -96,6 +96,38 @@ def _create_all_symlinks(
     return tuple( all_symlink_names )
 
 
+def _populate_instructions_if_configured(
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    target: __.Path,
+    tag_prefix: __.Absential[ str ],
+    simulate: bool,
+) -> tuple[ bool, str ]:
+    ''' Populates instructions if configured and returns status.
+
+        Returns tuple of (sources_present, instructions_target_path).
+        sources_present indicates whether instruction sources were
+        configured and processed.
+    '''
+    if not configuration.get( 'provide_instructions', False ):
+        return ( False, '' )
+    instructions_sources = configuration.get( 'instructions_sources', [ ] )
+    instructions_target = configuration.get(
+        'instructions_target', '.auxiliary/instructions' )
+    if not instructions_sources:
+        return ( False, instructions_target )
+    instructions_attempted, instructions_updated = (
+        _instructions.populate_instructions(
+            instructions_sources,
+            target / instructions_target,
+            tag_prefix,
+            simulate,
+        ) )
+    _scribe.info(
+        f"Updated {instructions_updated}/"
+        f"{instructions_attempted} instruction files" )
+    return ( True, instructions_target )
+
+
 def _create_coder_directory_symlinks(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
@@ -215,24 +247,15 @@ class PopulateCommand( __.appcore_cli.Command ):
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
-        if configuration.get( 'provide_instructions', False ):
-            instructions_sources = configuration.get(
-                'instructions_sources', [ ] )
-            instructions_target = configuration.get(
-                'instructions_target', '.auxiliary/instructions' )
-            if instructions_sources:
-                instructions_attempted, instructions_updated = (
-                    _instructions.populate_instructions(
-                        instructions_sources,
-                        self.target / instructions_target,
-                        prefix,
-                        self.simulate,
-                    ) )
-                _scribe.info(
-                    f"Updated {instructions_updated}/"
-                    f"{instructions_attempted} instruction files" )
+        instructions_populated, instructions_target = (
+            _populate_instructions_if_configured(
+                configuration, self.target, prefix, self.simulate ) )
         all_symlink_names = _create_all_symlinks(
             configuration, self.target, self.mode, self.simulate )
+        git_exclude_entries: list[ str ] = [ ]
+        if instructions_populated:
+            git_exclude_entries.append( instructions_target )
+        git_exclude_entries.extend( all_symlink_names )
         if self.update_globals:
             globals_attempted, globals_updated = (
                 _userdata.populate_globals(
@@ -244,13 +267,12 @@ class PopulateCommand( __.appcore_cli.Command ):
             _scribe.info(
                 f"Updated {globals_updated}/{globals_attempted} "
                 "global files" )
-        if all_symlink_names:
+        if git_exclude_entries:
             excludes_added = _operations.update_git_exclude(
-                self.target, all_symlink_names, self.simulate )
+                self.target, git_exclude_entries, self.simulate )
             if excludes_added > 0:
                 _scribe.info(
-                    f"Added {excludes_added} symlink names to "
-                    ".git/info/exclude" )
+                    f"Added {excludes_added} entries to .git/info/exclude" )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
