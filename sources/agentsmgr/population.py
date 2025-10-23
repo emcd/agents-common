@@ -26,6 +26,7 @@ from . import cmdbase as _cmdbase
 from . import core as _core
 from . import exceptions as _exceptions
 from . import generator as _generator
+from . import instructions as _instructions
 from . import memorylinks as _memorylinks
 from . import operations as _operations
 from . import renderers as _renderers
@@ -214,6 +215,22 @@ class PopulateCommand( __.appcore_cli.Command ):
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
+        if configuration.get( 'provide_instructions', False ):
+            instructions_sources = configuration.get(
+                'instructions_sources', [ ] )
+            instructions_target = configuration.get(
+                'instructions_target', '.auxiliary/instructions' )
+            if instructions_sources:
+                instructions_attempted, instructions_updated = (
+                    _instructions.populate_instructions(
+                        instructions_sources,
+                        self.target / instructions_target,
+                        prefix,
+                        self.simulate,
+                    ) )
+                _scribe.info(
+                    f"Updated {instructions_updated}/"
+                    f"{instructions_attempted} instruction files" )
         all_symlink_names = _create_all_symlinks(
             configuration, self.target, self.mode, self.simulate )
         if self.update_globals:
