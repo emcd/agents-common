@@ -55,8 +55,9 @@ def _create_all_symlinks(
     ''' Creates all symlinks and returns their names for git exclude.
 
         Creates memory symlinks for all coders and coder directory
-        symlinks for per-project mode. Returns tuple of all created
-        symlink names.
+        symlinks for per-project mode. Returns tuple of all symlink
+        names (both newly created and pre-existing) for git exclude
+        update.
     '''
     all_symlink_names: list[ str ] = [ ]
     if mode == 'nowhere': return tuple( all_symlink_names )
@@ -108,7 +109,8 @@ def _create_coder_directory_symlinks(
         .auxiliary/configuration/coders/.
 
         Returns tuple of (attempted, created, symlink_names) where
-        symlink_names contains names of all created symlinks.
+        symlink_names contains names of all symlinks (both newly created
+        and pre-existing).
     '''
     attempted = 0
     created = 0
@@ -127,9 +129,8 @@ def _create_coder_directory_symlinks(
         attempted += 1
         was_created, symlink_name = _memorylinks.create_memory_symlink(
             source, link_path, simulate )
-        if was_created:
-            created += 1
-            symlink_names.append( symlink_name )
+        if was_created: created += 1
+        symlink_names.append( symlink_name )
 
         # Create .mcp.json symlink for Claude coder specifically
         if coder_name == 'claude':
@@ -139,9 +140,8 @@ def _create_coder_directory_symlinks(
             attempted += 1
             was_created, symlink_name = _memorylinks.create_memory_symlink(
                 mcp_source, mcp_link, simulate )
-            if was_created:
-                created += 1
-                symlink_names.append( symlink_name )
+            if was_created: created += 1
+            symlink_names.append( symlink_name )
 
     return ( attempted, created, tuple( symlink_names ) )
 
