@@ -18,40 +18,18 @@
 #============================================================================#
 
 
-''' Local filesystem source handler.
-
-    This module provides source resolution for local filesystem paths,
-    maintaining the existing behavior from the original retrieve_data_location
-    function.
-'''
+''' Reusable type aliases for agentsmgr public API. '''
 
 
 from . import __
-from . import base as _base
 
 
-@_base.source_handler(['', 'file'])
-class LocalSourceHandler:
-    ''' Handles local filesystem path resolution.
-
-        Resolves local path specifications to absolute filesystem paths.
-        This maintains backward compatibility with existing local path
-        usage patterns.
-    '''
-
-    def resolve(
-        self,
-        source_spec: str,
-        tag_prefix: __.typx.Annotated[
-            __.Absential[ str ],
-            __.ddoc.Doc(
-                "Tag prefix for filtering version tags; ignored for local "
-                "sources." ),
-        ] = __.absent,
-    ) -> __.Path:
-        ''' Resolves local path specification to absolute path.
-
-            Converts relative paths to absolute paths and validates that
-            the path exists and is accessible.
-        '''
-        return __.Path( source_spec ).resolve( )
+TagPrefixArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ str ],
+    __.ddoc.Doc( '''
+        Prefix for filtering version tags when no explicit ref
+        is specified. Only tags starting with this prefix will be
+        considered, and the prefix will be stripped before version
+        parsing.
+    ''' ),
+]

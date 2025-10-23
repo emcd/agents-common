@@ -46,21 +46,21 @@ def populate_directory(
     items_written = 0
     for coder_name in generator.configuration[ 'coders' ]:
         for item_type in ( 'commands', 'agents' ):
-            attempted, written = produce_coder_item_type(
+            attempted, written = generate_coder_item_type(
                 generator, coder_name, item_type, target, simulate )
             items_attempted += attempted
             items_written += written
     return ( items_attempted, items_written )
 
 
-def produce_coder_item_type(
+def generate_coder_item_type(
     generator: _generator.ContentGenerator,
     coder: str,
     item_type: str,
     target: __.Path,
     simulate: bool
 ) -> tuple[ int, int ]:
-    ''' Produces items of specific type for a coder.
+    ''' Generates items of specific type for a coder.
 
         Generates all items (commands or agents) for specified coder by
         iterating through configuration files. Returns tuple of
@@ -78,15 +78,15 @@ def produce_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, configuration_file.stem, coder, target )
-        if update_content( result.content, result.location, simulate ):
+        if save_content( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
 
 
-def update_content(
+def save_content(
     content: str, location: __.Path, simulate: bool = False
 ) -> bool:
-    ''' Updates content file, creating directories as needed.
+    ''' Saves content to location, creating parent directories as needed.
 
         Writes content to specified location, creating parent directories
         if necessary. In simulation mode, no actual writing occurs.
@@ -100,7 +100,7 @@ def update_content(
     try: location.write_text( content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
-            location, "update content" ) from exception
+            location, "save content" ) from exception
     return True
 
 
@@ -115,10 +115,16 @@ def update_git_exclude(
         commits of generated symlinks. Processes file line-by-line to
         preserve existing content and avoid duplicates.
 
+        Handles GIT_DIR environment variable and git worktrees by
+        resolving the actual git directory location and using the common
+        git directory for shared resources.
+
         Returns count of symlink names added to exclude file.
     '''
     if simulate or not symlinks: return 0
-    exclude_file = target / '.git' / 'info' / 'exclude'
+    git_dir = _resolve_git_directory( target )
+    if not git_dir: return 0
+    exclude_file = git_dir / 'info' / 'exclude'
     if not exclude_file.exists( ): return 0
     try: content = exclude_file.read_text( encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
@@ -144,3 +150,40 @@ def update_git_exclude(
         raise _exceptions.FileOperationFailure(
             exclude_file, "update git exclude file" ) from exception
     return len( additions )
+
+
+def _resolve_git_directory(
+    start_path: __.Path
+) -> __.typx.Optional[ __.Path ]:
+    ''' Resolves git directory location, handling GIT_DIR and worktrees.
+
+        Checks GIT_DIR environment variable first, then uses Dulwich to
+        discover repository. Returns common git directory (shared across
+        worktrees) for access to shared resources like info/exclude.
+
+        Returns None if not in a git repository or on error.
+    '''
+    from dulwich.repo import Repo
+    git_dir_env = __.os.environ.get( 'GIT_DIR' )
+    if git_dir_env:
+        git_dir_path = __.Path( git_dir_env )
+        if git_dir_path.exists( ) and git_dir_path.is_dir( ):
+            return _discover_common_git_directory( git_dir_path )
+    try: repo = Repo.discover( str( start_path ) )
+    except Exception: return None
+    git_dir_path = __.Path( repo.controldir( ) )
+    return _discover_common_git_directory( git_dir_path )
+
+
+def _discover_common_git_directory( git_dir: __.Path ) -> __.Path:
+    ''' Discovers common git directory, handling worktree commondir.
+
+        For worktrees, reads commondir file to find shared resources.
+        For standard repos, returns git_dir unchanged.
+    '''
+    commondir_file = git_dir / 'commondir'
+    if not commondir_file.exists( ):
+        return git_dir
+    try: common_path = commondir_file.read_text( encoding = 'utf-8' ).strip( )
+    except ( OSError, IOError ): return git_dir
+    return ( git_dir / common_path ).resolve( )

@@ -99,7 +99,8 @@ def create_memory_symlinks_for_coders(
         of targeting mode since memory files are project-specific.
 
         Returns tuple of (attempted, created, symlink_names) where
-        symlink_names contains names of all created symlinks.
+        symlink_names contains names of all symlinks (both newly created
+        and pre-existing).
     '''
     source = target / '.auxiliary' / 'configuration' / 'conventions.md'
     if not source.exists( ):
@@ -115,7 +116,6 @@ def create_memory_symlinks_for_coders(
         attempted += 1
         was_created, symlink_name = create_memory_symlink(
             source, link_path, simulate )
-        if was_created:
-            created += 1
-            symlink_names.append( symlink_name )
+        if was_created: created += 1
+        symlink_names.append( symlink_name )
     return ( attempted, created, tuple( symlink_names ) )

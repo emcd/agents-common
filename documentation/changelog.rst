@@ -23,6 +23,23 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a2 (2025-10-22)
+============================
+
+Enhancements
+------------
+
+- Add support for Git worktrees and ``GIT_DIR`` environment variable in populate command, improving compatibility with non-standard Git configurations.
+- Support relative paths in populate command source argument without requiring explicit ``./`` prefix. The source resolution now uses standard URL scheme extraction for simplified path handling.
+
+
+Repairs
+-------
+
+- Fix Git source handler URL scheme registration for correct path resolution in populate command source argument.
+- Fix populate command to respect per-coder mode defaults when creating coder directory symlinks and properly handle interrupted operations for idempotent behavior.
+
+
 agentsmgr 1.0a1 (2025-10-21)
 ============================
 

@@ -77,8 +77,7 @@ class GitRefAbsence( __.DataSourceNoSupport ):
 
 
 @_base.source_handler([
-    'github:', 'gitlab:', 'git+https:',
-    'https://github.com/', 'https://gitlab.com/', 'git@'
+    'github', 'gitlab', 'git+https', 'https', 'git@'
 ])
 class GitSourceHandler:
     ''' Handles Git repository source resolution with Dulwich.
