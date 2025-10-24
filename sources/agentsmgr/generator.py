@@ -132,18 +132,17 @@ class ContentGenerator( __.immut.DataclassObject ):
         self, item_type: str, coder: str
     ) -> list[ str ]:
         directory = self.location / "templates"
-        try: renderer = _renderers.RENDERERS[ coder ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder ) from exception
-        target_dir_name = renderer.calculate_directory_location( item_type )
-        # Always plural (e.g., commands, agents)
+        # Validate coder exists in registry
+        if coder not in _renderers.RENDERERS:
+            raise _exceptions.CoderAbsence( coder )
+        # Template directories always use plural form (commands, agents)
         source_dir = directory / item_type
         if not source_dir.exists():
             raise _exceptions.TemplateError.for_missing_template(
                 coder, item_type
             )
         templates = [
-            f"{target_dir_name}/{p.name}"
+            f"{item_type}/{p.name}"
             for p in source_dir.glob( "*.jinja" )
         ]
         if not templates:
@@ -261,10 +260,10 @@ class ContentGenerator( __.immut.DataclassObject ):
             raise _exceptions.CoderAbsence( coder ) from exception
         flavor = renderer.get_template_flavor( item_type )
         available = self._survey_available_templates( item_type, coder )
-        directory_name = renderer.calculate_directory_location( item_type )
+        # Template paths always use plural item_type (commands, agents)
         for extension in [ 'md', 'toml' ]:
             organized_path = (
-                f"{directory_name}/{flavor}.{extension}.jinja" )
+                f"{item_type}/{flavor}.{extension}.jinja" )
             if organized_path in available:
                 return organized_path
         raise _exceptions.TemplateError.for_missing_template(
