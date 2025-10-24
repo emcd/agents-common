@@ -152,6 +152,29 @@ class ContentGenerator( __.immut.DataclassObject ):
             )
         return templates
 
+    def resolve_content_paths(
+        self, item_type: str, item_name: str, coder: str
+    ) -> tuple[ __.Path, __.typx.Optional[ __.Path ] ]:
+        ''' Resolves primary and fallback content paths.
+
+            Returns tuple of (primary_path, fallback_path) where fallback_path
+            is None if no fallback coder is configured.
+
+            This method is public to allow operations module to pre-check
+            content availability without loading files.
+        '''
+        primary_path = (
+            self.location / "contents" / item_type / coder /
+            f"{item_name}.md" )
+        fallback_path = None
+        fallback_mappings = self._retrieve_fallback_mappings( )
+        fallback_coder = fallback_mappings.get( coder )
+        if fallback_coder:
+            fallback_path = (
+                self.location / "contents" / item_type /
+                fallback_coder / f"{item_name}.md" )
+        return ( primary_path, fallback_path )
+
     def _retrieve_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
     ) -> str:
@@ -160,20 +183,14 @@ class ContentGenerator( __.immut.DataclassObject ):
             Attempts to read content from coder-specific location first,
             then falls back to compatible coder if content is missing.
         '''
-        primary_path = (
-            self.location / "contents" / item_type / coder /
-            f"{item_name}.md" )
+        primary_path, fallback_path = self.resolve_content_paths(
+            item_type, item_name, coder )
         if primary_path.exists( ):
             return primary_path.read_text( encoding = 'utf-8' )
-        fallback_mappings = self._retrieve_fallback_mappings( )
-        fallback_coder = fallback_mappings.get( coder )
-        if fallback_coder:
-            fallback_path = (
-                self.location / "contents" / item_type /
-                fallback_coder / f"{item_name}.md" )
-            if fallback_path.exists( ):
-                _scribe.debug( f"Using {fallback_coder} content for {coder}" )
-                return fallback_path.read_text( encoding = 'utf-8' )
+        if fallback_path and fallback_path.exists( ):
+            fallback_coder = self._retrieve_fallback_mappings( ).get( coder )
+            _scribe.debug( f"Using {fallback_coder} content for {coder}" )
+            return fallback_path.read_text( encoding = 'utf-8' )
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
     def _parse_template_extension( self, template_name: str ) -> str:
