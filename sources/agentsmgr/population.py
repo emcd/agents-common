@@ -268,11 +268,11 @@ class PopulateCommand( __.appcore_cli.Command ):
                 f"Updated {globals_updated}/{globals_attempted} "
                 "global files" )
         if git_exclude_entries:
-            excludes_added = _operations.update_git_exclude(
+            entries_count = _operations.update_git_exclude(
                 self.target, git_exclude_entries, self.simulate )
-            if excludes_added > 0:
+            if entries_count > 0:
                 _scribe.info(
-                    f"Added {excludes_added} entries to .git/info/exclude" )
+                    f"Managing {entries_count} entries in .git/info/exclude" )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,

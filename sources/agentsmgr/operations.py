@@ -31,6 +31,11 @@ from . import exceptions as _exceptions
 from . import generator as _generator
 
 
+_MANAGED_BLOCK_BEGIN = '# BEGIN: Managed by agentsmgr (emcd-agents)'
+_MANAGED_BLOCK_WARNING = '# Do not manually edit entries in this block.'
+_MANAGED_BLOCK_END = '# END: Managed by agentsmgr (emcd-agents)'
+
+
 def populate_directory(
     generator: _generator.ContentGenerator,
     target: __.Path,
@@ -131,22 +136,23 @@ def save_content(
 
 def update_git_exclude(
     target: __.Path,
-    symlinks: __.cabc.Sequence[ str ],
+    entries: __.cabc.Collection[ str ],
     simulate: bool = False
 ) -> int:
-    ''' Updates .git/info/exclude with symlink names if not already present.
+    ''' Updates .git/info/exclude with managed block of agentsmgr entries.
 
-        Adds symlink names to git exclude file to prevent accidental
-        commits of generated symlinks. Processes file line-by-line to
-        preserve existing content and avoid duplicates.
+        Maintains a clearly-marked block of entries managed by agentsmgr,
+        with complete replacement on each update. Entries are sorted
+        lexicographically within the block. User entries outside the
+        managed block are preserved.
 
         Handles GIT_DIR environment variable and git worktrees by
         resolving the actual git directory location and using the common
         git directory for shared resources.
 
-        Returns count of symlink names added to exclude file.
+        Returns count of entries in managed block.
     '''
-    if simulate or not symlinks: return 0
+    if simulate: return 0
     git_dir = _resolve_git_directory( target )
     if not git_dir: return 0
     exclude_file = git_dir / 'info' / 'exclude'
@@ -155,26 +161,92 @@ def update_git_exclude(
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             exclude_file, "read git exclude file" ) from exception
-    existing_lines = content.splitlines( )
-    existing_patterns = frozenset( existing_lines )
-    additions = [
-        symlink for symlink in symlinks
-        if symlink not in existing_patterns
-    ]
-    if not additions: return 0
-    new_content_lines = existing_lines.copy( )
-    if new_content_lines and not new_content_lines[ -1 ].strip( ):
-        new_content_lines.extend( additions )
+    normalized_entries = sorted( {
+        entry.strip( ) for entry in entries if entry.strip( )
+    } )
+    if not normalized_entries:
+        new_content = _remove_managed_block( content )
+        if new_content == content: return 0
     else:
-        new_content_lines.append( '' )
-        new_content_lines.extend( additions )
-    new_content = '\n'.join( new_content_lines )
-    if not new_content.endswith( '\n' ): new_content += '\n'
+        new_content = _update_managed_block( content, normalized_entries )
     try: exclude_file.write_text( new_content, encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             exclude_file, "update git exclude file" ) from exception
-    return len( additions )
+    return len( normalized_entries )
+
+
+def _update_managed_block(
+    content: str, entries: __.cabc.Sequence[ str ]
+) -> str:
+    ''' Updates content with new managed block containing sorted entries.
+
+        Locates existing managed block (if present) and replaces it with
+        new block. If no block exists, appends to end of file. Preserves
+        user content outside the managed block.
+    '''
+    lines = content.splitlines( )
+    before_block, after_block = _partition_around_managed_block( lines )
+    block_lines = [ _MANAGED_BLOCK_BEGIN, _MANAGED_BLOCK_WARNING ]
+    block_lines.extend( entries )
+    block_lines.append( _MANAGED_BLOCK_END )
+    if before_block and before_block[ -1 ].strip( ):
+        before_block.append( '' )
+    result_lines = before_block + block_lines
+    if after_block:
+        result_lines.append( '' )
+        result_lines.extend( after_block )
+    return '\n'.join( result_lines ) + '\n'
+
+
+def _remove_managed_block( content: str ) -> str:
+    ''' Removes managed block from content, preserving user entries.
+
+        Locates and removes managed block if present. Returns content
+        unchanged if no block found.
+    '''
+    lines = content.splitlines( )
+    before_block, after_block = _partition_around_managed_block( lines )
+    if not before_block and not after_block:
+        return content
+    result_lines = before_block
+    if result_lines and after_block:
+        if result_lines[ -1 ].strip( ):
+            result_lines.append( '' )
+        result_lines.extend( after_block )
+    elif after_block:
+        result_lines = after_block
+    if not result_lines: return ''
+    return '\n'.join( result_lines ) + '\n'
+
+
+def _partition_around_managed_block(
+    lines: __.cabc.Sequence[ str ]
+) -> tuple[ list[ str ], list[ str ] ]:
+    ''' Partitions lines into content before and after managed block.
+
+        Locates managed block markers and returns (before, after) tuple.
+        If block is malformed or not found, returns (all_lines, []).
+        Malformed blocks are treated as non-existent.
+    '''
+    try: begin_index = lines.index( _MANAGED_BLOCK_BEGIN )
+    except ValueError: return ( list( lines ), [ ] )
+    try: end_index = lines.index( _MANAGED_BLOCK_END, begin_index )
+    except ValueError:
+        __.provide_scribe( __name__ ).warning(
+            "Malformed agentsmgr block in .git/info/exclude; rebuilding." )
+        return ( list( lines ), [ ] )
+    if end_index < begin_index:
+        __.provide_scribe( __name__ ).warning(
+            "Malformed agentsmgr block in .git/info/exclude; rebuilding." )
+        return ( list( lines ), [ ] )
+    before_block = list( lines[ :begin_index ] )
+    while before_block and not before_block[ -1 ].strip( ):
+        before_block.pop( )
+    after_block = list( lines[ end_index + 1: ] )
+    while after_block and not after_block[ 0 ].strip( ):
+        after_block.pop( 0 )
+    return ( before_block, after_block )
 
 
 def _resolve_git_directory(
