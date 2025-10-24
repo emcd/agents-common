@@ -23,6 +23,24 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a3 (2025-10-23)
+============================
+
+Enhancements
+------------
+
+- Agent: Add python-annotator agent for Python type annotation tasks including adding type hints, resolving Pyright issues, creating type stubs, and analyzing type: ignore pragmas.
+- CLI: Add instruction file downloading support to populate command with automatic retrieval from Git sources, flexible glob pattern filtering, and per-file preprocessing with header stripping support.
+- CLI: Automatically manage git exclusion of instruction files through .git/info/exclude when populate command runs, respecting dynamic configuration changes.
+- CLI: Populate command now skips items with missing content and logs warnings instead of failing the entire operation, enabling iterative development without complete content sets.
+
+
+Repairs
+-------
+
+- CLI: Fix template path resolution for OpenCode coder which was causing silent failures during content population due to singular/plural directory name mismatch.
+
+
 agentsmgr 1.0a2 (2025-10-22)
 ============================
 

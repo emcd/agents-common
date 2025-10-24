@@ -89,6 +89,28 @@ class FileOperationFailure( Omnierror, OSError ):
         super( ).__init__( message )
 
 
+class InstructionSourceInvalidity( Omnierror, ValueError ):
+    ''' Instruction source configuration invalidity. '''
+
+
+class InstructionSourceFieldAbsence( InstructionSourceInvalidity ):
+    ''' Instruction source 'source' field absence. '''
+
+    def __init__( self ):
+        message = "Instruction source missing required 'source' field."
+        super( ).__init__( message )
+
+
+class InstructionFilesConfigurationInvalidity(
+    InstructionSourceInvalidity
+):
+    ''' Instruction files configuration format invalidity. '''
+
+    def __init__( self ):
+        message = "Instruction 'files' configuration must be a mapping."
+        super( ).__init__( message )
+
+
 class ContextInvalidity( Omnierror, TypeError ):
     ''' Invalid execution context. '''
 

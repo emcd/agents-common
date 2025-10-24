@@ -1,10 +1,19 @@
 # Changes here will be overwritten by Copier
-_commit: v1.0a0-23-g5eefc90
+_commit: v1.0a2-3-ga6351f1
 _src_path: .
 coders:
 - claude
+- codex
+- gemini
 - opencode
 - qwen
+instructions_sources:
+-   files:
+        '*.rst':
+            strip_header_lines: 20
+    source: github:emcd/python-project-common@docs-1#documentation/common
+instructions_target: .auxiliary/instructions
 languages:
 - python
 project_name: agents-common
+provide_instructions: true

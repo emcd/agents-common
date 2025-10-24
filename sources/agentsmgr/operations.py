@@ -53,6 +53,24 @@ def populate_directory(
     return ( items_attempted, items_written )
 
 
+def _content_exists(
+    generator: _generator.ContentGenerator,
+    item_type: str,
+    item_name: str,
+    coder: str
+) -> bool:
+    ''' Checks if content file exists without loading it.
+
+        Uses path resolution from ContentGenerator to check both primary
+        and fallback locations. Returns True if content is available.
+    '''
+    primary_path, fallback_path = generator.resolve_content_paths(
+        item_type, item_name, coder )
+    if primary_path.exists( ):
+        return True
+    return bool( fallback_path and fallback_path.exists( ) )
+
+
 def generate_coder_item_type(
     generator: _generator.ContentGenerator,
     coder: str,
@@ -63,8 +81,9 @@ def generate_coder_item_type(
     ''' Generates items of specific type for a coder.
 
         Generates all items (commands or agents) for specified coder by
-        iterating through configuration files. Returns tuple of
-        (items_attempted, items_written).
+        iterating through configuration files. Pre-checks content
+        availability and skips items with missing content. Returns tuple
+        of (items_attempted, items_written).
     '''
     items_attempted = 0
     items_written = 0
@@ -75,9 +94,15 @@ def generate_coder_item_type(
     if not configuration_directory.exists( ):
         return ( items_attempted, items_written )
     for configuration_file in configuration_directory.glob( '*.toml' ):
+        item_name = configuration_file.stem
+        if not _content_exists( generator, item_type, item_name, coder ):
+            __.provide_scribe( __name__ ).warning(
+                f"Skipping {item_type}/{item_name} for {coder}: "
+                "content not found" )
+            continue
         items_attempted += 1
         result = generator.render_single_item(
-            item_type, configuration_file.stem, coder, target )
+            item_type, item_name, coder, target )
         if save_content( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )

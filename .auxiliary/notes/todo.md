@@ -4,23 +4,29 @@
 
 ## Features
 
+- [ ] Group and sort Git ignores in .git/info/exclude under a "Managed by
+  agentsmgr" comment.
+
 - [ ] **Tool groups for common combinations**: Define standard tool groups in
   configuration (e.g., "file_operations", "shell_access"). Create template
   helpers for common tool sets. Validate tool names against known Qwen tools.
   (Related to Phase 2 enhancement features but deferred as not core to Qwen
   support.)
 
-- [ ] **GIT_DIR and worktree support**: Update git-related functionality to
-  respect `GIT_DIR` environment variable and handle git worktrees (where `.git`
-  is a file pointing to the actual git directory). This affects:
-  - `update_git_exclude()` in `sources/agentsmgr/commands/operations.py`
-    (currently assumes `.git/info/exclude` path)
-  - `_detect_git_branch()` in `defaults/globals/claude/statusline.py`
-    (currently assumes `.git/HEAD` path)
-  - Implementation should check `GIT_DIR` env var, parse `.git` file if it
-    exists (worktree case), and gracefully handle edge cases
+- [ ] Split `populate` into two subcommands: `project` and `userdata`? Or,
+  figure out a clearer UX for existing `populate` command.
 
-- [ ] Split `populate` into two subcommands: `project` and `userdata`.
+- [ ] **Configurable content absence behavior**: Consider making failure
+  behavior configurable when coder content is missing during populate operations.
+  Current implementation (as of 2025-10-23) warns and skips missing content,
+  which works well for iterative development. However, CI/CD pipelines or
+  production deployments might want strict validation. Potential approaches:
+  - Add `--strict` flag to fail on missing content
+  - Add `--lenient` flag (or make current behavior default with opt-in strictness)
+  - Extend to configuration file option for project-wide defaults
+  - Consider whether strictness should apply to templates, configurations, etc.
+  - Decide on interaction with `--simulate` mode
+  - Consider summarizing warnings at end vs. inline logging
 
 
 ## Documentation

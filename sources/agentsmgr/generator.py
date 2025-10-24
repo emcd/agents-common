@@ -132,18 +132,17 @@ class ContentGenerator( __.immut.DataclassObject ):
         self, item_type: str, coder: str
     ) -> list[ str ]:
         directory = self.location / "templates"
-        try: renderer = _renderers.RENDERERS[ coder ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder ) from exception
-        target_dir_name = renderer.calculate_directory_location( item_type )
-        # Always plural (e.g., commands, agents)
+        # Validate coder exists in registry
+        if coder not in _renderers.RENDERERS:
+            raise _exceptions.CoderAbsence( coder )
+        # Template directories always use plural form (commands, agents)
         source_dir = directory / item_type
         if not source_dir.exists():
             raise _exceptions.TemplateError.for_missing_template(
                 coder, item_type
             )
         templates = [
-            f"{target_dir_name}/{p.name}"
+            f"{item_type}/{p.name}"
             for p in source_dir.glob( "*.jinja" )
         ]
         if not templates:
@@ -151,6 +150,29 @@ class ContentGenerator( __.immut.DataclassObject ):
                 coder, item_type
             )
         return templates
+
+    def resolve_content_paths(
+        self, item_type: str, item_name: str, coder: str
+    ) -> tuple[ __.Path, __.typx.Optional[ __.Path ] ]:
+        ''' Resolves primary and fallback content paths.
+
+            Returns tuple of (primary_path, fallback_path) where fallback_path
+            is None if no fallback coder is configured.
+
+            This method is public to allow operations module to pre-check
+            content availability without loading files.
+        '''
+        primary_path = (
+            self.location / "contents" / item_type / coder /
+            f"{item_name}.md" )
+        fallback_path = None
+        fallback_mappings = self._retrieve_fallback_mappings( )
+        fallback_coder = fallback_mappings.get( coder )
+        if fallback_coder:
+            fallback_path = (
+                self.location / "contents" / item_type /
+                fallback_coder / f"{item_name}.md" )
+        return ( primary_path, fallback_path )
 
     def _retrieve_content_with_fallback(
         self, item_type: str, item_name: str, coder: str
@@ -160,20 +182,14 @@ class ContentGenerator( __.immut.DataclassObject ):
             Attempts to read content from coder-specific location first,
             then falls back to compatible coder if content is missing.
         '''
-        primary_path = (
-            self.location / "contents" / item_type / coder /
-            f"{item_name}.md" )
+        primary_path, fallback_path = self.resolve_content_paths(
+            item_type, item_name, coder )
         if primary_path.exists( ):
             return primary_path.read_text( encoding = 'utf-8' )
-        fallback_mappings = self._retrieve_fallback_mappings( )
-        fallback_coder = fallback_mappings.get( coder )
-        if fallback_coder:
-            fallback_path = (
-                self.location / "contents" / item_type /
-                fallback_coder / f"{item_name}.md" )
-            if fallback_path.exists( ):
-                _scribe.debug( f"Using {fallback_coder} content for {coder}" )
-                return fallback_path.read_text( encoding = 'utf-8' )
+        if fallback_path and fallback_path.exists( ):
+            fallback_coder = self._retrieve_fallback_mappings( ).get( coder )
+            _scribe.debug( f"Using {fallback_coder} content for {coder}" )
+            return fallback_path.read_text( encoding = 'utf-8' )
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
     def _parse_template_extension( self, template_name: str ) -> str:
@@ -244,10 +260,10 @@ class ContentGenerator( __.immut.DataclassObject ):
             raise _exceptions.CoderAbsence( coder ) from exception
         flavor = renderer.get_template_flavor( item_type )
         available = self._survey_available_templates( item_type, coder )
-        directory_name = renderer.calculate_directory_location( item_type )
+        # Template paths always use plural item_type (commands, agents)
         for extension in [ 'md', 'toml' ]:
             organized_path = (
-                f"{directory_name}/{flavor}.{extension}.jinja" )
+                f"{item_type}/{flavor}.{extension}.jinja" )
             if organized_path in available:
                 return organized_path
         raise _exceptions.TemplateError.for_missing_template(

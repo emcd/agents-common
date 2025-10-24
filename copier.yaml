@@ -26,10 +26,30 @@ coders:
     multiselect: true
     choices:
         - claude
+        - codex
         - gemini
         - opencode
         - qwen
     default:
         - claude
         - opencode
-        - qwen
+
+provide_instructions:
+    type: bool
+    help: Download instructions for AI agents
+    default: true
+
+instructions_target:
+    type: str
+    help: Target directory for instruction files
+    default: ".auxiliary/instructions"
+    when: "{{ provide_instructions }}"
+
+instructions_sources:
+    type: yaml
+    help: Git sources for documentation instructions
+    default:
+      - source: "github:emcd/python-project-common@docs-1#documentation/common"
+        files:
+          "*.rst": {strip_header_lines: 20}
+    when: "{{ provide_instructions }}"
