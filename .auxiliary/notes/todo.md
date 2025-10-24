@@ -4,23 +4,17 @@
 
 ## Features
 
+- [ ] Group and sort Git ignores in .git/info/exclude under a "Managed by
+  agentsmgr" comment.
+
 - [ ] **Tool groups for common combinations**: Define standard tool groups in
   configuration (e.g., "file_operations", "shell_access"). Create template
   helpers for common tool sets. Validate tool names against known Qwen tools.
   (Related to Phase 2 enhancement features but deferred as not core to Qwen
   support.)
 
-- [ ] **GIT_DIR and worktree support**: Update git-related functionality to
-  respect `GIT_DIR` environment variable and handle git worktrees (where `.git`
-  is a file pointing to the actual git directory). This affects:
-  - `update_git_exclude()` in `sources/agentsmgr/commands/operations.py`
-    (currently assumes `.git/info/exclude` path)
-  - `_detect_git_branch()` in `defaults/globals/claude/statusline.py`
-    (currently assumes `.git/HEAD` path)
-  - Implementation should check `GIT_DIR` env var, parse `.git` file if it
-    exists (worktree case), and gracefully handle edge cases
-
-- [ ] Split `populate` into two subcommands: `project` and `userdata`.
+- [ ] Split `populate` into two subcommands: `project` and `userdata`? Or,
+  figure out a clearer UX for existing `populate` command.
 
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.
