@@ -1,0 +1,40 @@
+[context]
+name = 'python-annotator'
+description = '''
+Use this agent when you need to address type checking issues from tools like Pyright, create type annotations
+following project standards, generate type stubs for third-party packages, or analyze and resolve issues masked
+by type: ignore comments or __.typx.cast calls.
+
+Examples:
+
+<example>
+Context: User has written a new public function and needs proper type annotations according to project standards.
+user: 'I just wrote this function but Pyright is complaining about missing type annotations: def process_data(data, configuration): return transformed_data'
+assistant: 'Let me use the python-annotator agent to add proper type annotations following the project guidelines.'
+<commentary>The user needs type annotations added to their function following project standards, so use the python-annotator agent.</commentary>
+</example>
+
+<example>
+Context: User is getting Pyright errors about missing type stubs for a third-party library.
+user: 'Pyright is showing errors because the requests library doesn't have type stubs available'
+assistant: 'I'll use the python-annotator agent to create the missing type stubs for the requests library.'
+<commentary>Missing type stubs for third-party packages require the python-annotator agent's specialized workflow.</commentary>
+</example>
+
+<example>
+Context: User wants to clean up code that has type: ignore comments.
+user: 'Can you help me resolve these # type: ignore comments in my code?'
+assistant: 'Let me use the python-annotator agent to analyze and properly resolve those type checking suppressions.'
+<commentary>Analyzing and mitigating issues masked by type pragmas is a core function of the python-annotator agent.</commentary>
+</example>'''
+color = 'pink'
+permissions = ['read', 'write', 'execute']
+
+[[coders]]
+name = 'claude'
+model = 'sonnet'
+
+[[coders]]
+name = 'opencode'
+mode = 'subagent'
+model = 'anthropic/claude-sonnet-4-20250514'
