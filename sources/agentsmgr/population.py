@@ -219,6 +219,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             self.target, self.profile )
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'configurations', 'contents', 'templates' ) )
         generator = _generator.ContentGenerator(
             location = location,
             configuration = configuration,
@@ -292,6 +295,9 @@ class PopulateUserCommand( __.appcore_cli.Command ):
             __.Path.cwd( ), self.profile )
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'user/configurations', 'user/executables' ) )
         globals_attempted, globals_updated = _userdata.populate_globals(
             location,
             configuration[ 'coders' ],

@@ -146,6 +146,23 @@ def retrieve_data_location(
     return _sources.resolve_source_location( source_spec, tag_prefix )
 
 
+def validate_data_source_structure(
+    location: __.Path,
+    required_directories: __.cabc.Sequence[ str ],
+) -> None:
+    ''' Validates data source contains required directory structure.
+
+        Checks that all required directories exist at the data source
+        location. Raises DataSourceInvalidity with list of missing
+        directories if validation fails.
+    '''
+    missing = tuple(
+        directory for directory in required_directories
+        if not ( location / directory ).is_dir( ) )
+    if missing:
+        raise _exceptions.DataSourceInvalidity( location, missing )
+
+
 def retrieve_variant_answers_file(
     auxdata: _core.Globals, variant: str
 ) -> __.Path:

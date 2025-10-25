@@ -152,10 +152,12 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │       ├── qwen/              # Qwen-specific agent content
     │       │   └── python-conformer.md
     │       └── gemini/            # Gemini-specific agent content
-    ├── globals/                   # Per-user global files (actual implementation)
-    │   └── claude/
-    │       ├── statusline.py      # Python-based statusline configuration
-    │       └── settings.json      # Base Claude settings
+    ├── user/                      # Per-user files and executables
+    │   ├── configurations/        # Per-user global settings
+    │   │   └── claude/
+    │   │       ├── statusline.py      # Python-based statusline configuration
+    │   │       └── settings.json      # Base Claude settings
+    │   └── executables/           # Wrapper scripts for user bin directory
     └── templates/                 # Pioneer-named template flavors by coder
         ├── commands/
         │   ├── claude.md.jinja    # Markdown commands (Claude, Opencode, Codex)
@@ -226,10 +228,13 @@ The system uses dual-channel distribution combining Copier templates and dynamic
 
     # Dynamic Content Generation (agentsmgr)
     agents-common/defaults/
-    ↓ (agentsmgr populate --source=agents-common@agents-N)
-    target-project/.auxiliary/configuration/[tool]/commands/
-    target-project/.auxiliary/configuration/[tool]/agents/
-    target-project/.auxiliary/configuration/[tool]/globals/
+    ↓ (agentsmgr populate project --source=agents-common@agents-N)
+    target-project/.auxiliary/configuration/coders/[tool]/commands/
+    target-project/.auxiliary/configuration/coders/[tool]/agents/
+
+    ↓ (agentsmgr populate user --source=agents-common@agents-N)
+    ~/.config/[tool]/            # Per-user configuration files
+    ~/.local/bin/                # Wrapper executables
 
 **Template-of-Templates Generation:**
 
