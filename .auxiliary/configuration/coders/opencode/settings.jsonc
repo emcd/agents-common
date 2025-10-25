@@ -76,5 +76,14 @@
       "wc *": "allow",
       "which *": "allow"
     }
+  },
+
+  "formatter": {
+    "ruff": {
+      "disabled": true
+    },
+    "prettier": {
+      "disabled": true
+    }
   }
 }
