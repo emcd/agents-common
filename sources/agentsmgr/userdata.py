@@ -189,6 +189,43 @@ def _write_merged_settings(
         ) from exception
 
 
+def populate_user_wrappers(
+    data_location: __.Path,
+    simulate: bool = False,
+) -> tuple[ int, int ]:
+    ''' Installs wrapper scripts to user bin directory.
+
+        Copies wrapper scripts from data source to ~/.local/bin,
+        making them executable. Returns tuple of (files_attempted,
+        files_installed) counts.
+    '''
+    wrappers_dir = data_location / 'user' / 'executables'
+    user_bin = __.Path.home( ) / '.local' / 'bin'
+    if not wrappers_dir.exists( ):
+        return ( 0, 0 )
+    files_attempted = 0
+    files_installed = 0
+    for script in wrappers_dir.iterdir( ):
+        if not script.is_file( ):
+            continue
+        files_attempted += 1
+        target = user_bin / script.name
+        if not simulate:
+            user_bin.mkdir( parents = True, exist_ok = True )
+            try: __.shutil.copy2( script, target )
+            except ( OSError, IOError ) as exception:
+                raise _exceptions.GlobalsPopulationFailure(
+                    script, target
+                ) from exception
+            try: target.chmod( target.stat( ).st_mode | 0o111 )
+            except ( OSError, IOError ) as exception:
+                raise _exceptions.GlobalsPopulationFailure(
+                    script, target
+                ) from exception
+        files_installed += 1
+    return ( files_attempted, files_installed )
+
+
 def _deep_merge_settings(
     target: dict[ str, __.typx.Any ], source: dict[ str, __.typx.Any ]
 ) -> dict[ str, __.typx.Any ]:
