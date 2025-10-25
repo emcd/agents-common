@@ -48,14 +48,14 @@ def populate_globals(
 ) -> tuple[ int, int ]:
     ''' Populates per-user global files for configured coders.
 
-        Surveys defaults/globals directory for coder-specific files and
-        populates them to per-user locations. Handles two types of files:
-        direct copy for non-settings files and merge for settings files
-        (preserving user values).
+        Surveys defaults/user/configurations directory for coder-specific
+        files and populates them to per-user locations. Handles two types
+        of files: direct copy for non-settings files and merge for settings
+        files (preserving user values).
 
         Returns tuple of (files_attempted, files_updated) counts.
     '''
-    globals_directory = data_location / 'globals'
+    globals_directory = data_location / 'user' / 'configurations'
     if not globals_directory.exists( ):
         return ( 0, 0 )
     files_attempted = 0
