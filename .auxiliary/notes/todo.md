@@ -4,18 +4,6 @@
 
 ## Features
 
-- [ ] Group and sort Git ignores in .git/info/exclude under a "Managed by
-  agentsmgr" comment.
-
-- [ ] **Tool groups for common combinations**: Define standard tool groups in
-  configuration (e.g., "file_operations", "shell_access"). Create template
-  helpers for common tool sets. Validate tool names against known Qwen tools.
-  (Related to Phase 2 enhancement features but deferred as not core to Qwen
-  support.)
-
-- [ ] Split `populate` into two subcommands: `project` and `userdata`? Or,
-  figure out a clearer UX for existing `populate` command.
-
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.
   Current implementation (as of 2025-10-23) warns and skips missing content,
@@ -54,7 +42,6 @@ Based on analysis of the populate command architecture, the following improvemen
   - Write permission validation for target directories
   - JSON syntax validation for existing settings files
   - Disk space availability checks
-  - Configuration compatibility verification
 
 - [ ] **Enhanced Backup Strategy**: Improve backup mechanism with:
   - Timestamped backup directories for full restoration
