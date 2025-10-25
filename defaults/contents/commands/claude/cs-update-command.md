@@ -13,8 +13,7 @@ Stop and consult if:
 
 ## Context
 
-- Command template: @.auxiliary/configuration/claude/miscellany/command-template.md
-- Project conventions: @.auxiliary/configuration/conventions.md
+- Command template: @.auxiliary/configuration/coders/claude/miscellany/command-template.md
 
 ## Prerequisites
 
@@ -22,7 +21,6 @@ Before updating the command, ensure:
 - Clear understanding of what improvements are needed
 - Target file exists and is accessible
 - Any referenced files or patterns are available
-- Changes align with project conventions and existing process patterns
 
 ## Process Summary
 
@@ -37,7 +35,6 @@ Key functional areas:
 
 Stop and consult the user if:
 - Process changes would break existing workflows or dependencies
-- Updates conflict with established project conventions
 - Structural modifications require significant rework of command logic
 
 ## Execution
@@ -79,7 +76,6 @@ Review and adjust technical aspects:
 Apply formatting and tone standards:
 - Use professional headers without excessive emphasis
 - Maintain clear, direct language without redundancy
-- Ensure consistency with project conventions
 - Remove any attention-grabbing formatting that isn't necessary
 - Balance guidance strength with readability
 
