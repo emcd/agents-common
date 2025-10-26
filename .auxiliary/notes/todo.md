@@ -16,6 +16,23 @@
   - Decide on interaction with `--simulate` mode
   - Consider summarizing warnings at end vs. inline logging
 
+- [ ] **Symlink Health Check Subcommand**: Add `agentsmgr maintenance check-symlinks`
+  command to report dangling, broken, or unexpected symlinks. Should:
+  - Identify all managed symlinks in project
+  - Report status of each (valid, dangling, broken, unexpected)
+  - Distinguish between expected symlinks (memory files, coder directories) and others
+  - Provide actionable recommendations for issues found
+  - Support `--json` output for automation
+
+- [ ] **Symlink Cleanup Subcommand**: Add `agentsmgr maintenance clean-symlinks`
+  command to remove dangling symlinks with confirmation. Should:
+  - Detect all dangling symlinks in project root and `.auxiliary/`
+  - Show preview of symlinks to be removed
+  - Require confirmation unless `--force` flag provided
+  - Support dry-run mode via `--simulate`
+  - Log all cleanup actions
+  - Optionally clean up backup files from previous symlink updates
+
 
 ## Documentation
 
