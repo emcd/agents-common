@@ -26,7 +26,12 @@
 '''
 
 
-from .base import RENDERERS, RendererBase, TargetMode
+from .base import (
+    RENDERERS,
+    ExplicitTargetMode,
+    RendererBase,
+    TargetMode,
+)
 
 # Import renderer modules to populate registry
 from . import claude, codex, gemini, opencode, qwen

@@ -47,6 +47,32 @@ TargetArgument: __.typx.TypeAlias = __.typx.Annotated[
 ]
 
 
+def _filter_coders_by_mode(
+    coders: __.cabc.Sequence[ str ],
+    target_mode: _renderers.ExplicitTargetMode,
+    renderers: __.cabc.Mapping[ str, __.typx.Any ],
+) -> tuple[ str, ... ]:
+    ''' Filters coders by their default targeting mode.
+
+        Returns coders whose mode_default matches the target mode.
+        This ensures populate project only handles per-project coders
+        and populate user only handles per-user coders, respecting each
+        renderer's designed usage pattern.
+    '''
+    filtered: list[ str ] = [ ]
+    for coder_name in coders:
+        try: renderer = renderers[ coder_name ]
+        except KeyError as exception:
+            raise _exceptions.CoderAbsence( coder_name ) from exception
+        if renderer.mode_default == target_mode:
+            filtered.append( coder_name )
+        else:
+            _scribe.debug(
+                f"Skipping {coder_name} for {target_mode} mode: "
+                f"default mode is {renderer.mode_default}" )
+    return tuple( filtered )
+
+
 def _create_all_symlinks(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     target: __.Path,
@@ -126,6 +152,41 @@ def _populate_instructions_if_configured(
         f"Updated {instructions_updated}/"
         f"{instructions_attempted} instruction files" )
     return ( True, instructions_target )
+
+
+def _populate_per_user_content(
+    location: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Populates commands and agents for per-user coders.
+
+        Generates content to each coder's per-user directory using
+        renderer's resolve_base_directory() with per-user mode.
+        Returns tuple of (items_attempted, items_generated).
+    '''
+    items_attempted = 0
+    items_generated = 0
+    for coder_name in coders:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError as exception:
+            raise _exceptions.CoderAbsence( coder_name ) from exception
+        coder_configuration = { 'coders': [ coder_name ] }
+        generator = _generator.ContentGenerator(
+            location = location,
+            configuration = coder_configuration,
+            application_configuration = application_configuration,
+            mode = 'per-user',
+        )
+        target = renderer.resolve_base_directory(
+            'per-user', __.Path.cwd( ), configuration, dict( __.os.environ ) )
+        attempted, generated = _operations.populate_directory(
+            generator, target, simulate )
+        items_attempted += attempted
+        items_generated += generated
+    return ( items_attempted, items_generated )
 
 
 def _create_coder_directory_symlinks(
@@ -222,6 +283,14 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             f"Populating project content from {self.source} to {self.target}" )
         configuration = await _cmdbase.retrieve_configuration(
             self.target, self.profile )
+        per_project_coders = _filter_coders_by_mode(
+            configuration[ 'coders' ], 'per-project', _renderers.RENDERERS )
+        if not per_project_coders:
+            _scribe.warning(
+                "No per-project default coders found in configuration" )
+            return
+        filtered_configuration = dict( configuration )
+        filtered_configuration[ 'coders' ] = per_project_coders
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
@@ -229,7 +298,7 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             ( 'configurations', 'contents', 'templates' ) )
         generator = _generator.ContentGenerator(
             location = location,
-            configuration = configuration,
+            configuration = filtered_configuration,
             application_configuration = auxdata.configuration,
             mode = 'per-project',
         )
@@ -238,9 +307,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
         instructions_populated, instructions_target = (
             _populate_instructions_if_configured(
-                configuration, self.target, prefix, self.simulate ) )
+                filtered_configuration, self.target, prefix, self.simulate ) )
         all_symlink_names = _create_all_symlinks(
-            configuration, self.target, 'per-project', self.simulate )
+            filtered_configuration, self.target, 'per-project', self.simulate )
         git_exclude_entries: list[ str ] = [ ]
         if instructions_populated:
             git_exclude_entries.append( instructions_target )
@@ -298,14 +367,31 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         _scribe.info( f"Populating user configuration from {self.source}" )
         configuration = await _cmdbase.retrieve_configuration(
             __.Path.cwd( ), self.profile )
+        per_user_coders = _filter_coders_by_mode(
+            configuration[ 'coders' ], 'per-user', _renderers.RENDERERS )
+        if not per_user_coders:
+            _scribe.warning(
+                "No per-user default coders found in configuration" )
+            return
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
             location,
-            ( 'user/configurations', 'user/executables' ) )
+            ( 'configurations', 'contents', 'templates',
+              'user/configurations', 'user/executables' ) )
+        content_attempted, content_generated = _populate_per_user_content(
+            location,
+            per_user_coders,
+            configuration,
+            auxdata.configuration,
+            self.simulate,
+        )
+        if content_attempted > 0:
+            _scribe.info(
+                f"Generated {content_generated}/{content_attempted} items" )
         globals_attempted, globals_updated = _userdata.populate_globals(
             location,
-            configuration[ 'coders' ],
+            per_user_coders,
             auxdata.configuration,
             self.simulate,
         )
@@ -317,12 +403,13 @@ class PopulateUserCommand( __.appcore_cli.Command ):
             _scribe.info(
                 f"Installed {wrappers_installed}/{wrappers_attempted} "
                 "wrapper scripts" )
+        total_items = content_generated + globals_updated + wrappers_installed
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = __.Path.home( ),
-            coders = tuple( configuration[ 'coders' ] ),
+            coders = per_user_coders,
             simulated = self.simulate,
-            items_generated = globals_updated + wrappers_installed,
+            items_generated = total_items,
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
