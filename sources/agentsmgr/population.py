@@ -141,31 +141,37 @@ def _create_coder_directory_symlinks(
         while keeping actual files organized under
         .auxiliary/configuration/coders/.
 
+        Only creates symlinks for coders whose default mode is per-project.
+        Coders with per-user default mode are skipped since they do not
+        use per-project directories.
+
         Returns tuple of (attempted, created, symlink_names) where
         symlink_names contains names of all symlinks (both newly created
         and pre-existing).
     '''
+    # TODO: Move symlink rendering to coders and call common code from each
+    #       one. Should have not have coder-specific logic in this general
+    #       function.
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
     for coder_name in coders:
-        try: renderers[ coder_name ]
+        try: renderer = renderers[ coder_name ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder_name ) from exception
-
-        # Source: actual location under .auxiliary/configuration/coders/
+        if renderer.mode_default != 'per-project':
+            _scribe.debug(
+                f"Skipping directory symlink for {coder_name}: "
+                f"default mode is {renderer.mode_default}" )
+            continue
         source = (
             target / '.auxiliary' / 'configuration' / 'coders' / coder_name )
-        # Link: expected location for coder (.claude, .opencode, etc.)
         link_path = target / f'.{coder_name}'
-
         attempted += 1
         was_created, symlink_name = _memorylinks.create_memory_symlink(
             source, link_path, simulate )
         if was_created: created += 1
         symlink_names.append( symlink_name )
-
-        # Create .mcp.json symlink for Claude coder specifically
         if coder_name == 'claude':
             mcp_source = (
                 target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
@@ -175,7 +181,6 @@ def _create_coder_directory_symlinks(
                 mcp_source, mcp_link, simulate )
             if was_created: created += 1
             symlink_names.append( symlink_name )
-
     return ( attempted, created, tuple( symlink_names ) )
 
 
@@ -339,5 +344,3 @@ class PopulateCommand( __.appcore_cli.Command ):
 
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
-
-
