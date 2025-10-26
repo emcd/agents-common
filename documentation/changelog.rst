@@ -23,6 +23,27 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a4 (2025-10-25)
+============================
+
+Enhancements
+------------
+
+- CLI: Add source data structure validation to populate commands.
+  The populate project and populate user commands now validate that the source location contains the required directory structure before attempting population.
+  Invalid source structures produce clear error messages listing all missing required directories, allowing graceful failure instead of silently generating no items.
+- CLI: Implement managed block for Git exclude entries.
+  Git exclude entries are now managed within a clearly-marked, lexicographically sorted managed block with BEGIN/END markers.
+  This ensures complete block replacement on each update, naturally handling entry removals and preventing accumulation of unnecessary blank lines.
+- CLI: Implement mode-based filtering in populate commands.
+  The populate project and populate user commands now filter coders by their default mode to ensure each command handles only appropriate coders: populate project processes per-project default coders, while populate user processes per-user default coders.
+  Coder directory symlinks are now only created for coders whose default mode is per-project, preventing dangling symlinks for per-user coders.
+- CLI: Split populate command into nested project and user subcommands.
+  The populate command now uses a nested subcommand structure: ``populate project`` for project-scoped operations (content generation, symlinks, git exclude) and ``populate user`` for user-scoped operations (global settings, wrapper installation).
+  The ``--mode`` flag has been removed, as ``populate project`` always uses per-project mode.
+  The ``--update-globals`` flag has been replaced by the separate ``populate user`` subcommand.
+
+
 agentsmgr 1.0a3 (2025-10-23)
 ============================
 

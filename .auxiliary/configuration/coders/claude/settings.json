@@ -90,5 +90,9 @@
       "mcp__pyright__references",
       "mcp__pyright__rename_symbol"
     ]
+  },
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": true
   }
 }

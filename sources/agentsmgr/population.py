@@ -47,6 +47,32 @@ TargetArgument: __.typx.TypeAlias = __.typx.Annotated[
 ]
 
 
+def _filter_coders_by_mode(
+    coders: __.cabc.Sequence[ str ],
+    target_mode: _renderers.ExplicitTargetMode,
+    renderers: __.cabc.Mapping[ str, __.typx.Any ],
+) -> tuple[ str, ... ]:
+    ''' Filters coders by their default targeting mode.
+
+        Returns coders whose mode_default matches the target mode.
+        This ensures populate project only handles per-project coders
+        and populate user only handles per-user coders, respecting each
+        renderer's designed usage pattern.
+    '''
+    filtered: list[ str ] = [ ]
+    for coder_name in coders:
+        try: renderer = renderers[ coder_name ]
+        except KeyError as exception:
+            raise _exceptions.CoderAbsence( coder_name ) from exception
+        if renderer.mode_default == target_mode:
+            filtered.append( coder_name )
+        else:
+            _scribe.debug(
+                f"Skipping {coder_name} for {target_mode} mode: "
+                f"default mode is {renderer.mode_default}" )
+    return tuple( filtered )
+
+
 def _create_all_symlinks(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     target: __.Path,
@@ -128,6 +154,41 @@ def _populate_instructions_if_configured(
     return ( True, instructions_target )
 
 
+def _populate_per_user_content(
+    location: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Populates commands and agents for per-user coders.
+
+        Generates content to each coder's per-user directory using
+        renderer's resolve_base_directory() with per-user mode.
+        Returns tuple of (items_attempted, items_generated).
+    '''
+    items_attempted = 0
+    items_generated = 0
+    for coder_name in coders:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError as exception:
+            raise _exceptions.CoderAbsence( coder_name ) from exception
+        coder_configuration = { 'coders': [ coder_name ] }
+        generator = _generator.ContentGenerator(
+            location = location,
+            configuration = coder_configuration,
+            application_configuration = application_configuration,
+            mode = 'per-user',
+        )
+        target = renderer.resolve_base_directory(
+            'per-user', __.Path.cwd( ), configuration, dict( __.os.environ ) )
+        attempted, generated = _operations.populate_directory(
+            generator, target, simulate )
+        items_attempted += attempted
+        items_generated += generated
+    return ( items_attempted, items_generated )
+
+
 def _create_coder_directory_symlinks(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
@@ -141,31 +202,37 @@ def _create_coder_directory_symlinks(
         while keeping actual files organized under
         .auxiliary/configuration/coders/.
 
+        Only creates symlinks for coders whose default mode is per-project.
+        Coders with per-user default mode are skipped since they do not
+        use per-project directories.
+
         Returns tuple of (attempted, created, symlink_names) where
         symlink_names contains names of all symlinks (both newly created
         and pre-existing).
     '''
+    # TODO: Move symlink rendering to coders and call common code from each
+    #       one. Should have not have coder-specific logic in this general
+    #       function.
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
     for coder_name in coders:
-        try: renderers[ coder_name ]
+        try: renderer = renderers[ coder_name ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder_name ) from exception
-
-        # Source: actual location under .auxiliary/configuration/coders/
+        if renderer.mode_default != 'per-project':
+            _scribe.debug(
+                f"Skipping directory symlink for {coder_name}: "
+                f"default mode is {renderer.mode_default}" )
+            continue
         source = (
             target / '.auxiliary' / 'configuration' / 'coders' / coder_name )
-        # Link: expected location for coder (.claude, .opencode, etc.)
         link_path = target / f'.{coder_name}'
-
         attempted += 1
         was_created, symlink_name = _memorylinks.create_memory_symlink(
             source, link_path, simulate )
         if was_created: created += 1
         symlink_names.append( symlink_name )
-
-        # Create .mcp.json symlink for Claude coder specifically
         if coder_name == 'claude':
             mcp_source = (
                 target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
@@ -175,12 +242,11 @@ def _create_coder_directory_symlinks(
                 mcp_source, mcp_link, simulate )
             if was_created: created += 1
             symlink_names.append( symlink_name )
-
     return ( attempted, created, tuple( symlink_names ) )
 
 
-class PopulateCommand( __.appcore_cli.Command ):
-    ''' Generates dynamic agent content from data sources. '''
+class PopulateProjectCommand( __.appcore_cli.Command ):
+    ''' Generates project-scoped agent content from data sources. '''
 
     source: SourceArgument = '.'
     target: TargetArgument = __.dcls.field( default_factory = __.Path.cwd )
@@ -198,18 +264,89 @@ class PopulateCommand( __.appcore_cli.Command ):
             help = "Dry run mode - show generated content",
             prefix_name = False ),
     ] = False
-    mode: __.typx.Annotated[
-        _renderers.TargetMode,
+    tag_prefix: __.typx.Annotated[
+        __.typx.Optional[ str ],
         __.tyro.conf.arg(
             help = (
-                "Targeting mode: default (use coder defaults), per-user, "
-                "per-project, or nowhere (skip generation)" ),
+                "Prefix for version tags (e.g., 'v', 'stable-', 'prod-'); "
+                "only tags with this prefix are considered and the prefix "
+                "is stripped before version parsing" ),
             prefix_name = False ),
-    ] = 'default'
-    update_globals: __.typx.Annotated[
+    ] = None
+
+    @_cmdbase.intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Generates project content from data sources. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
+        _scribe.info(
+            f"Populating project content from {self.source} to {self.target}" )
+        configuration = await _cmdbase.retrieve_configuration(
+            self.target, self.profile )
+        per_project_coders = _filter_coders_by_mode(
+            configuration[ 'coders' ], 'per-project', _renderers.RENDERERS )
+        if not per_project_coders:
+            _scribe.warning(
+                "No per-project default coders found in configuration" )
+            return
+        filtered_configuration = dict( configuration )
+        filtered_configuration[ 'coders' ] = per_project_coders
+        prefix = __.absent if self.tag_prefix is None else self.tag_prefix
+        location = _cmdbase.retrieve_data_location( self.source, prefix )
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'configurations', 'contents', 'templates' ) )
+        generator = _generator.ContentGenerator(
+            location = location,
+            configuration = filtered_configuration,
+            application_configuration = auxdata.configuration,
+            mode = 'per-project',
+        )
+        items_attempted, items_generated = _operations.populate_directory(
+            generator, self.target, self.simulate )
+        _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
+        instructions_populated, instructions_target = (
+            _populate_instructions_if_configured(
+                filtered_configuration, self.target, prefix, self.simulate ) )
+        all_symlink_names = _create_all_symlinks(
+            filtered_configuration, self.target, 'per-project', self.simulate )
+        git_exclude_entries: list[ str ] = [ ]
+        if instructions_populated:
+            git_exclude_entries.append( instructions_target )
+        git_exclude_entries.extend( all_symlink_names )
+        if git_exclude_entries:
+            entries_count = _operations.update_git_exclude(
+                self.target, git_exclude_entries, self.simulate )
+            if entries_count > 0:
+                _scribe.info(
+                    f"Managing {entries_count} entries in .git/info/exclude" )
+        result = _results.ContentGenerationResult(
+            source_location = location,
+            target_location = self.target,
+            coders = tuple( configuration[ 'coders' ] ),
+            simulated = self.simulate,
+            items_generated = items_generated,
+        )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )
+
+
+class PopulateUserCommand( __.appcore_cli.Command ):
+    ''' Populates per-user global settings and executables. '''
+
+    source: SourceArgument = '.'
+    profile: __.typx.Annotated[
+        __.typx.Optional[ __.Path ],
+        __.tyro.conf.arg(
+            help = (
+                "Alternative Copier answers file (defaults to "
+                "auto-detected)" ),
+            prefix_name = False ),
+    ] = None
+    simulate: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(
-            help = "Update per-user global files (orthogonal to mode)",
+            help = "Dry run mode - show what would be installed",
             prefix_name = False ),
     ] = False
     tag_prefix: __.typx.Annotated[
@@ -224,61 +361,73 @@ class PopulateCommand( __.appcore_cli.Command ):
 
     @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        ''' Generates content from data sources and displays result. '''
+        ''' Populates user-scoped settings and executables. '''
         if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
             raise _exceptions.ContextInvalidity
-        _scribe.info(
-            f"Populating agent content from {self.source} to {self.target}" )
+        _scribe.info( f"Populating user configuration from {self.source}" )
         configuration = await _cmdbase.retrieve_configuration(
-            self.target, self.profile )
-        coder_count = len( configuration[ 'coders' ] )
-        _scribe.debug( f"Detected configuration with {coder_count} coders" )
-        _scribe.debug( f"Using {self.mode} targeting mode" )
-        prefix = (
-            __.absent if self.tag_prefix is None
-            else self.tag_prefix )
+            __.Path.cwd( ), self.profile )
+        per_user_coders = _filter_coders_by_mode(
+            configuration[ 'coders' ], 'per-user', _renderers.RENDERERS )
+        if not per_user_coders:
+            _scribe.warning(
+                "No per-user default coders found in configuration" )
+            return
+        prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
-        generator = _generator.ContentGenerator(
-            location = location,
-            configuration = configuration,
-            application_configuration = auxdata.configuration,
-            mode = self.mode,
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'configurations', 'contents', 'templates',
+              'user/configurations', 'user/executables' ) )
+        content_attempted, content_generated = _populate_per_user_content(
+            location,
+            per_user_coders,
+            configuration,
+            auxdata.configuration,
+            self.simulate,
         )
-        items_attempted, items_generated = _operations.populate_directory(
-            generator, self.target, self.simulate )
-        _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
-        instructions_populated, instructions_target = (
-            _populate_instructions_if_configured(
-                configuration, self.target, prefix, self.simulate ) )
-        all_symlink_names = _create_all_symlinks(
-            configuration, self.target, self.mode, self.simulate )
-        git_exclude_entries: list[ str ] = [ ]
-        if instructions_populated:
-            git_exclude_entries.append( instructions_target )
-        git_exclude_entries.extend( all_symlink_names )
-        if self.update_globals:
-            globals_attempted, globals_updated = (
-                _userdata.populate_globals(
-                    location,
-                    configuration[ 'coders' ],
-                    auxdata.configuration,
-                    self.simulate,
-                ) )
+        if content_attempted > 0:
             _scribe.info(
-                f"Updated {globals_updated}/{globals_attempted} "
-                "global files" )
-        if git_exclude_entries:
-            excludes_added = _operations.update_git_exclude(
-                self.target, git_exclude_entries, self.simulate )
-            if excludes_added > 0:
-                _scribe.info(
-                    f"Added {excludes_added} entries to .git/info/exclude" )
+                f"Generated {content_generated}/{content_attempted} items" )
+        globals_attempted, globals_updated = _userdata.populate_globals(
+            location,
+            per_user_coders,
+            auxdata.configuration,
+            self.simulate,
+        )
+        _scribe.info(
+            f"Updated {globals_updated}/{globals_attempted} global files" )
+        wrappers_attempted, wrappers_installed = (
+            _userdata.populate_user_wrappers( location, self.simulate ) )
+        if wrappers_attempted > 0:
+            _scribe.info(
+                f"Installed {wrappers_installed}/{wrappers_attempted} "
+                "wrapper scripts" )
+        total_items = content_generated + globals_updated + wrappers_installed
         result = _results.ContentGenerationResult(
             source_location = location,
-            target_location = self.target,
-            coders = tuple( configuration[ 'coders' ] ),
+            target_location = __.Path.home( ),
+            coders = per_user_coders,
             simulated = self.simulate,
-            items_generated = items_generated,
+            items_generated = total_items,
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
+
+
+class PopulateCommand( __.appcore_cli.Command ):
+    ''' Populates agent content and configuration. '''
+
+    command: __.typx.Union[
+        __.typx.Annotated[
+            PopulateProjectCommand,
+            __.tyro.conf.subcommand( 'project', prefix_name = False ),
+        ],
+        __.typx.Annotated[
+            PopulateUserCommand,
+            __.tyro.conf.subcommand( 'user', prefix_name = False ),
+        ],
+    ] = __.dcls.field( default_factory = PopulateProjectCommand )
+
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        await self.command( auxdata )

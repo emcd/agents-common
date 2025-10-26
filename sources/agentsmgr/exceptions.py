@@ -119,6 +119,40 @@ class ContextInvalidity( Omnierror, TypeError ):
         super( ).__init__( message )
 
 
+class DataSourceInvalidity( Omnierror, ValueError ):
+    ''' Data source structure invalidity. '''
+
+    def __init__(
+        self, location: __.Path, missing_directories: tuple[ str, ... ]
+    ) -> None:
+        self.location = location
+        self.missing_directories = missing_directories
+        directories_list = ", ".join( missing_directories )
+        message = (
+            f"Invalid data source structure at {location}: "
+            f"missing required directories: {directories_list}" )
+        super( ).__init__( message )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders data source invalidity with helpful guidance. '''
+        lines = [ "## Error: Invalid Data Source Structure" ]
+        lines.append( "" )
+        lines.append(
+            "The data source location does not contain the expected "
+            "directory structure:" )
+        lines.append( "" )
+        lines.append( f"    {self.location}" )
+        lines.append( "" )
+        lines.append( "**Missing required directories:**" )
+        lines.extend(
+            f"- `{directory}`" for directory in self.missing_directories )
+        lines.append( "" )
+        lines.append(
+            "Data sources should contain structured directories for "
+            "configurations, contents, and templates." )
+        return tuple( lines )
+
+
 class DataSourceNoSupport( Omnierror, ValueError ):
     ''' Unsupported data source format error. '''
 

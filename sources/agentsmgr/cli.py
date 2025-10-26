@@ -57,7 +57,10 @@ class Application( __.appcore_cli.Application ):
 
 def execute( ) -> None:
     ''' Entrypoint for CLI execution. '''
-    config = ( __.tyro.conf.HelptextFromCommentsOff, )
+    config = (
+        __.tyro.conf.EnumChoicesFromValues,
+        __.tyro.conf.HelptextFromCommentsOff,
+    )
     try: __.asyncio.run( __.tyro.cli( Application, config = config )( ) )
     except SystemExit: raise
     except BaseException:

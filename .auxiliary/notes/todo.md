@@ -4,18 +4,6 @@
 
 ## Features
 
-- [ ] Group and sort Git ignores in .git/info/exclude under a "Managed by
-  agentsmgr" comment.
-
-- [ ] **Tool groups for common combinations**: Define standard tool groups in
-  configuration (e.g., "file_operations", "shell_access"). Create template
-  helpers for common tool sets. Validate tool names against known Qwen tools.
-  (Related to Phase 2 enhancement features but deferred as not core to Qwen
-  support.)
-
-- [ ] Split `populate` into two subcommands: `project` and `userdata`? Or,
-  figure out a clearer UX for existing `populate` command.
-
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.
   Current implementation (as of 2025-10-23) warns and skips missing content,
@@ -27,6 +15,23 @@
   - Consider whether strictness should apply to templates, configurations, etc.
   - Decide on interaction with `--simulate` mode
   - Consider summarizing warnings at end vs. inline logging
+
+- [ ] **Symlink Health Check Subcommand**: Add `agentsmgr maintenance check-symlinks`
+  command to report dangling, broken, or unexpected symlinks. Should:
+  - Identify all managed symlinks in project
+  - Report status of each (valid, dangling, broken, unexpected)
+  - Distinguish between expected symlinks (memory files, coder directories) and others
+  - Provide actionable recommendations for issues found
+  - Support `--json` output for automation
+
+- [ ] **Symlink Cleanup Subcommand**: Add `agentsmgr maintenance clean-symlinks`
+  command to remove dangling symlinks with confirmation. Should:
+  - Detect all dangling symlinks in project root and `.auxiliary/`
+  - Show preview of symlinks to be removed
+  - Require confirmation unless `--force` flag provided
+  - Support dry-run mode via `--simulate`
+  - Log all cleanup actions
+  - Optionally clean up backup files from previous symlink updates
 
 
 ## Documentation
@@ -54,7 +59,6 @@ Based on analysis of the populate command architecture, the following improvemen
   - Write permission validation for target directories
   - JSON syntax validation for existing settings files
   - Disk space availability checks
-  - Configuration compatibility verification
 
 - [ ] **Enhanced Backup Strategy**: Improve backup mechanism with:
   - Timestamped backup directories for full restoration

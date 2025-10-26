@@ -29,7 +29,7 @@ Extract from the user's input:
 
 - Current custom commands: !`ls .claude/commands/cs-*.md 2>/dev/null || echo "No cs-* commands found"`
 - Referenced files (if any): Check for existence and read as needed
-- Command template: @.auxiliary/configuration/claude/miscellany/command-template.md
+- Command template: @.auxiliary/configuration/coders/claude/miscellany/command-template.md
 
 ## Prerequisites
 
