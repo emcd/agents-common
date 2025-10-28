@@ -2,7 +2,7 @@ export const PreBashGitCommitCheck = async ({ project, client, $, directory, wor
   return {
     "tool.execute.before": async (input, output) => {
       // Only check bash commands that are git commits
-      if (input.tool === "bash") {
+      if (input.tool === "bash" && input.args && input.args.command) {
         const command = input.args.command || "";
         const commands = _partitionCommandLine(command);
         

@@ -3,7 +3,6 @@
 ## Code Quality
 
 - [x] **OpenCode Plugin Migration**: Migrated Claude Code hooks to OpenCode plugins
-- Testing plugin functionality now!
 
 ## Features
 

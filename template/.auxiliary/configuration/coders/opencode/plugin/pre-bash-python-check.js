@@ -18,7 +18,7 @@ export const PreBashPythonCheck = async ({ project, client, $, directory, worktr
 
 function _partitionCommandLine(commandLine) {
   const splitters = new Set([';', '&', '|', '&&', '||']);
-  const tokens = commandLine.trim().split(/\s+/);
+  const tokens = _shellSplit(commandLine);
   const commands = [];
   let commandTokens = [];
   
@@ -36,6 +36,41 @@ function _partitionCommandLine(commandLine) {
   }
   
   return commands;
+}
+
+// Basic shell tokenization that handles quotes (similar to Python's shlex.split)
+function _shellSplit(commandLine) {
+  const tokens = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+  let i = 0;
+  
+  while (i < commandLine.length) {
+    const char = commandLine[i];
+    
+    if ((char === '"' || char === "'") && !inQuotes) {
+      inQuotes = true;
+      quoteChar = char;
+    } else if (char === quoteChar && inQuotes) {
+      inQuotes = false;
+      quoteChar = '';
+    } else if (/\s/.test(char) && !inQuotes) {
+      if (current.trim()) {
+        tokens.push(current.trim());
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+    i++;
+  }
+  
+  if (current.trim()) {
+    tokens.push(current.trim());
+  }
+  
+  return tokens;
 }
 
 function _checkDirectPythonUsage(tokens) {
