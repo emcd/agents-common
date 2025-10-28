@@ -189,6 +189,56 @@ def _populate_per_user_content(
     return ( items_attempted, items_generated )
 
 
+def _create_claude_specific_symlinks(
+    target: __.Path,
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Creates Claude-specific symlinks (.mcp.json).
+
+        Returns tuple of (attempted, created, symlink_names).
+    '''
+    attempted = 0
+    created = 0
+    symlink_names: list[ str ] = [ ]
+
+    mcp_source = (
+        target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
+    mcp_link = target / '.mcp.json'
+    attempted += 1
+    was_created, symlink_name = _memorylinks.create_memory_symlink(
+        mcp_source, mcp_link, simulate )
+    if was_created: created += 1
+    symlink_names.append( symlink_name )
+
+    return ( attempted, created, tuple( symlink_names ) )
+
+
+def _create_opencode_specific_symlinks(
+    target: __.Path,
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Creates OpenCode-specific symlinks (opencode.jsonc).
+
+        Returns tuple of (attempted, created, symlink_names).
+    '''
+    attempted = 0
+    created = 0
+    symlink_names: list[ str ] = [ ]
+
+    opencode_config_source = (
+        target / '.auxiliary' / 'configuration' / 'coders' /
+        'opencode' / 'settings.jsonc'
+    )
+    opencode_config_link = target / 'opencode.jsonc'
+    attempted += 1
+    was_created, symlink_name = _memorylinks.create_memory_symlink(
+        opencode_config_source, opencode_config_link, simulate )
+    if was_created: created += 1
+    symlink_names.append( symlink_name )
+
+    return ( attempted, created, tuple( symlink_names ) )
+
+
 def _create_coder_directory_symlinks(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
@@ -216,6 +266,7 @@ def _create_coder_directory_symlinks(
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
+
     for coder_name in coders:
         try: renderer = renderers[ coder_name ]
         except KeyError as exception:
@@ -234,14 +285,17 @@ def _create_coder_directory_symlinks(
         if was_created: created += 1
         symlink_names.append( symlink_name )
         if coder_name == 'claude':
-            mcp_source = (
-                target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
-            mcp_link = target / '.mcp.json'
-            attempted += 1
-            was_created, symlink_name = _memorylinks.create_memory_symlink(
-                mcp_source, mcp_link, simulate )
-            if was_created: created += 1
-            symlink_names.append( symlink_name )
+            ( coder_attempted, coder_created, coder_symlink_names ) = (
+                _create_claude_specific_symlinks( target, simulate ) )
+            attempted += coder_attempted
+            created += coder_created
+            symlink_names.extend( coder_symlink_names )
+        elif coder_name == 'opencode':
+            ( coder_attempted, coder_created, coder_symlink_names ) = (
+                _create_opencode_specific_symlinks( target, simulate ) )
+            attempted += coder_attempted
+            created += coder_created
+            symlink_names.extend( coder_symlink_names )
     return ( attempted, created, tuple( symlink_names ) )
 
 
