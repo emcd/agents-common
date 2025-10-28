@@ -23,6 +23,22 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a5 (2025-10-28)
+============================
+
+Enhancements
+------------
+
+- CLI: Add claude-zai wrapper for GLM Coding Plan API integration, providing convenient access to glm-4.6 and glm-4.5-air models.
+- OpenCode: Create opencode.jsonc symlink in per-project mode for proper configuration management and git exclusion.
+
+
+Notices
+-------
+
+- OpenCode: Disable built-in Pyright LSP server to prevent diagnostic errors and ensure proper type checking with project configuration.
+
+
 agentsmgr 1.0a4 (2025-10-25)
 ============================
 

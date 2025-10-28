@@ -103,6 +103,24 @@ class RendererBase( __.immut.Object ):
         '''
         return 'claude'
 
+    def provide_project_symlinks(
+        self, target: __.Path
+    ) -> __.cabc.Sequence[ tuple[ __.Path, __.Path ] ]:
+        ''' Provides symlinks required for coder in per-project mode.
+
+            Returns sequence of (source, link_path) tuples where source
+            is the target path and link_path is where the symlink should
+            be created. Default implementation returns base symlink from
+            .auxiliary/configuration/coders/{coder_name} to .{coder_name}.
+
+            Subclasses may override to provide additional coder-specific
+            symlinks (e.g., Claude's .mcp.json, OpenCode's opencode.jsonc).
+        '''
+        source = (
+            target / '.auxiliary' / 'configuration' / 'coders' / self.name )
+        link_path = target / f'.{self.name}'
+        return [ ( source, link_path ) ]
+
 
 RENDERERS: __.accret.Dictionary[ str, RendererBase ] = (
     __.accret.Dictionary( ) )

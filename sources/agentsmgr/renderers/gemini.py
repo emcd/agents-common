@@ -55,6 +55,7 @@ class GeminiRenderer( _base.RendererBase ):
         error_message = f"Gemini CLI does not support {item_type} generation"
         raise __.Omnierror( error_message )
 
+
     def resolve_base_directory(
         self,
         mode: _base.ExplicitTargetMode,
