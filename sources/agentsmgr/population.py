@@ -189,56 +189,6 @@ def _populate_per_user_content(
     return ( items_attempted, items_generated )
 
 
-def _create_claude_specific_symlinks(
-    target: __.Path,
-    simulate: bool,
-) -> tuple[ int, int, tuple[ str, ... ] ]:
-    ''' Creates Claude-specific symlinks (.mcp.json).
-
-        Returns tuple of (attempted, created, symlink_names).
-    '''
-    attempted = 0
-    created = 0
-    symlink_names: list[ str ] = [ ]
-
-    mcp_source = (
-        target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
-    mcp_link = target / '.mcp.json'
-    attempted += 1
-    was_created, symlink_name = _memorylinks.create_memory_symlink(
-        mcp_source, mcp_link, simulate )
-    if was_created: created += 1
-    symlink_names.append( symlink_name )
-
-    return ( attempted, created, tuple( symlink_names ) )
-
-
-def _create_opencode_specific_symlinks(
-    target: __.Path,
-    simulate: bool,
-) -> tuple[ int, int, tuple[ str, ... ] ]:
-    ''' Creates OpenCode-specific symlinks (opencode.jsonc).
-
-        Returns tuple of (attempted, created, symlink_names).
-    '''
-    attempted = 0
-    created = 0
-    symlink_names: list[ str ] = [ ]
-
-    opencode_config_source = (
-        target / '.auxiliary' / 'configuration' / 'coders' /
-        'opencode' / 'settings.jsonc'
-    )
-    opencode_config_link = target / 'opencode.jsonc'
-    attempted += 1
-    was_created, symlink_name = _memorylinks.create_memory_symlink(
-        opencode_config_source, opencode_config_link, simulate )
-    if was_created: created += 1
-    symlink_names.append( symlink_name )
-
-    return ( attempted, created, tuple( symlink_names ) )
-
-
 def _create_coder_directory_symlinks(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
@@ -252,6 +202,10 @@ def _create_coder_directory_symlinks(
         while keeping actual files organized under
         .auxiliary/configuration/coders/.
 
+        Each renderer is responsible for specifying its symlink requirements
+        via provide_project_symlinks(). Population logic simply iterates
+        coders and asks renderers for their symlinks.
+
         Only creates symlinks for coders whose default mode is per-project.
         Coders with per-user default mode are skipped since they do not
         use per-project directories.
@@ -260,9 +214,6 @@ def _create_coder_directory_symlinks(
         symlink_names contains names of all symlinks (both newly created
         and pre-existing).
     '''
-    # TODO: Move symlink rendering to coders and call common code from each
-    #       one. Should have not have coder-specific logic in this general
-    #       function.
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
@@ -276,26 +227,13 @@ def _create_coder_directory_symlinks(
                 f"Skipping directory symlink for {coder_name}: "
                 f"default mode is {renderer.mode_default}" )
             continue
-        source = (
-            target / '.auxiliary' / 'configuration' / 'coders' / coder_name )
-        link_path = target / f'.{coder_name}'
-        attempted += 1
-        was_created, symlink_name = _memorylinks.create_memory_symlink(
-            source, link_path, simulate )
-        if was_created: created += 1
-        symlink_names.append( symlink_name )
-        if coder_name == 'claude':
-            ( coder_attempted, coder_created, coder_symlink_names ) = (
-                _create_claude_specific_symlinks( target, simulate ) )
-            attempted += coder_attempted
-            created += coder_created
-            symlink_names.extend( coder_symlink_names )
-        elif coder_name == 'opencode':
-            ( coder_attempted, coder_created, coder_symlink_names ) = (
-                _create_opencode_specific_symlinks( target, simulate ) )
-            attempted += coder_attempted
-            created += coder_created
-            symlink_names.extend( coder_symlink_names )
+        for source, link_path in renderer.provide_project_symlinks( target ):
+            attempted += 1
+            was_created, symlink_name = (
+                _memorylinks.create_memory_symlink(
+                    source, link_path, simulate ) )
+            if was_created: created += 1
+            symlink_names.append( symlink_name )
     return ( attempted, created, tuple( symlink_names ) )
 
 

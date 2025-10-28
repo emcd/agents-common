@@ -66,6 +66,23 @@ class OpencodeRenderer( RendererBase ):
             return 'claude'
         return 'opencode'
 
+    def provide_project_symlinks(
+        self, target: __.Path
+    ) -> __.cabc.Sequence[ tuple[ __.Path, __.Path ] ]:
+        ''' Provides symlinks required for OpenCode in per-project mode.
+
+            OpenCode requires base symlink plus opencode.jsonc symlink
+            linking to the settings file in the OpenCode configuration.
+        '''
+        symlinks = list( super( ).provide_project_symlinks( target ) )
+        opencode_source = (
+            target / '.auxiliary' / 'configuration' / 'coders' /
+            'opencode' / 'settings.jsonc'
+        )
+        opencode_link = target / 'opencode.jsonc'
+        symlinks.append( ( opencode_source, opencode_link ) )
+        return symlinks
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,

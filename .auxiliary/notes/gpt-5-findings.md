@@ -1,10 +1,5 @@
 # GPT-5 Findings
 
-## Renderer-specific symlink orchestration
-- **Context**: `sources/agentsmgr/population.py:192`
-- ` _create_coder_directory_symlinks` contains coder-specific behavior (special handling for Claude, knowledge of individual directories) even though renderers already encapsulate per-coder filesystem rules.
-- **Opportunity**: move symlink definitions into each renderer (e.g., expose `project_symlinks(target)`), so the population logic just iterates coders and asks their renderer which links to create. This removes the need for special cases and keeps knowledge about MCP files and directory aliases next to the renderer that owns them.
-
 ## Centralized coder configuration extraction
 - **Context**: `sources/agentsmgr/renderers/claude.py:96`, `renderers/codex.py:99`, `renderers/opencode.py:113`, `renderers/gemini.py:98`, `renderers/qwen.py:97`
 - Every renderer reimplements `_extract_coder_configuration` plus nearly identical precedence logic (ENV → config override → default path) for resolving per-user directories.

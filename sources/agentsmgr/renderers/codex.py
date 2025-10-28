@@ -51,6 +51,16 @@ class CodexRenderer( RendererBase ):
         '''
         return 'claude'
 
+    def provide_project_symlinks(
+        self, target: __.Path
+    ) -> __.cabc.Sequence[ tuple[ __.Path, __.Path ] ]:
+        ''' Provides symlinks required for Codex CLI in per-project mode.
+
+            Codex does not support per-project mode, so this method
+            returns empty sequence. Only per-user mode is supported.
+        '''
+        return [ ]
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,

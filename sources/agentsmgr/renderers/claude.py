@@ -50,6 +50,21 @@ class ClaudeRenderer( RendererBase ):
         '''
         return 'claude'
 
+    def provide_project_symlinks(
+        self, target: __.Path
+    ) -> __.cabc.Sequence[ tuple[ __.Path, __.Path ] ]:
+        ''' Provides symlinks required for Claude Code in per-project mode.
+
+            Claude requires base symlink plus .mcp.json symlink linking to
+            the shared MCP server configuration file.
+        '''
+        symlinks = list( super( ).provide_project_symlinks( target ) )
+        mcp_source = (
+            target / '.auxiliary' / 'configuration' / 'mcp-servers.json' )
+        mcp_link = target / '.mcp.json'
+        symlinks.append( ( mcp_source, mcp_link ) )
+        return symlinks
+
     def resolve_base_directory(
         self,
         mode: ExplicitTargetMode,
