@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# claude-zai: Rhymes with "Claude's eye", the Anthropic viewpoint.
+
+eecho() {
+    echo "$@" >&2
+}
+
+ENV_FILE=".auxiliary/secrets/zai-api.env"
+
+if [[ ! -f "${ENV_FILE}" ]]; then
+    eecho "Error: Environment file not found at '${ENV_FILE}'."
+    eecho "Please create the file with your Z.AI API key."
+    eecho "Get your API key from: https://z.ai/manage-apikey/apikey-list"
+    exit 1
+fi
+
+source "${ENV_FILE}"
+
+if [[ -z "${ZAI_API_KEY}" ]]; then
+    eecho "Error: ZAI_API_KEY not found in '${ENV_FILE}'."
+    eecho "Please set ZAI_API_KEY=your_api_key in the environment file."
+    exit 1
+fi
+
+# Configure Claude Code to use GLM Coding Plan
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+export ANTHROPIC_AUTH_TOKEN="${ZAI_API_KEY}"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-4.6"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-4.6"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
+export API_TIMEOUT_MS="3000000"
+
+eecho "Claude Code configured for GLM Coding Plan"
+eecho "API URL: ${ANTHROPIC_BASE_URL}"
+eecho "Models: Opus/Sonnet=${ANTHROPIC_DEFAULT_OPUS_MODEL}, Haiku=${ANTHROPIC_DEFAULT_HAIKU_MODEL}"
+
+exec claude "$@"
