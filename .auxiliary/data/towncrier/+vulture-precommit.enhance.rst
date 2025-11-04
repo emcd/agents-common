@@ -1,0 +1,1 @@
+Hooks: Add vulture dead code detection as blocking pre-commit check to ensure code quality before commits.
