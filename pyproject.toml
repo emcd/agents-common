@@ -17,14 +17,14 @@ requires-python = '>= 3.10'
 dependencies = [
   'Jinja2',
   'PyYAML',
-  'absence~=1.1',
   'accretive~=4.2',
   'dulwich',
-  'dynadoc~=1.4',
-  'frigid~=4.2',
   'packaging',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
+  'absence~=1.1',
+  'dynadoc~=1.4',
+  'frigid~=4.2',
   'emcd-appcore[cli]~=1.6',
   # --- END: Injected by Copier ---
 ]
@@ -147,7 +147,6 @@ linters = [
   # --- BEGIN: Injected by Copier ---
   # --- END: Injected by Copier ---
   """isort --check-only --diff sources tests""",
-  """vulture""",
   """pyright sources""",
 ]
 packagers = [
