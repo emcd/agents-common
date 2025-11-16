@@ -9,10 +9,7 @@
 Install GitHub CLI from the latest release (ensures latest version instead of older Ubuntu package):
 
 ```bash
-# Get latest version number and install
-GH_VERSION=$(wget https://github.com/cli/cli/releases/latest -O - 2>&1 | grep -oP 'href="/cli/cli/releases/tag/v\K[0-9.]+' | head -1) && \
-wget -O /tmp/gh_${GH_VERSION}_linux_amd64.deb https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.deb && \
-dpkg -i /tmp/gh_${GH_VERSION}_linux_amd64.deb
+GH_VERSION=$(wget https://github.com/cli/cli/releases/latest -O - 2>&1 | grep -oP 'href="/cli/cli/releases/tag/v\K[0-9.]+' | head -1) && wget -O /tmp/gh_${GH_VERSION}_linux_amd64.deb https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.deb && dpkg -i /tmp/gh_${GH_VERSION}_linux_amd64.deb
 ```
 
 ### 2. Install Core Python Tools
