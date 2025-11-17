@@ -97,8 +97,5 @@ bash-tool-bypass gh --version
 
 ## Notes
 
-- `librovore` MCP server does not require pre-installation; `uvx` will handle it automatically
 - The `.mcp.json` configuration expects these tools to be in PATH
-- Direct GitHub CLI installation avoids APT GPG signature verification issues
 - The `bash-tool-bypass` wrapper enables execution of commands restricted by Claude Code Bash tool permissions
-- `GH_TOKEN` environment variable should be configured in Claude Code settings for GitHub API authentication
