@@ -23,6 +23,22 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a6 (2025-11-29)
+============================
+
+Enhancements
+------------
+
+- Hooks: Add vulture dead code detection as blocking pre-commit check to ensure code quality before commits.
+- Slash Commands: Improve release workflow reliability with extended timeouts and coder-agnostic backgrounded task handling guidance.
+
+
+Repairs
+-------
+
+- Hooks: Fix post-edit-linter hook to gracefully handle repositories without Hatch configuration.
+
+
 agentsmgr 1.0a5 (2025-10-28)
 ============================
 
