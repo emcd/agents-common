@@ -11,8 +11,10 @@ _render_and_print_result # unused function - will be used in Phase 5
 # Renderer parameters for Phase 2 implementation
 environment             # unused parameter - will be used for env var resolution in Phase 2
 
+
 # --- BEGIN: Injected by Copier ---
 Omnierror              # unused base exception class for derivation
+CoderResourceAbsence   # unused exception class - will be used for validation in future
 # --- END: Injected by Copier ---
 
 # Source handlers register themselves via decorators (self-registration pattern)

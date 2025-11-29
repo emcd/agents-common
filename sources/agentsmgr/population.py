@@ -237,8 +237,59 @@ def _create_coder_directory_symlinks(
     return ( attempted, created, tuple( symlink_names ) )
 
 
+def _copy_coder_resources(
+    location: __.Path,
+    target: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    simulate: bool
+) -> tuple[ int, int ]:
+    ''' Copies static resources for coders.
+
+        Copies resources from defaults/per-project/resources/<coder>
+        to target directory. Returns tuple of (coders_attempted,
+        coders_processed).
+    '''
+    resources_source = location / 'per-project' / 'resources'
+    if not resources_source.exists( ):
+        _scribe.debug(
+            f"No per-project resources found at {resources_source}" )
+        return ( 0, 0 )
+    coders_target = target / '.auxiliary' / 'configuration' / 'coders'
+    return _operations.copy_coder_resources(
+        resources_source, coders_target, coders, simulate )
+
+
+def _manage_project_auxiliaries(
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    target: __.Path,
+    tag_prefix: __.Absential[ str ],
+    simulate: bool
+) -> None:
+    ''' Manages auxiliary project files (instructions, symlinks, excludes). '''
+    instructions_populated, instructions_target = (
+        _populate_instructions_if_configured(
+            configuration, target, tag_prefix, simulate ) )
+    all_symlink_names = _create_all_symlinks(
+        configuration, target, 'per-project', simulate )
+    git_exclude_entries: list[ str ] = [ ]
+    if instructions_populated:
+        git_exclude_entries.append( instructions_target )
+    git_exclude_entries.extend( all_symlink_names )
+    if git_exclude_entries:
+        entries_count = _operations.update_git_exclude(
+            target, git_exclude_entries, simulate )
+        if entries_count > 0:
+            _scribe.info(
+                f"Managing {entries_count} entries in .git/info/exclude" )
+
+
 class PopulateProjectCommand( __.appcore_cli.Command ):
-    ''' Generates project-scoped agent content from data sources. '''
+    ''' Generates project-scoped agent content from data sources.
+
+        Populates agent commands, definitions, and static resources
+        from the specified data source. Copies static resources from
+        defaults/per-project/resources/ to the project configuration.
+    '''
 
     source: SourceArgument = '.'
     target: TargetArgument = __.dcls.field( default_factory = __.Path.cwd )
@@ -297,21 +348,17 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         items_attempted, items_generated = _operations.populate_directory(
             generator, self.target, self.simulate )
         _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
-        instructions_populated, instructions_target = (
-            _populate_instructions_if_configured(
-                filtered_configuration, self.target, prefix, self.simulate ) )
-        all_symlink_names = _create_all_symlinks(
-            filtered_configuration, self.target, 'per-project', self.simulate )
-        git_exclude_entries: list[ str ] = [ ]
-        if instructions_populated:
-            git_exclude_entries.append( instructions_target )
-        git_exclude_entries.extend( all_symlink_names )
-        if git_exclude_entries:
-            entries_count = _operations.update_git_exclude(
-                self.target, git_exclude_entries, self.simulate )
-            if entries_count > 0:
-                _scribe.info(
-                    f"Managing {entries_count} entries in .git/info/exclude" )
+        resources_attempted, resources_copied = _copy_coder_resources(
+            location,
+            self.target,
+            filtered_configuration[ 'coders' ],
+            self.simulate )
+        if resources_copied > 0:
+            _scribe.info(
+                f"Copied resources for "
+                f"{resources_copied}/{resources_attempted} coders" )
+        _manage_project_auxiliaries(
+            filtered_configuration, self.target, prefix, self.simulate )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
