@@ -150,7 +150,7 @@ linters = [
   """pyright sources""",
 ]
 packagers = [
-  """hatch build""",
+  """env -u HATCH_ENV_ACTIVE hatch build""",
   # --- BEGIN: Injected by Copier ---
   """pyinstaller \
       --clean \
