@@ -34,7 +34,6 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 - Use `rg --line-number --column` to get precise coordinates for MCP tools that require line/column positions.
 - Choose appropriate editing tools based on the task complexity and your familiarity with the tools.
-- Consider `mcp__pyright__edit_file` for more reliable line-based editing than context-based `Edit`/`MultiEdit` when making complex changes.
 - Use pyright MCP tools where appropriate: `rename_symbol` for refactors, `hover` for getting function definitions without searching through code, `references` for precise symbol analysis.
 - Batch related changes together when possible to maintain consistency.
 - Use relative paths rather than absolute paths when possible.
@@ -44,7 +43,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 # Commits
 
 - Use `git status` to ensure all relevant changes are in the changeset.
-- Do **not** commit without explicit user approval. Unless the user has requested the commit, ask for a review of your edits first.
+- Do **not** commit without explicit user approval. Unless the user has requested the commit, **ask first** for a review of your work.
 - Use present tense, imperative mood verbs (e.g., "Fix" not "Fixed").
 - Write sentences with proper punctuation.
 - Include a `Co-Authored-By:` field as the final line. Should include the model name and a no-reply address.
