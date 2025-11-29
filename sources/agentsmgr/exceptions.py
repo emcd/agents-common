@@ -175,7 +175,7 @@ class GlobalsPopulationFailure( Omnierror, OSError ):
 class MemoryFileAbsence( Omnierror, FileNotFoundError ):
     ''' Memory file absence.
 
-        Raised when project memory file (conventions.md) does not exist
+        Raised when project memory file (AGENTS.md) does not exist
         but memory symlinks need to be created.
     '''
 
@@ -200,7 +200,7 @@ class MemoryFileAbsence( Omnierror, FileNotFoundError ):
         lines.append( "" )
         lines.append(
             "**Suggested action**: Create "
-            "`.auxiliary/configuration/conventions.md` with "
+            "`.auxiliary/configuration/AGENTS.md` with "
             "project-specific conventions, or copy from a template "
             "project." )
         return tuple( lines )
