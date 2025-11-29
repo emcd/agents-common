@@ -248,7 +248,6 @@ def _partition_around_managed_block(
         after_block.pop( 0 )
     return ( before_block, after_block )
 
-
 def _resolve_git_directory(
     start_path: __.Path
 ) -> __.typx.Optional[ __.Path ]:
@@ -271,7 +270,6 @@ def _resolve_git_directory(
     git_dir_path = __.Path( repo.controldir( ) )
     return _discover_common_git_directory( git_dir_path )
 
-
 def _discover_common_git_directory( git_dir: __.Path ) -> __.Path:
     ''' Discovers common git directory, handling worktree commondir.
 
@@ -284,3 +282,52 @@ def _discover_common_git_directory( git_dir: __.Path ) -> __.Path:
     try: common_path = commondir_file.read_text( encoding = 'utf-8' ).strip( )
     except ( OSError, IOError ): return git_dir
     return ( git_dir / common_path ).resolve( )
+
+def copy_coder_resources(
+    source_root: __.Path,
+    target_root: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    simulate: bool = False
+) -> tuple[ int, int ]:
+    ''' Copies static resources for specified coders.
+
+        Iterates through coders and copies resources from
+        source_root/<coder> to target_root/<coder>.
+        Returns tuple of (coders_attempted, coders_processed).
+    '''
+    attempted = 0
+    processed = 0
+    for coder in coders:
+        source = source_root / coder
+        target = target_root / coder
+        if not source.exists( ):
+            __.provide_scribe( __name__ ).debug(
+                f"No resources found for {coder} at {source}" )
+            continue
+        attempted += 1
+        if copy_resource_content( source, target, simulate ):
+            processed += 1
+    return ( attempted, processed )
+
+def copy_resource_content(
+    source: __.Path, target: __.Path, simulate: bool
+) -> bool:
+    ''' Recursively copies directory contents.
+
+        Copies all files and subdirectories from source to target,
+        overwriting existing files. Handles directory creation.
+    '''
+    if simulate: return True
+    try:
+        target.mkdir( parents = True, exist_ok = True )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.CoderResourceCopyFailure(
+            source, target
+        ) from exception
+    try:
+        __.shutil.copytree( source, target, dirs_exist_ok = True )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.CoderResourceCopyFailure(
+            source, target
+        ) from exception
+    return True

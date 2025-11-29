@@ -44,6 +44,22 @@ class CoderAbsence( Omnierror, ValueError ):
         super( ).__init__( message )
 
 
+class CoderResourceAbsence( Omnierror, FileNotFoundError ):
+    ''' Coder resource absence. '''
+
+    def __init__( self, coder: str, path: __.Path ):
+        message = f"Resources for {coder} not found at {path}"
+        super( ).__init__( message )
+
+
+class CoderResourceCopyFailure( Omnierror, OSError ):
+    ''' Coder resource copy failure. '''
+
+    def __init__( self, source: __.Path, target: __.Path ):
+        message = f"Failed to copy resources from {source} to {target}"
+        super( ).__init__( message )
+
+
 class ConfigurationAbsence( Omnierror, FileNotFoundError ):
 
     def __init__(
@@ -69,7 +85,6 @@ class ConfigurationInvalidity( Omnierror, ValueError ):
         if __.is_absent( reason ): message = "Invalid configuration."
         else: message = f"Invalid configuration: {reason}"
         super( ).__init__( message )
-
 
 
 class ContentAbsence( Omnierror, FileNotFoundError ):
@@ -161,15 +176,12 @@ class DataSourceNoSupport( Omnierror, ValueError ):
         super( ).__init__( message )
 
 
-
-
 class GlobalsPopulationFailure( Omnierror, OSError ):
     ''' Global settings population failure. '''
 
     def __init__( self, source: __.Path, target: __.Path ):
         message = f"Failed to populate global file from {source} to {target}"
         super( ).__init__( message )
-
 
 
 class MemoryFileAbsence( Omnierror, FileNotFoundError ):
