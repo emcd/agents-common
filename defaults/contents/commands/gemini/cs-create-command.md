@@ -2,9 +2,9 @@
 
 Generate a new custom slash command following established patterns for structure, tone, and formatting.
 
-Target: $ARGUMENTS
+Target: {{args}}
 
-**IMPORTANT**: You are creating slash commands for other Claude instances to execute. They will have no knowledge of:
+**IMPORTANT**: You are creating slash commands for other Gemini instances to execute. They will have no knowledge of:
 - The concept of "arguments" being passed to slash commands
 - The ARGUMENTS variable or its expansion
 - The meta-context of slash command generation
@@ -27,9 +27,9 @@ Extract from the user's input:
 
 ## Context
 
-- Current custom commands: !`ls .claude/commands/cs-*.md 2>/dev/null || echo "No cs-* commands found"`
+- Current custom commands: !{ls .gemini/commands/cs-*.toml 2>/dev/null || echo "No cs-* commands found"}
 - Referenced files (if any): Check for existence and read as needed
-- Command template: @.auxiliary/configuration/coders/claude/miscellany/command-template.md
+- Command template: @{.auxiliary/configuration/coders/gemini/miscellany/command-template.md}
 
 ## Prerequisites
 
@@ -44,7 +44,7 @@ Before creating the slash command, ensure:
 ### 1. Analyze User Request
 
 From the user's input, determine:
-- **Filename** (extract `cs-*.md` name)
+- **Filename** (extract `cs-*.toml` name)
 - **Purpose** (what should the generated slash command accomplish)
 - **Required tools** (based on functionality)
 - **Process details** (read any referenced files for specifics)
@@ -87,10 +87,10 @@ Choose appropriate allowed-tools based on functionality:
 
 ### 5. Generate and Write File
 
-1. **Read the template** from `.auxiliary/configuration/coders/claude/miscellany/command-template.md`
+1. **Read the template** from `.auxiliary/configuration/coders/gemini/miscellany/command-template.md`
 2. **Customize all sections** based on the specific purpose
 3. **Replace placeholders** with appropriate content for the target functionality
-4. **Write the final file** to `.claude/commands/[filename].md`
+4. **Write the final file** to `.gemini/commands/[filename].toml`
 
 
 ### 6. Validation and Summary
