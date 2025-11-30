@@ -8,7 +8,7 @@ Request from user: {{args}}
 
 - Template answers file: @{.auxiliary/configuration/copier-answers.yaml}
 - Current git status: !{git status --porcelain}
-- Existing conflicts check: !{grep -r "^<<<<<<<\|^=======$\|^>>>>>>>" . --exclude-dir=.git || echo "No conflicts"}
+- Existing conflicts check: !{grep -r "^<<<<<<<\\|^=======$\\|^>>>>>>>" . --exclude-dir=.git || echo "No conflicts"}
 - Project conventions: @{.auxiliary/configuration/conventions.md}
 
 ## Prerequisites
