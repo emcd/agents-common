@@ -5,6 +5,15 @@
   "tools": {
     "autoAccept": true,
     "core": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__librovore__query_content",
+      "mcp__librovore__query_inventory",
+      "mcp__pyright__definition",
+      "mcp__pyright__diagnostics",
+      "mcp__pyright__hover",
+      "mcp__pyright__references",
+      "mcp__pyright__rename_symbol",
       "edit",
       "glob",
       "google_web_search",
@@ -16,7 +25,9 @@
       "search_file_content",
       "web_fetch",
       "write_file",
-      "write_todos",
+      "write_todos"
+    ],
+    "allowed": [
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "mcp__librovore__query_content",
@@ -25,15 +36,15 @@
       "mcp__pyright__diagnostics",
       "mcp__pyright__hover",
       "mcp__pyright__references",
-      "mcp__pyright__rename_symbol"
-    ],
-    "allowed": [
+      "mcp__pyright__rename_symbol",
       "edit",
       "glob",
       "google_web_search",
       "list_directory",
       "read_file",
       "replace",
+      "run_shell_command(hatch run)",
+      "run_shell_command(hatch --env develop run)",
       "run_shell_command(awk)",
       "run_shell_command(cat)",
       "run_shell_command(cut)",
@@ -62,7 +73,6 @@
       "run_shell_command(git show)",
       "run_shell_command(git status)",
       "run_shell_command(grep)",
-      "run_shell_command(hatch)",
       "run_shell_command(head)",
       "run_shell_command(ls)",
       "run_shell_command(ps)",
@@ -78,16 +88,7 @@
       "search_file_content",
       "web_fetch",
       "write_file",
-      "write_todos",
-      "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs",
-      "mcp__librovore__query_content",
-      "mcp__librovore__query_inventory",
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol"
+      "write_todos"
     ]
   },
   "general": {
