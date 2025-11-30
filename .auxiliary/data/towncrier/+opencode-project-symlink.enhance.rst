@@ -1,1 +1,0 @@
-OpenCode: Create opencode.jsonc symlink in per-project mode for proper configuration management and git exclusion.

@@ -1,1 +1,0 @@
-CLI: Add claude-zai wrapper for GLM Coding Plan API integration, providing convenient access to glm-4.6 and glm-4.5-air models.

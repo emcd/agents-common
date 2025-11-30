@@ -102,7 +102,7 @@ def create_memory_symlinks_for_coders(
         symlink_names contains names of all symlinks (both newly created
         and pre-existing).
     '''
-    source = target / '.auxiliary' / 'configuration' / 'conventions.md'
+    source = target / '.auxiliary' / 'configuration' / 'AGENTS.md'
     if not source.exists( ):
         raise _exceptions.MemoryFileAbsence( source )
     attempted = 0

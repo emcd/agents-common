@@ -1,1 +1,0 @@
-OpenCode: Disable built-in Pyright LSP server to prevent diagnostic errors and ensure proper type checking with project configuration.

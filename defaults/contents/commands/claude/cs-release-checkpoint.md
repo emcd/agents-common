@@ -103,8 +103,10 @@ gh run watch <correct-qa-run-id> --interval 30 --compact
 
 Do not proceed until workflow completes:
 - Monitor QA workflow with `gh run watch` using the correct run ID
-- Use `timeout: 300000` (5 minutes) parameter in Bash tool for monitoring commands
-- If command times out, immediately rerun `gh run watch` until completion
+- Use a timeout of 420000 milliseconds (7 minutes) when executing the monitoring command in a shell
+- If the command times out or is automatically backgrounded:
+  * Wait 60-90 seconds before checking status to avoid excessive token consumption
+  * Periodically poll the backgrounded task or rerun `gh run watch` until completion
 - Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
 - Stop if any jobs fail - consult user before proceeding
 
@@ -131,8 +133,10 @@ gh run watch <correct-release-run-id> --interval 30 --compact
 
 Do not proceed until workflow completes:
 - Monitor release workflow with `gh run watch` using the correct run ID
-- Use `timeout: 600000` (10 minutes) parameter in Bash tool for monitoring commands
-- If command times out, immediately rerun `gh run watch` until completion
+- Use a timeout of 900000 milliseconds (15 minutes) when executing the monitoring command in a shell
+- If the command times out or is automatically backgrounded:
+  * Wait 60-90 seconds before checking status to avoid excessive token consumption
+  * Periodically poll the backgrounded task or rerun `gh run watch` until completion
 - Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
 - Stop if any jobs fail - consult user before proceeding
 
@@ -147,7 +151,7 @@ git commit -m "Clean up news fragments."
 Bump to next alpha version:
 ```bash
 hatch version alpha
-git commit -am "Version: $(hatch version)"
+git commit -am "Start of development for release $(hatch version | sed 's/a[0-9]*$//')."
 ```
 
 ### 7. Final Push
