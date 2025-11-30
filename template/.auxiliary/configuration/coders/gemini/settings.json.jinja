@@ -5,7 +5,72 @@
   "tools": {
     "autoAccept": true,
     "core": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__librovore__query_content",
+      "mcp__librovore__query_inventory",
+      {%- if "python" in languages %}
+      "mcp__pyright__definition",
+      "mcp__pyright__diagnostics",
+      "mcp__pyright__hover",
+      "mcp__pyright__references",
+      "mcp__pyright__rename_symbol",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "mcp__rust-analyzer__definition",
+      "mcp__rust-analyzer__diagnostics",
+      "mcp__rust-analyzer__hover",
+      "mcp__rust-analyzer__references",
+      "mcp__rust-analyzer__rename_symbol",
+      {%- endif %}
+      "edit",
+      "glob",
+      "google_web_search",
+      "list_directory",
+      "read_file",
+      "replace",
       "run_shell_command",
+      "save_memory",
+      "search_file_content",
+      "web_fetch",
+      "write_file",
+      "write_todos"
+    ],
+    "allowed": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__librovore__query_content",
+      "mcp__librovore__query_inventory",
+      {%- if "python" in languages %}
+      "mcp__pyright__definition",
+      "mcp__pyright__diagnostics",
+      "mcp__pyright__hover",
+      "mcp__pyright__references",
+      "mcp__pyright__rename_symbol",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "mcp__rust-analyzer__definition",
+      "mcp__rust-analyzer__diagnostics",
+      "mcp__rust-analyzer__hover",
+      "mcp__rust-analyzer__references",
+      "mcp__rust-analyzer__rename_symbol",
+      {%- endif %}
+      "edit",
+      "glob",
+      "google_web_search",
+      "list_directory",
+      "read_file",
+      "replace",
+      {%- if "python" in languages %}
+      "run_shell_command(hatch run)",
+      "run_shell_command(hatch --env develop run)",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "run_shell_command(cargo build)",
+      "run_shell_command(cargo check)",
+      "run_shell_command(cargo clippy)",
+      "run_shell_command(cargo test)",
+      {%- endif %}
       "run_shell_command(awk)",
       "run_shell_command(cat)",
       "run_shell_command(cut)",
@@ -14,15 +79,26 @@
       "run_shell_command(echo)",
       "run_shell_command(file)",
       "run_shell_command(find)",
-      "run_shell_command(gh)",
-      "run_shell_command(git)",
+      "run_shell_command(gh browse)",
+      "run_shell_command(gh issue list)",
+      "run_shell_command(gh issue view)",
+      "run_shell_command(gh pr checks)",
+      "run_shell_command(gh pr list)",
+      "run_shell_command(gh pr view)",
+      "run_shell_command(gh release list)",
+      "run_shell_command(gh release view)",
+      "run_shell_command(gh repo list)",
+      "run_shell_command(gh repo view)",
+      "run_shell_command(gh run list)",
+      "run_shell_command(gh run view)",
+      "run_shell_command(gh run watch)",
+      "run_shell_command(gh status)",
+      "run_shell_command(git add)",
+      "run_shell_command(git diff)",
+      "run_shell_command(git log)",
+      "run_shell_command(git show)",
+      "run_shell_command(git status)",
       "run_shell_command(grep)",
-      {%- if "python" in languages %}
-      "run_shell_command(hatch)",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "run_shell_command(cargo)",
-      {%- endif %}
       "run_shell_command(head)",
       "run_shell_command(ls)",
       "run_shell_command(ps)",
@@ -34,32 +110,11 @@
       "run_shell_command(uniq)",
       "run_shell_command(wc)",
       "run_shell_command(which)",
-      "read_file",
-      "write_file",
-      "edit",
-      "list_directory",
-      "glob",
+      "save_memory",
       "search_file_content",
-      "todo_write",
       "web_fetch",
-      "web_search",
-      "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs",
-      {%- if "python" in languages %}
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__edit_file",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol"
-      {%- endif %}
-      {%- if "rust" in languages %}
-      {%- if "python" in languages %},{% endif %}
-      "mcp__rust-analyzer__definition",
-      "mcp__rust-analyzer__diagnostics",
-      "mcp__rust-analyzer__hover",
-      "mcp__rust-analyzer__references"
-      {%- endif %}
+      "write_file",
+      "write_todos"
     ]
   },
   "general": {
