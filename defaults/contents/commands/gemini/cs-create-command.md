@@ -87,7 +87,7 @@ Choose appropriate allowed-tools based on functionality:
 
 ### 5. Generate and Write File
 
-1. **Read the template** from `.auxiliary/configuration/gemini/miscellany/command-template.md`
+1. **Read the template** from `.auxiliary/configuration/coders/gemini/miscellany/command-template.md`
 2. **Customize all sections** based on the specific purpose
 3. **Replace placeholders** with appropriate content for the target functionality
 4. **Write the final file** to `.gemini/commands/[filename].toml`

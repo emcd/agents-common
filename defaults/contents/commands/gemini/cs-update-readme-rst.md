@@ -10,8 +10,8 @@ User input: {{args}}
 
 - Current git status: !{git status --porcelain}
 - Project structure: !{ls -la}
-- Current README: @README.rst
-- Project metadata: @pyproject.toml
+- Current README: @{README.rst}
+- Project metadata: @{pyproject.toml}
 - Product requirements: @{documentation/prd.rst}
 - Architecture overview: @{documentation/architecture/filesystem.rst}
 
