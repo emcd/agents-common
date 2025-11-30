@@ -68,15 +68,21 @@
     }
   },
   "mcpServers": {
+    {%- if "python" in languages %},
+    "pyright": {
+      "command": "mcp-language-server",
+      "args": [
+        "--lsp", "pyright-langserver", "--workspace", ".",
+        "--", "--stdio"
+      ],
+      "excludeTools": [ "edit_file" ]
+    },
+    {%- endif %}
     {%- if "rust" in languages %}
     "rust-analyzer": {
       "command": "mcp-language-server",
-      "args": [
-        "--lsp",
-        "rust-analyzer",
-        "--workspace",
-        "."
-      ]
+      "args": [ "--lsp", "rust-analyzer", "--workspace", "." ],
+      "excludeTools": [ "edit_file" ]
     },
     {%- endif %}
     "context7": {
@@ -86,14 +92,6 @@
     "librovore": {
       "command": "uvx",
       "args": [ "librovore", "serve" ]
-    }{%- if "python" in languages %},
-    "pyright": {
-      "command": "mcp-language-server",
-      "args": [
-        "--lsp", "pyright-langserver", "--workspace", ".",
-        "--", "--stdio"
-      ]
     }
-    {%- endif %}
   }
 }
