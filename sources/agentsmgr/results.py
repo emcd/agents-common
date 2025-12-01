@@ -44,11 +44,11 @@ class ConfigurationDetectionResult( ResultBase ):
     def render_as_markdown( self ) -> tuple[ str, ... ]:
         ''' Renders configuration detection as Markdown lines. '''
         lines = [ '🔍 Agent Configuration Detected:' ]
-        lines.append( f"   Coders: {', '.join( self.coders )}" )
-        lines.append( f"   Languages: {', '.join( self.languages )}" )
+        lines.append( f" * Coders: {', '.join( self.coders )}" )
+        lines.append( f" * Languages: {', '.join( self.languages )}" )
         if self.project_name:
-            lines.append( f"   Project: {self.project_name}" )
-        lines.append( f"   Target Directory: {self.target.resolve( )}" )
+            lines.append( f" * Project: {self.project_name}" )
+        lines.append( f" * Target Directory: {self.target.resolve( )}" )
         return tuple( lines )
 
 
@@ -64,9 +64,9 @@ class ContentGenerationResult( ResultBase ):
     def render_as_markdown( self ) -> tuple[ str, ... ]:
         ''' Renders content generation results as Markdown lines. '''
         lines = [ f"🚀 Populating agent content (simulate={self.simulated}):" ]
-        lines.append( f"   Source: {self.source_location}" )
-        lines.append( f"   Target: {self.target_location.resolve( )}" )
-        lines.append( f"   Coders: {', '.join( self.coders )}" )
+        lines.append( f" * Source: {self.source_location}" )
+        lines.append( f" * Target: {self.target_location.resolve( )}" )
+        lines.append( f" * Coders: {', '.join( self.coders )}" )
         lines.append( '' )
         lines.append( f"   Generated {self.items_generated} items" )
         lines.append( '' )
@@ -90,14 +90,14 @@ class ValidationResult( ResultBase ):
     def render_as_markdown( self ) -> tuple[ str, ... ]:
         ''' Renders validation results as Markdown lines. '''
         lines = [ f"✅ Validation complete for '{self.variant}' variant:" ]
-        lines.append( f"   Temporary Directory: {self.temporary_directory}" )
+        lines.append( f" * Temporary Directory: {self.temporary_directory}" )
         lines.append(
-            f"   Items: {self.items_generated}/{self.items_attempted} "
+            f" * Items: {self.items_generated}/{self.items_attempted} "
             "generated" )
         if self.preserved:
             lines.append(
-                f"   📁 Files preserved for inspection at: "
+                f" * 📁 Files preserved for inspection at: "
                 f"{self.temporary_directory}" )
         else:
-            lines.append( "   🗑️  Temporary files cleaned up" )
+            lines.append( " * 🗑️  Temporary files cleaned up" )
         return tuple( lines )
