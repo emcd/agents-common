@@ -82,20 +82,20 @@ def _create_all_symlinks(
     ''' Creates all symlinks and returns their names for git exclude.
 
         Creates memory symlinks for all coders and coder directory
-        symlinks for per-project mode. Returns tuple of all symlink
+        symlinks for per-project mode. Returns list of all symlink
         names (both newly created and pre-existing) for git exclude
         update.
     '''
     all_symlink_names: list[ str ] = [ ]
     if mode == 'nowhere': return tuple( all_symlink_names )
-    links_attempted, links_created, symlink_names = (
+    links_attempted, links_created, symlink_names_memory = (
         _memorylinks.create_memory_symlinks_for_coders(
             coders = configuration[ 'coders' ],
             target = target,
             renderers = _renderers.RENDERERS,
             simulate = simulate,
         ) )
-    all_symlink_names.extend( symlink_names )
+    all_symlink_names.extend( symlink_names_memory )
     if links_created > 0:
         _scribe.info(
             f"Created {links_created}/{links_attempted} memory symlinks" )
@@ -119,6 +119,15 @@ def _create_all_symlinks(
             _scribe.info(
                 f"Created {coder_symlinks_created}/"
                 f"{coder_symlinks_attempted} coder directory symlinks" )
+    openspec_link_path = target / 'openspec'
+    openspec_source_path = (
+        target / 'documentation' / 'architecture' / 'openspec' )
+    if not simulate:
+        openspec_source_path.mkdir( parents = True, exist_ok = True )
+    _, symlink_name_openspec = _memorylinks.create_memory_symlink(
+        openspec_source_path, openspec_link_path, simulate )
+    all_symlink_names.append( symlink_name_openspec )
+    _scribe.info( "Created 1/1 openspec symlink" )
     return tuple( all_symlink_names )
 
 
@@ -149,8 +158,8 @@ def _populate_instructions_if_configured(
             simulate,
         ) )
     _scribe.info(
-        f"Updated {instructions_updated}/"
-        f"{instructions_attempted} instruction files" )
+        f"Updated {instructions_updated}/{instructions_attempted} "
+        "instruction files" )
     return ( True, instructions_target )
 
 
@@ -269,8 +278,8 @@ def _manage_project_auxiliaries(
     instructions_populated, instructions_target = (
         _populate_instructions_if_configured(
             configuration, target, tag_prefix, simulate ) )
-    all_symlink_names = _create_all_symlinks(
-        configuration, target, 'per-project', simulate )
+    all_symlink_names: list[ str ] = list( _create_all_symlinks(
+        configuration, target, 'per-project', simulate ) )
     git_exclude_entries: list[ str ] = [ ]
     if instructions_populated:
         git_exclude_entries.append( instructions_target )

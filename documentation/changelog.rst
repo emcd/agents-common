@@ -23,6 +23,16 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a7 (2025-12-01)
+============================
+
+Enhancements
+------------
+
+- Added an 'openspec' symlink to the project root for easier access to architecture specifications.
+- Improved the rendering of command result objects in the CLI, using bullet lists for clearer output.
+
+
 agentsmgr 1.0a6 (2025-11-29)
 ============================
 

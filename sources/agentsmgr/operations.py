@@ -162,7 +162,12 @@ def update_git_exclude(
         raise _exceptions.FileOperationFailure(
             exclude_file, "read git exclude file" ) from exception
     normalized_entries = sorted( {
-        entry.strip( ) for entry in entries if entry.strip( )
+        (
+            "/{0}".format( entry.strip( ) )
+            if entry.strip( ) and not entry.strip( ).startswith( '/' )
+            else entry.strip( )
+        )
+        for entry in entries if entry.strip( )
     } )
     if not normalized_entries:
         new_content = _remove_managed_block( content )

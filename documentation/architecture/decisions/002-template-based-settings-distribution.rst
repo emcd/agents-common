@@ -10,9 +10,9 @@ Accepted
 Context
 ===============================================================================
 
-AI agent settings files (like Claude Code's ``settings.json``) contain both 
-static configuration and dynamic hook configurations that reference script paths. 
-This creates a coordination problem between distributed configurations and actual 
+AI agent settings files (like Claude Code's ``settings.json``) contain both
+static configuration and dynamic hook configurations that reference script paths.
+This creates a coordination problem between distributed configurations and actual
 script locations across different deployment environments.
 
 Key challenges include:
@@ -27,37 +27,40 @@ Several approaches were considered:
 
 **Direct Distribution**: Distribute complete ``settings.json`` files with hardcoded paths.
 
-**Configuration Merging**: Use git diff-based algorithms similar to Copier for 
+**Configuration Merging**: Use git diff-based algorithms similar to Copier for
 merging base and project-specific settings.
 
-**Custom CLI Renderer**: Use Jinja2 templates with custom CLI tooling for 
+**Custom CLI Renderer**: Use Jinja2 templates with custom CLI tooling for
 settings generation and local override support.
 
-**Copier Template Integration**: Transform agents-common into a Copier template 
+**Copier Template Integration**: Transform agents-common into a Copier template
 that generates tool configurations from structured data sources.
 
 Decision
 ===============================================================================
 
-Implement a hybrid approach combining Copier template distribution for base 
-configuration templates with ``agentsmgr`` tool for dynamic content generation 
+Implement a hybrid approach combining Copier template distribution for base
+configuration templates with ``agentsmgr`` tool for dynamic content generation
 directly in downstream projects from structured data sources.
 
 The approach includes:
 
 **Data-Driven Source Structure**:
-- ``data/`` directory contains structured sources (TOML command definitions, 
+
+- ``data/`` directory contains structured sources (TOML command definitions,
   agent configurations, hook scripts, tool-specific Jinja2 templates)
 - ``agentsmgr populate`` generates content directly in downstream projects
 - Single source of truth maintained in structured, tool-agnostic format
 
 **Minimal Copier Template** (``template/.auxiliary/configuration/``):
+
 - Contains base configuration templates (settings.json.jinja, mcp-servers.json.jinja)
 - Provides directory structure with .gitignore files for generated content
 - README files indicating dynamic generation via agentsmgr
 - Standard Copier template structure for base distribution
 
 **Dynamic Content Generation**:
+
 - ``agentsmgr populate --source=agents-common@tag`` generates commands, agents, scripts
 - Content generated directly in downstream projects, not committed to version control
 - Tool-specific formats handled at generation time from common data sources
@@ -68,7 +71,7 @@ Alternatives
 
 **Direct Distribution** was rejected because:
 - Cannot handle path coordination between different deployment environments
-- Requires hardcoded paths that break across different project structures  
+- Requires hardcoded paths that break across different project structures
 - No mechanism for project-specific customization
 - Creates maintenance burden for path updates
 

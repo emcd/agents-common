@@ -41,6 +41,36 @@
   },
   "permissions": {
     "auto_allow": [
+      "mcp__context7__get-library-docs",
+      "mcp__context7__resolve-library-id",
+      "mcp__librovore__query_content",
+      "mcp__librovore__query_inventory",
+      {%- if "python" in languages %}
+      "mcp__pyright__definition",
+      "mcp__pyright__diagnostics",
+      "mcp__pyright__edit_file",
+      "mcp__pyright__hover",
+      "mcp__pyright__references",
+      "mcp__pyright__rename_symbol",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "mcp__rust-analyzer__definition",
+      "mcp__rust-analyzer__diagnostics",
+      "mcp__rust-analyzer__edit_file",
+      "mcp__rust-analyzer__hover",
+      "mcp__rust-analyzer__references",
+      "mcp__rust-analyzer__rename_symbol",
+      {%- endif %}
+      {%- if "python" in languages %}
+      "Bash(hatch run *)",
+      "Bash(hatch --env develop run *)",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "Bash(cargo build *)",
+      "Bash(cargo check *)",
+      "Bash(cargo clippy *)",
+      "Bash(cargo test *)",
+      {%- endif %}
       "Bash(awk *)",
       "Bash(cat *)",
       "Bash(cut *)",
@@ -70,16 +100,6 @@
       "Bash(git show *)",
       "Bash(git status)",
       "Bash(grep *)",
-      {%- if "python" in languages %}
-      "Bash(hatch run python *)",
-      "Bash(hatch --env develop run *)",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "Bash(cargo build *)",
-      "Bash(cargo test *)",
-      "Bash(cargo check *)",
-      "Bash(cargo clippy *)",
-      {%- endif %}
       "Bash(head *)",
       "Bash(ls *)",
       "Bash(ps *)",
@@ -90,24 +110,7 @@
       "Bash(tail *)",
       "Bash(uniq *)",
       "Bash(wc *)",
-      "Bash(which *)",
-      "mcp__context7__get-library-docs",
-      "mcp__context7__resolve-library-id",
-      {%- if "python" in languages %}
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__edit_file",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol"
-      {%- endif %}
-      {%- if "rust" in languages %}
-      {%- if "python" in languages %},{%- endif %}
-      "mcp__rust-analyzer__definition",
-      "mcp__rust-analyzer__diagnostics",
-      "mcp__rust-analyzer__hover",
-      "mcp__rust-analyzer__references"
-      {%- endif %}
+      "Bash(which *)"
     ]
   },
   "sandbox": {

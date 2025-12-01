@@ -1,1 +1,0 @@
-Hooks: Fix post-edit-linter hook to gracefully handle repositories without Hatch configuration.
