@@ -1,193 +1,155 @@
-# OpenSpec Integration Plan for agentsmgr
+# Openspec Integration Notes
 
-## Overview
+This file tracks additional ideas and tasks related to Openspec integration.
 
-This plan outlines modifications to `agentsmgr` to support population of statically-generated OpenSpec commands from `defaults/` directories, enabling template-based projects to include OpenSpec tooling without committing generated commands to git.
+## AGENTS.md Consolidation (Future Consideration)
 
-## Current State Analysis
+### Current State
 
-- OpenSpec skeleton has been added to `template/.auxiliary/configuration/openspec/`
-- AGENTS.md has been updated to include OpenSpec instructions
-- OpenSpec commands currently in `.claude/commands/openspec/` and `.opencode/command/openspec-*.md`
-- Template `.gitignore` prevents committing commands in `.auxiliary/configuration/coders/claude/commands/`
-- Need mechanism to populate OpenSpec commands during `agentsmgr populate project`
+Multiple AGENTS.md files exist:
+- `.auxiliary/configuration/AGENTS.md` - Project-specific AI instructions
+- `documentation/architecture/openspec/AGENTS.md` - Openspec workflow instructions
+- `template/documentation/architecture/openspec/AGENTS.md` - Template for new projects
 
-## Proposed Directory Structure
+### Proposed Consolidation
 
-### New Defaults Directories
-```
-defaults/
-├── per-project/
-│   └── resources/
-│       ├── claude/
-│       │   └── commands/
-│       │       └── openspec/
-│       │           ├── apply.md
-│       │           ├── archive.md
-│       │           └── proposal.md
-│       └── opencode/
-│           └── command/
-│               ├── openspec-apply.md
-│               ├── openspec-archive.md
-│               └── openspec-proposal.md
+**Option 1: Symlink + Merge Content**
+```bash
+# Merge project-specific content into openspec/AGENTS.md
+# Symlink for backward compatibility
+ln -s ../../documentation/architecture/openspec/AGENTS.md .auxiliary/configuration/AGENTS.md
 ```
 
-### Target Population Structure
+**Merged structure:**
+```markdown
+# Project Context
+[Current .auxiliary/configuration/AGENTS.md content]
+- Project overview, MCP servers, operation guidelines
+
+# OpenSpec Instructions
+[Current openspec/AGENTS.md content]
+- Openspec workflow, validation, conventions
+
+# Project Standards (ADDED)
+Before any design or implementation:
+- Read @.auxiliary/instructions/practices.rst
+- Read @.auxiliary/instructions/practices-python.rst
+- Read @.auxiliary/instructions/nomenclature.rst
+
+Quality gates:
+```bash
+hatch --env develop run linters  # Includes vibelinter
+hatch --env develop run testers
 ```
-.auxiliary/configuration/
-├── coders/
-│   ├── claude/
-│   │   └── commands/
-│   │       └── openspec/
-│   │           ├── apply.md
-│   │           ├── archive.md
-│   │           └── proposal.md
-│   └── opencode/
-│       └── command/
-│           ├── openspec-apply.md
-│           ├── openspec-archive.md
-│           └── openspec-proposal.md
+
+# Commits
+[Git workflow from .auxiliary/configuration/AGENTS.md]
+
+# Project Notes
+[Project-specific notes]
 ```
 
-## Implementation Plan
+**Benefits:**
+- ✅ Single source of AI instructions
+- ✅ Openspec instructions include project standards
+- ✅ `openspec update` updates both project and Openspec instructions
+- ✅ Template includes project standards by default
 
-### Phase 1: Extend Population Logic
+**Challenges:**
+- ⚠️ `openspec update` might overwrite project-specific customizations
+- ⚠️ Need to ensure project standards section is preserved during updates
+- ⚠️ Template needs to be customizable per project
 
-#### 1.1 Extend `sources/agentsmgr/population.py`
+### Template Enhancement Strategy
 
-**New Function**: `_copy_coder_resources()`
-- Copy from `defaults/per-project/resources/<coder>/`
-  to `.auxiliary/configuration/coders/<coder>/` for all coders
-- Handle missing directories gracefully
-- Integrate with existing simulation mode
-- Support both file and directory copying with recursive preservation
+**Current Openspec template:**
+- Generic Openspec workflow instructions
+- No project-specific standards
 
-**Modify**: existing population workflow
-- Add call to `_copy_coder_resources()` after directory structure creation
-- Ensure happens before symlink creation to avoid copying broken links
+**Enhanced template for agents-common projects:**
+```markdown
+# [Project Name] OpenSpec Guide
 
-#### 1.2 Extend `sources/agentsmgr/operations.py`
+## Project Context
+- Project overview: @README.rst
+- Architecture: @documentation/architecture/
+- Practices: @.auxiliary/instructions/
+- Current work: @.auxiliary/notes/
 
-**Extend existing**: `operations.py` with generic file operation functions
+## OpenSpec Instructions
+[Standard Openspec workflow from upstream]
 
-**New Functions**:
-- `copy_coder_resources(source, target, coder, simulate=False)`
-- `ensure_coder_directories(target, coder, simulate=False)`
-- `copy_resource_content(source_dir, target_dir, simulate=False)`
-- `find_available_coders(source_path)` - discover available coders in defaults
+## Project Standards (CUSTOMIZABLE SECTION)
 
-### Phase 2: CLI Integration
+### Before Creating Proposals
+Prerequisites:
+1. Read @.auxiliary/instructions/practices.rst
+2. Read @.auxiliary/instructions/practices-python.rst (for Python)
+3. Read @.auxiliary/instructions/practices-rust.rst (for Rust)
+4. Read @.auxiliary/instructions/nomenclature.rst
 
-#### 2.1 Update Help Text
+### Quality Gates
+All implementations MUST pass:
+```bash
+hatch --env develop run linters  # Project-specific linters
+hatch --env develop run testers
+```
 
-**Update `populate` subcommand help** to mention population of coder commands from defaults
+See @.auxiliary/instructions/validation.rst for details.
 
-### Phase 3: Error Handling and Validation
+### Implementation Standards
+[Project-specific requirements from practices guides]
+- Wide parameter, narrow return patterns
+- Exception hierarchy (Omnierror)
+- Immutability preferences
+- Documentation (narrative mood)
 
-#### 3.1 New Exceptions in `sources/agentsmgr/exceptions.py`
+## Commits
+[Project git workflow]
 
-**New Exception Classes**:
-- `CoderResourceAbsence` - when coder resources not found in defaults
-- `CoderResourceCopyFailure` - when copying coder resources fails
+## Project Notes
+[Project-specific context]
+```
 
-#### 3.2 Validation Logic
+**Implementation approach:**
+1. Create enhanced template with project standards section
+2. Use Copier to distribute to projects
+3. Ensure `openspec update` preserves custom sections
+4. Test that managed blocks (`<!-- OPENSPEC:START -->`) work correctly
 
-**Pre-copying checks**:
-- Verify source directories exist in defaults for each coder
-- Validate target directories are writable
-- Check for conflicts with existing resources
+### Tasks (Future)
 
-**Post-copying validation**:
-- Verify resources were copied successfully
-- Validate resource file formats
-- Ensure proper permissions
+- [ ] Test if `openspec update` preserves custom content outside managed blocks
+- [ ] Create enhanced AGENTS.md template with project standards
+- [ ] Add project standards section to current openspec/AGENTS.md
+- [ ] Test symlink approach (.auxiliary/configuration → openspec/)
+- [ ] Update Copier template to include enhanced AGENTS.md
+- [ ] Document which sections are managed vs custom
+- [ ] Validate workflow with both files merged
 
-### Phase 4: Testing
+### Decision Points
 
-#### 4.1 Unit Tests
+**When to consolidate:**
+- After validating Openspec workflow with current structure
+- After confirming `openspec update` behavior with custom content
+- When template enhancement is ready for distribution
 
-**New test module**: `tests/test_coder_resource_copying.py`
+**Alternatives:**
+1. Keep separate files but cross-reference (current approach)
+2. Merge into single file with clear section boundaries
+3. Use symlink but maintain separate concerns
 
-**Test cases**:
-- Successful copying of coder resources for multiple coders
-- Missing source directories handling
-- File permission issues
-- Simulation mode behavior
-- Integration with existing symlink creation
+### Open Questions
 
-#### 4.2 Integration Tests
+1. **Update behavior:** Does `openspec update` preserve content outside managed blocks?
+2. **Customization:** Can we mark sections as "project-specific, do not overwrite"?
+3. **Template distribution:** How to maintain enhanced template across projects via Copier?
+4. **Backward compatibility:** How to handle existing projects during migration?
 
-**Extend existing tests**:
-- `test_populate_project.py` - add coder resource copying verification
-- End-to-end workflow testing
+---
 
-### Phase 5: Documentation
+## Related Notes
 
-#### 5.1 Update Documentation
-
-**README updates**:
-- Document coder resource integration
-- Examples of using coder resources from defaults
-- Troubleshooting guide
-
-**AGENTS.md enhancements**:
-- Update instructions to reference copied coder resources
-- Add workflow examples
-
-#### 6.2 Code Documentation
-
-**Docstrings and comments**:
-- Comprehensive documentation for new resource copying functions
-- Integration points with existing code
-- Error condition documentation
-
-## Implementation Sequence
-
-1. **Extend population logic** in `populations.py`
-2. **Add error handling** with new exception classes
-3. **Update CLI help text**
-4. **Add comprehensive tests**
-5. **Update documentation**
-6. **Integration testing**
-
-## Backward Compatibility
-
-- Existing `agentsmgr populate project` behavior unchanged
-- Coder resource copying is additive, doesn't replace existing functionality
-- Default to copying all available resources from defaults
-- Maintain existing simulation mode support
-
-## Risk Mitigation
-
-**Low Risk**:
-- Directory creation and file copying operations are well-understood
-- Existing population patterns can be reused
-- Simulation mode provides safe testing
-
-**Medium Risk**:
-- Integration with existing population workflow needs careful sequencing
-- Error handling for file permission issues
-- Path resolution across different operating systems
-
-**Mitigation**:
-- Extensive testing with simulation mode first
-- Graceful degradation when coder resources are missing
-- Clear error messages and recovery instructions
-
-## Success Criteria
-
-1. ✅ Coder resources are copied during `agentsmgr populate project`
-2. ✅ Resources are available in expected locations (`.auxiliary/configuration/coders/<coder>/`)
-3. ✅ Existing functionality remains unchanged
-4. ✅ Simulation mode works correctly
-5. ✅ Appropriate error handling for edge cases
-6. ✅ Comprehensive test coverage
-7. ✅ Clear documentation for users
-
-## Next Steps
-
-1. Review and approve this plan
-2. Begin Phase 1 implementation (directory structure and command migration)
-3. Proceed through phases sequentially
-4. Test at each phase before proceeding
-5. Final integration testing and documentation
+- Implementation plan: `openspec-designs.md`
+- Architecture ideas: `openspec-adrs.md`
+- Migration prompts: `openspec-migration.md`
