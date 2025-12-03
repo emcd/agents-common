@@ -40,6 +40,14 @@
 - **Immutability:** Preference for immutable data structures (`frigid` packages) to ensure state predictability.
 - **Sentinel Values:** Use of `absence` package for distinguishing "undefined" from "None".
 
+### Development Practices
+Detailed practices documented in `.auxiliary/instructions/`:
+- **practices.rst** - Robustness principle (Postel's Law), immutability first, dependency injection, exception chaining
+- **practices-python.rst** - Module organization, type annotations, wide parameter/narrow return patterns, exception hierarchies, documentation (narrative mood)
+- **nomenclature.rst** - Naming patterns for variables, functions, classes, exceptions
+- **style.rst** - Code formatting (spacing, line length, 79 chars, documentation standards)
+- **validation.rst** - Quality gates (linters, type checkers, tests must pass)
+
 ### Testing Strategy
 - **Framework:** `pytest` for unit and integration tests.
 - **Doctests:** Executed via `sphinx` to ensure documentation accuracy.
