@@ -72,7 +72,18 @@ mv documentation/architecture/openspec documentation/architecture/designs
 
 **Execute this FIRST to establish capability structure**
 
-### Prompt Template
+### Simple Prompt (Recommended)
+
+```
+Please review README.rst and prd.rst for this project and create spec.md files under documentation/architecture/openspec/specs/<capability-name>.
+
+The format for each spec file is given by:
+https://raw.githubusercontent.com/Fission-AI/OpenSpec/refs/heads/main/openspec/specs/openspec-conventions/spec.md
+
+Group functional requirements from the PRD into logical user-facing capabilities.
+```
+
+### Detailed Prompt Template (For More Control)
 
 ```
 I need to migrate a Product Requirements Document to Openspec specification format.
@@ -206,7 +217,7 @@ After receiving LLM output:
 
 Before migrating designs, you must have:
 - ✅ Completed PRD migration (Phase 1)
-- ✅ Created capability structure in `openspec/specs/`
+- ✅ Created capability structure in `documentation/architecture/openspec/specs/`
 - ✅ Validated all capability specs with `openspec validate --specs --strict`
 
 ### Mapping Strategy
@@ -620,7 +631,7 @@ For each design:
 - [ ] Sphinx renders Markdown specs correctly
 
 ### Phase 5: Update References (After Validation)
-- Update slash commands to reference openspec/specs/
+- Update slash commands to reference documentation/architecture/openspec/specs/
 - Update CLAUDE.md with new paths
 - Keep old designs/ directory for reference (don't delete yet)
 - Test workflow with new structure
