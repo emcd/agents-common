@@ -151,7 +151,7 @@ git commit -m "Clean up news fragments."
 Bump to next alpha version:
 ```bash
 hatch version alpha
-git commit -am "Start of development for release $(hatch version | sed 's/a[0-9]*$//')."
+git commit -am "Start of development for release $(hatch version)."
 ```
 
 ### 7. Final Push
