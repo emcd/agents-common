@@ -1,9 +1,3 @@
-# Documentation Migration to Openspec
-
-This prompt performs batch migration of existing documentation to Openspec format.
-
----
-
 Please migrate documentation from RST to Openspec Markdown format.
 
 ## Phase 1: PRD Migration (If Exists)
@@ -100,44 +94,3 @@ After migration:
 openspec validate --specs --strict
 hatch --env develop run docsgen  # Verify Sphinx rendering
 ```
-
----
-
-## Background
-
-This prompt automates the migration of legacy RST documentation to Openspec format. Key aspects:
-
-### Batch Processing
-
-The prompt is designed for agentic coders to process all documentation in one session:
-- Discovers all files automatically
-- Handles PRD → specs and designs → design.md in sequence
-- No manual file-by-file specification needed
-
-### Conversion Strategy
-
-Uses `rst2myst` or `pandoc` for mechanical conversion to preserve fidelity:
-- Initial conversion is automated and faithful to source
-- LLM performs editorial cleanup and structural organization
-- Reduces risk of content loss or unwanted insertions
-
-### Capability Mapping
-
-**PRD first approach:**
-- PRD establishes capability structure based on user requirements
-- Designs map to existing capabilities
-- Ensures product-oriented rather than implementation-oriented organization
-
-**Implementation verification:**
-- Cross-checks that PRD requirements are actually implemented in sources/
-- Avoids documenting aspirational or unimplemented features
-- Grounds specifications in reality
-
-### Design Structure
-
-**Note:** Designs contain technical implementation details; they do not contain architecture. Architecture is a higher-level concern documented separately (e.g., in architecture/decisions/*.rst).
-
-**Sections are optional** - use what makes sense for each capability:
-- Not all capabilities need all sections
-- Focus on what helps developers understand and extend the design
-- Preserve all technical content from original RST files
