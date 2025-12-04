@@ -162,7 +162,6 @@ class GitSourceHandler:
         else:
             # Direct git URLs (git@github.com:user/repo.git)
             git_url = url_part
-
         return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
 
     def _create_temp_directory( self ) -> __.Path:

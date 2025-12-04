@@ -226,7 +226,6 @@ def _create_coder_directory_symlinks(
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
-
     for coder_name in coders:
         try: renderer = renderers[ coder_name ]
         except KeyError as exception:

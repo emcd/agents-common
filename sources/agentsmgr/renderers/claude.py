@@ -26,10 +26,12 @@
 
 
 from . import __
-from .base import RENDERERS, ExplicitTargetMode, RendererBase
+from .base import RENDERERS as _RENDERERS
+from .base import ExplicitTargetMode as _ExplicitTargetMode
+from .base import RendererBase as _RendererBase
 
 
-class ClaudeRenderer( RendererBase ):
+class ClaudeRenderer( _RendererBase ):
     ''' Renderer for Claude Code coder.
 
         Supports both per-user and per-project configuration modes.
@@ -67,7 +69,7 @@ class ClaudeRenderer( RendererBase ):
 
     def resolve_base_directory(
         self,
-        mode: ExplicitTargetMode,
+        mode: _ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],
@@ -122,4 +124,4 @@ class ClaudeRenderer( RendererBase ):
         return { }
 
 
-RENDERERS[ 'claude' ] = ClaudeRenderer( )
+_RENDERERS[ 'claude' ] = ClaudeRenderer( )

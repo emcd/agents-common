@@ -26,10 +26,12 @@
 
 
 from . import __
-from .base import RENDERERS, ExplicitTargetMode, RendererBase
+from .base import RENDERERS as _RENDERERS
+from .base import ExplicitTargetMode as _ExplicitTargetMode
+from .base import RendererBase as _RendererBase
 
 
-class CodexRenderer( RendererBase ):
+class CodexRenderer( _RendererBase ):
     ''' Renderer for Codex CLI coder.
 
         Only supports per-user configuration mode. Codex CLI does not
@@ -63,7 +65,7 @@ class CodexRenderer( RendererBase ):
 
     def resolve_base_directory(
         self,
-        mode: ExplicitTargetMode,
+        mode: _ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],
@@ -120,4 +122,4 @@ class CodexRenderer( RendererBase ):
         return { }
 
 
-RENDERERS[ 'codex' ] = CodexRenderer( )
+_RENDERERS[ 'codex' ] = CodexRenderer( )
