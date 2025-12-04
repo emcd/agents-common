@@ -12,7 +12,7 @@ User input: {{args}}
 - Project structure: !{ls -la}
 - Current README: @{README.rst}
 - Project metadata: @{pyproject.toml}
-- Product requirements: @{documentation/prd.rst}
+- Product specifications: @{documentation/specifications}
 - Architecture overview: @{documentation/architecture/filesystem.rst}
 
 ## Prerequisites
@@ -57,7 +57,7 @@ Read and analyze the current README structure:
 ### 2. Project Capability Assessment
 Analyze the actual project functionality:
 - Extract project metadata from pyproject.toml (name, description, dependencies)
-- Read PRD document if available for project goals and features
+- Read product specifications if available for project goals and features
 - Examine source code structure to understand API capabilities
 - Test CLI functionality if enabled to document actual usage patterns
 - Review configuration files and scripts for additional capabilities

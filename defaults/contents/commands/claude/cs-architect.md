@@ -8,7 +8,7 @@ Request from user: $ARGUMENTS
 
 ## Context
 
-- Product requirements: @documentation/prd.rst
+- Product specifications: @documentation/specifications
 - Architecture overview: @documentation/architecture/summary.rst
 - Filesystem patterns: @documentation/architecture/filesystem.rst
 - Architecture guidelines: @.auxiliary/instructions/architecture.rst
