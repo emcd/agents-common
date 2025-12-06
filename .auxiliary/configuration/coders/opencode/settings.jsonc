@@ -31,8 +31,10 @@
   },
 
   "permission": {
-    "edit": "allow",
     "bash": {
+      "*": "ask",
+      "hatch run *": "allow",
+      "hatch --env develop run *": "allow",
       "awk *": "allow",
       "cat *": "allow",
       "cut *": "allow",
@@ -60,10 +62,8 @@
       "git diff *": "allow",
       "git log *": "allow",
       "git show *": "allow",
-      "git status": "allow",
+      "git status *": "allow",
       "grep *": "allow",
-      "hatch run python *": "allow",
-      "hatch --env develop run *": "allow",
       "head *": "allow",
       "ls *": "allow",
       "ps *": "allow",
@@ -75,7 +75,9 @@
       "uniq *": "allow",
       "wc *": "allow",
       "which *": "allow"
-    }
+    },
+    "edit": "allow",
+    "webfetch": "ask"
   },
 
   "formatter": {

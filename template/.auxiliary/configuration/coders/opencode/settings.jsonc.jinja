@@ -13,6 +13,13 @@
   },
 
   "mcp": {
+    {%- if "python" in languages %}
+    "pyright": {
+      "type": "local",
+      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "enabled": true
+    },
+    {%- endif %}
     {%- if "rust" in languages %}
     "rust-analyzer": {
       "type": "local",
@@ -29,18 +36,22 @@
       "type": "local",
       "command": ["uvx", "librovore", "serve"],
       "enabled": true
-    }{%- if "python" in languages %},
-    "pyright": {
-      "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
-      "enabled": true
     }
-    {%- endif %}
   },
 
   "permission": {
-    "edit": "allow",
     "bash": {
+      "*": "ask",
+      {%- if "python" in languages %}
+      "hatch run *": "allow",
+      "hatch --env develop run *": "allow",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "cargo build *": "allow",
+      "cargo test *": "allow",
+      "cargo check *": "allow",
+      "cargo clippy *": "allow",
+      {%- endif %}
       "awk *": "allow",
       "cat *": "allow",
       "cut *": "allow",
@@ -68,18 +79,8 @@
       "git diff *": "allow",
       "git log *": "allow",
       "git show *": "allow",
-      "git status": "allow",
+      "git status *": "allow",
       "grep *": "allow",
-      {%- if "python" in languages %}
-      "hatch run python *": "allow",
-      "hatch --env develop run *": "allow",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "cargo build *": "allow",
-      "cargo test *": "allow",
-      "cargo check *": "allow",
-      "cargo clippy *": "allow",
-      {%- endif %}
       "head *": "allow",
       "ls *": "allow",
       "ps *": "allow",
@@ -91,7 +92,9 @@
       "uniq *": "allow",
       "wc *": "allow",
       "which *": "allow"
-    }
+    },
+    "edit": "allow",
+    "webfetch": "ask"
   },
 
   "formatter": {
