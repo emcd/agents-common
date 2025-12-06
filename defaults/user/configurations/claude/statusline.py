@@ -100,13 +100,14 @@ def _format_status(
 def main( ) -> None:
     ''' Parses transcript and displays token usage and current directory. '''
     input_data = _json_loads( _stdin.read( ) )
-    transcript_path = Path( input_data[ 'transcript_path' ] )
+    # transcript_path = Path( input_data[ 'transcript_path' ] )
     cwd = _abbreviate_home_in_path( input_data.get( 'cwd', '~' ) )
     branch = _detect_git_branch( input_data.get( 'cwd', '~' ) )
-    chunk = _extract_chunk_from_file( transcript_path, CHUNK_SIZE_BYTES )
-    lines = _decode_chunk_safely( chunk )
-    token_info = _find_latest_token_info( lines )
-    status = _format_status( cwd, branch, token_info )
+    # chunk = _extract_chunk_from_file( transcript_path, CHUNK_SIZE_BYTES )
+    # lines = _decode_chunk_safely( chunk )
+    # token_info = _find_latest_token_info( lines )
+    # status = _format_status( cwd, branch, token_info )
+    status = _format_status( cwd, branch, None )
     print( status, end = '' )
 
 
