@@ -7,9 +7,6 @@ mode: {{ coder.mode }}
 {%- if coder.model is defined %}
 model: {{ coder.model }}
 {%- endif %}
-{%- if context.color is defined %}
-color: {{ context.color }}
-{%- endif %}
 ---
 
 {{ content }}
