@@ -15,6 +15,11 @@
   },
 
   "mcp": {
+    "pyright": {
+      "type": "local",
+      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "enabled": true
+    },
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],
@@ -23,11 +28,6 @@
     "librovore": {
       "type": "local",
       "command": ["uvx", "librovore", "serve"],
-      "enabled": true
-    },
-    "pyright": {
-      "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
       "enabled": true
     }
   },
