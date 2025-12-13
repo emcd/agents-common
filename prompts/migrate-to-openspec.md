@@ -1,4 +1,5 @@
-Please migrate documentation from RST to Openspec Markdown format.
+Please migrate product requirements/specifications and design documentation
+from RST to Openspec Markdown format.
 
 ## Phase 1: PRD Migration (If Exists)
 
@@ -59,7 +60,7 @@ For each `documentation/architecture/designs/*.rst` file:
 # [capability-name] Design
 
 ## Overview
-[High-level architectural summary]
+[High-level summary]
 
 ## Design
 [Component descriptions, patterns, system structure]

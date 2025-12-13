@@ -5,6 +5,7 @@ set -eu -o pipefail
 uv tool install hatch
 uv tool install copier
 uv tool install emcd-agents
+uv tool install rst2myst
 
 agentsmgr populate project github:emcd/agents-common@master#defaults
 
@@ -22,5 +23,5 @@ EOF
 
 go install github.com/isaacphi/mcp-language-server@latest
 
-npm install -g pyright
-npm install -g @fission-ai/openspec@latest
+npm install --global pyright
+npm install --global @fission-ai/openspec@latest
