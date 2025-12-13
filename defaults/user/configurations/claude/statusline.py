@@ -101,7 +101,7 @@ def _format_status(
         sections.append( f"{emoji} {total_k}k/{context_k}k ({pct}%)" )
     sections.append( f"📁 {cwd}" )
     if branch: sections.append( f"🌿 {branch}" )
-    if model_name: sections.append( f"🧠 {model_name}" )
+    if model_name: sections.append( f"✨ {model_name}" )
     return ' | '.join( sections )
 
 

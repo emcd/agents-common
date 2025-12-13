@@ -5,7 +5,7 @@ set -eu -o pipefail
 uv tool install hatch
 uv tool install copier
 uv tool install emcd-agents
-uv tool install rst2myst
+uv tool install rst-to-myst
 
 agentsmgr populate project github:emcd/agents-common@master#defaults
 
