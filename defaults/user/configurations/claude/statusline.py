@@ -18,19 +18,53 @@ def _abbreviate_home_in_path( path: str ) -> str:
 
 
 def _detect_git_branch( cwd: str ) -> str | None:
-    ''' Detects current Git branch by parsing .git/HEAD. '''
-    git_dir = Path( cwd ).resolve( ) if cwd != '~' else Path.home( )
-    while git_dir != git_dir.parent:
-        git_head = git_dir / '.git' / 'HEAD'
-        if git_head.exists( ):
-            try:
-                content = git_head.read_text( ).strip( )
-                if content.startswith( 'ref: refs/heads/' ):
-                    return content[ len( 'ref: refs/heads/' ): ]
-                return f"detached@{content[:7]}"
-            except ( OSError, IOError ): return None
-        git_dir = git_dir.parent
+    ''' Detects current Git branch by parsing .git/HEAD.
+
+        Handles both regular repositories and worktrees. In worktrees,
+        .git is a file containing a gitdir reference rather than a directory.
+    '''
+    search_dir = Path( cwd ).resolve( ) if cwd != '~' else Path.home( )
+    while search_dir != search_dir.parent:
+        git_path = search_dir / '.git'
+        if git_path.exists( ):
+            git_dir = _resolve_git_directory( git_path )
+            if git_dir is None: return None
+            return _read_branch_from_head( git_dir / 'HEAD' )
+        search_dir = search_dir.parent
     return None
+
+
+def _resolve_git_directory( git_path: Path ) -> Path | None:
+    ''' Resolves actual git directory, handling worktrees.
+
+        For regular repos, .git is a directory containing HEAD.
+        For worktrees, .git is a file with "gitdir: <path>" content.
+    '''
+    if git_path.is_dir( ):
+        return git_path
+    # Worktree: .git is a file containing gitdir reference
+    try:
+        content = git_path.read_text( ).strip( )
+    except ( OSError, IOError ):
+        return None
+    if content.startswith( 'gitdir: ' ):
+        gitdir_path = content[ len( 'gitdir: ' ): ]
+        resolved = Path( gitdir_path )
+        if not resolved.is_absolute( ):
+            resolved = ( git_path.parent / gitdir_path ).resolve( )
+        return resolved if resolved.is_dir( ) else None
+    return None
+
+
+def _read_branch_from_head( head_path: Path ) -> str | None:
+    ''' Reads branch name from HEAD file. '''
+    try:
+        content = head_path.read_text( ).strip( )
+        if content.startswith( 'ref: refs/heads/' ):
+            return content[ len( 'ref: refs/heads/' ): ]
+        return f"detached@{content[:7]}"
+    except ( OSError, IOError ):
+        return None
 
 
 def _extract_token_info(
