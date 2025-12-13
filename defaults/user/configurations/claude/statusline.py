@@ -8,6 +8,8 @@ from sys import stdin as _stdin
 
 TOKEN_THRESHOLD_LOW = 50
 TOKEN_THRESHOLD_HIGH = 75
+AUTOCOMPACT_BUFFER_PERCENT = 22.5  # Reserved for auto-compaction summarization
+SYSTEM_OVERHEAD_TOKENS = 20000  # System prompt (~3k) + system tools (~16k)
 
 
 def _abbreviate_home_in_path( path: str ) -> str:
@@ -70,7 +72,11 @@ def _read_branch_from_head( head_path: Path ) -> str | None:
 def _extract_token_info(
     context_window: dict[ str, int ]
 ) -> tuple[ int, int, float ] | None:
-    ''' Extracts token usage from context_window field. '''
+    ''' Extracts token usage from context_window field.
+
+        Adds overhead (autocompact buffer + system prompt/tools) to tokens
+        used, giving accurate picture of total committed context space.
+    '''
     total_input = context_window.get( 'total_input_tokens' )
     total_output = context_window.get( 'total_output_tokens' )
     context_size = context_window.get( 'context_window_size' )
@@ -78,8 +84,11 @@ def _extract_token_info(
         return None
     if context_size == 0: return None
     total = total_input + total_output
-    percentage = ( total / context_size ) * 100
-    return ( total, context_size, percentage )
+    # Add overhead: autocompact buffer + fixed system overhead
+    autocompact_buffer = int( context_size * AUTOCOMPACT_BUFFER_PERCENT / 100 )
+    total_with_overhead = total + autocompact_buffer + SYSTEM_OVERHEAD_TOKENS
+    percentage = ( total_with_overhead / context_size ) * 100
+    return ( total_with_overhead, context_size, percentage )
 
 
 def _format_status(
