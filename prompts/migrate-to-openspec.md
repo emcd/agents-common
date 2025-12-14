@@ -54,39 +54,6 @@ For each `documentation/architecture/designs/*.rst` file:
    - Update cross-references to use Markdown links
    - Ensure technical accuracy and completeness
 
-**Design structure:**
-
-```markdown
-# [capability-name] Design
-
-## Overview
-[High-level summary]
-
-## Design
-[Component descriptions, patterns, system structure]
-
-## Module Contracts
-[Responsibilities, collaborators, invariants]
-
-## Implementation Patterns
-[Coding patterns, examples, guidance]
-
-## Trade-offs and Alternatives
-[Design decisions, alternatives considered, rationale]
-
-## Performance Characteristics
-[Performance properties, scaling considerations]
-
-## Extension Points
-[How to extend or customize]
-
-## Testing Considerations
-[Testing strategies, integration points]
-
-## Future Considerations
-[Deferred work, potential enhancements]
-```
-
 ## Validation
 
 After migration:
