@@ -70,20 +70,24 @@ def _read_branch_from_head( head_path: Path ) -> str | None:
 
 
 def _extract_token_info(
-    context_window: dict[ str, int ]
+    context_window: dict
 ) -> tuple[ int, int, float ] | None:
     ''' Extracts token usage from context_window field.
 
-        Adds overhead (autocompact buffer + system prompt/tools) to tokens
-        used, giving accurate picture of total committed context space.
+        Uses current_usage to reflect actual context consumption after
+        compaction. Adds overhead (autocompact buffer + system prompt/tools)
+        to give accurate picture of total committed context space.
     '''
-    total_input = context_window.get( 'total_input_tokens' )
-    total_output = context_window.get( 'total_output_tokens' )
+    current_usage = context_window.get( 'current_usage' )
     context_size = context_window.get( 'context_window_size' )
-    if total_input is None or total_output is None or context_size is None:
+    if current_usage is None or context_size is None:
         return None
     if context_size == 0: return None
-    total = total_input + total_output
+
+    input_tokens = current_usage.get( 'input_tokens', 0 )
+    output_tokens = current_usage.get( 'output_tokens', 0 )
+    total = input_tokens + output_tokens
+
     # Add overhead: autocompact buffer + fixed system overhead
     autocompact_buffer = int( context_size * AUTOCOMPACT_BUFFER_PERCENT / 100 )
     total_with_overhead = total + autocompact_buffer + SYSTEM_OVERHEAD_TOKENS
