@@ -3,6 +3,7 @@
     "BASH_DEFAULT_TIMEOUT_MS": 1800000,
     "BASH_MAX_TIMEOUT_MS": 1800000,
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": 1,
+    "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": 1,
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": 1,
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": 1
   },
@@ -17,12 +18,12 @@
             "command": ".claude/scripts/pre-bash-python-check",
             "timeout": 10
           },
-          {%- endif %}
           {
             "type": "command",
             "command": ".claude/scripts/pre-bash-git-commit-check",
             "timeout": 300
           }
+          {%- endif %}
         ]
       }
     ],
@@ -30,11 +31,13 @@
       {
         "matcher": "Edit|MultiEdit|Write",
         "hooks": [
+          {%- if "python" in languages %}
           {
             "type": "command",
             "command": ".claude/scripts/post-edit-linter",
             "timeout": 60
           }
+          {%- endif %}
         ]
       }
     ]
