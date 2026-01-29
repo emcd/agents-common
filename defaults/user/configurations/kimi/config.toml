@@ -1,0 +1,42 @@
+# Kimi CLI Configuration
+# https://github.com/MoonshotAI/kimi-cli
+
+# Default model configuration
+default_model = "kimi-for-coding"
+default_thinking = false
+
+# API Provider configuration
+[providers.kimi-for-coding]
+type = "kimi"
+base_url = "https://api.kimi.com/coding/v1"
+api_key = ""
+
+# Model configuration
+[models.kimi-for-coding]
+provider = "kimi-for-coding"
+model = "kimi-for-coding"
+max_context_size = 262144
+
+# Agent loop control parameters
+[loop_control]
+max_steps_per_turn = 100
+max_retries_per_step = 3
+max_ralph_iterations = 0
+reserved_context_size = 50000
+
+# MCP client configuration
+[mcp]
+client.tool_call_timeout_ms = 60000
+
+# MCP servers - Language servers and utilities
+[mcp.servers.pyright]
+command = "mcp-language-server"
+args = [ "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio" ]
+
+[mcp.servers.context7]
+command = "npx"
+args = [ "-y", "@upstash/context7-mcp" ]
+
+[mcp.servers.librovore]
+command = "uvx"
+args = [ "librovore", "serve" ]

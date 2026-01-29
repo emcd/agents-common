@@ -28,6 +28,7 @@ coders:
         - claude
         - codex
         - gemini
+        - kimi
         - opencode
         - qwen
     default:

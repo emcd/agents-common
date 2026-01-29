@@ -1,7 +1,9 @@
 coders:
 - claude
-- opencode
+- codex
 - gemini
+- kimi
+- opencode
 languages:
 - python
 - rust

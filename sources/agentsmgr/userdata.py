@@ -28,6 +28,8 @@
 
 import json as _json
 
+import toml as _toml
+
 from . import __
 from . import exceptions as _exceptions
 from . import renderers as _renderers
@@ -92,14 +94,15 @@ def populate_globals(
 def _is_settings_file( file: __.Path, coder: str ) -> bool:
     ''' Determines whether file is a settings file requiring merge logic.
 
-        Settings files have coder-specific names and contain JSON
+        Settings files have coder-specific names and contain JSON or TOML
         configuration that should be merged rather than replaced. Non-settings
         files are directly copied, replacing any existing version.
     '''
     settings_names: dict[ str, tuple[ str, ... ] ] = {
         'claude': ( 'settings.json', ),
-        'opencode': ( 'opencode.json', 'opencode.jsonc' ),
         'codex': ( 'config.json', ),
+        'kimi': ( 'config.toml', ),
+        'opencode': ( 'opencode.json', 'opencode.jsonc' ),
     }
     return file.name in settings_names.get( coder, ( ) )
 
@@ -126,21 +129,31 @@ def _copy_file_directly(
 def _merge_settings_file(
     source: __.Path, target: __.Path, simulate: bool
 ) -> bool:
-    ''' Merges JSON settings file preserving user values.
+    ''' Merges JSON or TOML settings file preserving user values.
 
         Loads both source template and target user settings, performs deep
         merge adding missing keys from template while preserving all user
         values. Creates backup before writing merged result. Returns True
         if file was updated (or would be updated in simulation mode).
     '''
-    template = _load_json_file( source, target )
-    user_settings: dict[ str, __.typx.Any ] = (
-        _load_json_file( target, target ) if target.exists( )
-        else { } )
-    merged = _deep_merge_settings( user_settings, template )
-    if simulate:
-        return True
-    _write_merged_settings( target, merged )
+    if source.suffix == '.toml':
+        template = _load_toml_file( source, target )
+        user_settings: dict[ str, __.typx.Any ] = (
+            _load_toml_file( target, target ) if target.exists( )
+            else { } )
+        merged = _deep_merge_settings( user_settings, template )
+        if simulate:
+            return True
+        _write_merged_toml_settings( target, merged )
+    else:
+        template = _load_json_file( source, target )
+        user_settings = (
+            _load_json_file( target, target ) if target.exists( )
+            else { } )
+        merged = _deep_merge_settings( user_settings, template )
+        if simulate:
+            return True
+        _write_merged_settings( target, merged )
     return True
 
 
@@ -183,6 +196,50 @@ def _write_merged_settings(
     try:
         target.write_text(
             _json.dumps( merged, indent = 2 ), encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.GlobalsPopulationFailure(
+            target, target
+        ) from exception
+
+
+def _load_toml_file(
+    filepath: __.Path, target_context: __.Path
+) -> dict[ str, __.typx.Any ]:
+    ''' Loads TOML file with error handling.
+
+        Raises GlobalsPopulationFailure with source context on any error.
+    '''
+    try: content = filepath.read_text( encoding = 'utf-8' )
+    except ( OSError, IOError ) as exception:
+        raise _exceptions.GlobalsPopulationFailure(
+            filepath, target_context ) from exception
+    try:
+        loaded: __.typx.Any = _toml.loads( content )
+    except ValueError as exception:
+        raise _exceptions.GlobalsPopulationFailure(
+            filepath, target_context ) from exception
+    if not _is_json_dict( loaded ):
+        raise _exceptions.GlobalsPopulationFailure( filepath, target_context )
+    return loaded
+
+
+def _write_merged_toml_settings(
+    target: __.Path, merged: dict[ str, __.typx.Any ]
+) -> None:
+    ''' Writes merged TOML settings with backup of existing file.
+
+        Creates target directory if needed. Backs up existing file before
+        writing merged result.
+    '''
+    target.parent.mkdir( parents = True, exist_ok = True )
+    if target.exists( ):
+        backup_path = target.with_suffix( '.toml.backup' )
+        try: __.shutil.copy2( target, backup_path )
+        except ( OSError, IOError ) as exception:
+            raise _exceptions.GlobalsPopulationFailure(
+                target, target ) from exception
+    try:
+        target.write_text( _toml.dumps( merged ), encoding = 'utf-8' )
     except ( OSError, IOError ) as exception:
         raise _exceptions.GlobalsPopulationFailure(
             target, target
