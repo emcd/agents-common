@@ -7,6 +7,7 @@
 
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
 - Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
+- Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
 - Update files under `.auxiliary/notes` during conversation, removing completed tasks and adding emergent items.
 
@@ -48,6 +49,28 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 - Use relative paths rather than absolute paths when possible.
 - Do not write to paths outside the current project unless explicitly requested.
 - Use the `.auxiliary/scribbles` directory for scratch space instead of `/tmp`.
+
+## Note-Taking with nb MCP Server
+
+### When to Use
+- **Project coordination**: Track handoffs between LLMs, document decisions, maintain task lists
+- **Issue tracking**: Create and manage todos with status tracking
+- **Knowledge sharing**: Document patterns, APIs, and project-specific knowledge
+- **Meeting notes**: Record discussions and action items
+
+### Tagging Conventions (for multi-LLM coordination)
+Use consistent tags for discoverability:
+- **LLM Collaborator**: `#llm-<name>` (e.g., `#llm-claude`, `#llm-gpt`)
+- **Project Component**: `#component-<name>` (e.g., `#component-data-models`)
+- **Task Type**: `#task-<type>` (e.g., `#task-design`, `#task-bug`)
+- **Status**: `#status-<state>` (e.g., `#status-in-progress`, `#status-review`)
+- **Coordination**: `#handoff`, `#coordination`
+
+### Common Patterns
+- Check for handoffs: `nb.search` with `#handoff` and `#status-review` tags
+- Find work by specific LLM: `nb.search` with `#llm-<name>` tag
+- Track todos: Use `nb.todo`, `nb.tasks`, `nb.do`, `nb.undo`
+- Organize with folders: `nb.folders`, `nb.mkdir`
 
 ## OpenSpec Instructions
 

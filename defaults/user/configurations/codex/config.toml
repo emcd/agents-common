@@ -1,0 +1,22 @@
+model = "gpt-5.2"
+model_reasoning_effort = "high"
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.librovore]
+command = "uvx"
+args = ["librovore", "serve"]
+
+# TODO: Add [mcp_servers.nb] configuration once nb-mcp supports
+# project auto-detection mode. Per-user configuration cannot define
+# project-specific notebook names, so we need nb to auto-detect the
+# project context before deploying via user-wide settings.
+
+[notice]
+hide_rate_limit_model_nudge = true
+
+[notice.model_migrations]
+"gpt-5.1-codex-max" = "gpt-5.2-codex"
+"gpt-5.2" = "gpt-5.2-codex"
