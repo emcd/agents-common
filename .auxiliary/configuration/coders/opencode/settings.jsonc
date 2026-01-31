@@ -71,6 +71,11 @@
       "type": "local",
       "command": ["uvx", "librovore", "serve"],
       "enabled": true
+    },
+    "nb": {
+      "type": "local",
+      "command": ["nb-mcp", "--notebook", "agents-common"],
+      "enabled": true
     }
   },
 
