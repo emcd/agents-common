@@ -1,33 +1,46 @@
 # Context
 
-- Project overview and quick start: README.rst
-- System architecture and design: @documentation/architecture/
-- Development practices and style: @.auxiliary/instructions/
-- Current session notes and TODOs: @.auxiliary/notes/
+- Overview and Quick Start: README.{md,rst}
+- Architecture and Design: @documentation/architecture/
+- Development Practices: @.auxiliary/instructions/
+- Notes and TODOs: @.auxiliary/notes/
 
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
 - Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
 - Update files under `.auxiliary/notes` during conversation, removing completed tasks and adding emergent items.
 
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
+## Purpose
 
-These instructions are for AI assistants working in this project.
+**emcd-agents** is a centralized, version-controlled system for managing AI
+agent configurations. It employs a hybrid distribution architecture that
+combines Copier templates for base configurations with a CLI tool (`agentsmgr`)
+for dynamic content generation. Its goal is to enable rapid iteration on agent
+configurations (slash commands, prompts, tool definitions) while ensuring
+consistency across multiple projects and users.
 
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
+## Tech Stack
 
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
-
-Keep this managed block so 'openspec update' can refresh the instructions.
-
-<!-- OPENSPEC:END -->
+- **Language:** Python (>= 3.10)
+- **Build System:** Hatch (hatchling)
+- **Core Dependencies:**
+    - `emcd-appcore[cli]` (Application framework)
+    - `Jinja2` (Templating)
+    - `PyYAML` (Configuration parsing)
+    - `dulwich` (Git operations)
+    - `frigid`, `accretive`, `absence` (Immutable/specialized data structures)
+    - `dynadoc` (Documentation utilities)
+- **Development Tools:**
+    - `ruff` (Linting and formatting)
+    - `pyright` (Static type checking)
+    - `isort` (Import sorting)
+    - `pre-commit` (Git hooks)
+    - `pytest` (Testing)
+    - `coverage` (Test coverage)
+    - `sphinx` (Documentation)
+    - `towncrier` (Changelog management)
+    - `copier` (Project templating)
+    - `pyinstaller` (Standalone executable builds)
 
 # Development Standards
 
@@ -49,6 +62,22 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 - Use relative paths rather than absolute paths when possible.
 - Do not write to paths outside the current project unless explicitly requested.
 - Use the `.auxiliary/scribbles` directory for scratch space instead of `/tmp`.
+
+## OpenSpec Instructions
+
+These instructions are for AI assistants working in this project.
+
+Workflow Guide: @openspec/AGENTS.md
+
+Always open `openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
 
 # Commits
 
