@@ -31,6 +31,6 @@
 ## 3. Docs
 
 - [x] 3.1 Document where skills live in downstream projects and how tools
-      discover them (via `.claude/skills`, `.opencode/skills`, `.codex/skills`).
+      discover them (via `.claude/skills`, `.opencode/skills`, `.gemini/skills`).
 - [x] 3.2 Document guidance for keeping `SKILL.md` small and pushing detail
       into `references/` (progressive disclosure).

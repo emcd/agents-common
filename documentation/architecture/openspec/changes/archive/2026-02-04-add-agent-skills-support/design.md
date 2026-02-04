@@ -34,7 +34,7 @@ These are surfaced via existing top-level symlinks (e.g. `.claude`, `.opencode`,
 
 - `.claude/skills/<name>/SKILL.md`
 - `.opencode/skills/<name>/SKILL.md`
-- `.codex/skills/<name>/SKILL.md`
+- `.gemini/skills/<name>/SKILL.md`
 
 ## Templates
 

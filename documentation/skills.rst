@@ -40,8 +40,9 @@ so tools discover skills in their expected locations:
 .. code-block:: text
 
    .claude/skills/<skill-name>/SKILL.md
-   .opencode/skills/<skill-name>/SKILL.md
    .codex/skills/<skill-name>/SKILL.md
+   .gemini/skills/<skill-name>/SKILL.md
+   .opencode/skills/<skill-name>/SKILL.md
 
 Notes:
 

@@ -43,6 +43,7 @@ class OpencodeRenderer( _RendererBase ):
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
+    item_types_available = frozenset( ( 'commands', 'agents', 'skills' ) )
 
     _LOCATIONS_MAP = __.immut.Dictionary( {
         'agents': 'agent',

@@ -52,7 +52,9 @@ def populate_directory(
     items_written = 0
     _ensure_output_directories( generator, target, simulate )
     for coder_name in generator.configuration[ 'coders' ]:
-        for item_type in ( 'commands', 'agents', 'skills' ):
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        for item_type in renderer.item_types_available:
             attempted, written = generate_coder_item_type(
                 generator, coder_name, item_type, target, simulate )
             items_attempted += attempted
@@ -78,7 +80,7 @@ def _ensure_output_directories(
             configuration = generator.application_configuration,
             environment = __.os.environ,
         )
-        for item_type in ( 'commands', 'agents', 'skills' ):
+        for item_type in renderer.item_types_available:
             dirname = renderer.produce_output_structure( item_type )
             ( base_directory / dirname ).mkdir(
                 parents = True, exist_ok = True )

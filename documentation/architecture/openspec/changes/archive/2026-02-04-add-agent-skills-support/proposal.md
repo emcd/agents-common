@@ -17,8 +17,9 @@ reusable instruction packages for **all** coders.
 - Define an Agent Skills–compatible output layout under each coder’s project
   configuration directory (to match tool-specific discovery paths), e.g.:
   - `.auxiliary/configuration/coders/claude/skills/<skill-name>/SKILL.md`
-  - `.auxiliary/configuration/coders/opencode/skills/<skill-name>/SKILL.md`
   - `.auxiliary/configuration/coders/codex/skills/<skill-name>/SKILL.md`
+  - `.auxiliary/configuration/coders/gemini/skills/<skill-name>/SKILL.md`
+  - `.auxiliary/configuration/coders/opencode/skills/<skill-name>/SKILL.md`
   (and reached via existing symlinks like `.claude`, `.opencode`, `.codex`).
 - Add templates that emit valid Agent Skills `SKILL.md` files:
   - YAML frontmatter: `name`, `description`, optional `allowed-tools`

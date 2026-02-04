@@ -32,7 +32,9 @@ This yields the Codex-supported paths:
 
 ## Skills
 
-Codex supports `.codex/skills/…` for Agent Skills. This change does not define
-or generate skills. Instead, Codex should consume the shared skills directory
-introduced by `add-agent-skills-support` (likely by exposing a symlink at
-`.codex/skills` pointing to the shared mount point).
+Codex supports `.codex/skills/…` for Agent Skills (`SKILL.md`).
+
+This change does not define or generate skills. Instead, Codex should consume
+the shared skills output introduced by `add-agent-skills-support`, which
+generates skills under `.auxiliary/configuration/coders/codex/skills/` and
+exposes them at `.codex/skills/` via the existing `.codex` symlink.

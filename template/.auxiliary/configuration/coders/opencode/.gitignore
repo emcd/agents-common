@@ -2,7 +2,6 @@ agent/
 command/
 prompt/
 skills/
-settings.local.jsonc
 node_modules/
 bun.lock
 package.json

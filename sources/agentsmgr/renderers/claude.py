@@ -43,6 +43,7 @@ class ClaudeRenderer( _RendererBase ):
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
     memory_filename = 'CLAUDE.md'
+    item_types_available = frozenset( ( 'commands', 'agents', 'skills' ) )
 
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor for Claude Code.

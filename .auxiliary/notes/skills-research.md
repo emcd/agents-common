@@ -64,8 +64,9 @@ It also documents a native `skill` tool and permission controls in `opencode.jso
   to keep skills under each coder’s config directory and leverage the existing
   top-level symlinks:
   - `.claude -> .auxiliary/configuration/coders/claude` so `.claude/skills/...`
-  - `.opencode -> .auxiliary/configuration/coders/opencode` so `.opencode/skills/...`
   - `.codex -> .auxiliary/configuration/coders/codex` so `.codex/skills/...`
+  - `.gemini -> .auxiliary/configuration/coders/gemini` so `.gemini/skills/...`
+  - `.opencode -> .auxiliary/configuration/coders/opencode` so `.opencode/skills/...`
 - `allowed-tools` is a likely pressure point:
   - Claude documents and enforces it in skills frontmatter.
   - OpenCode appears to ignore unknown frontmatter fields and uses separate

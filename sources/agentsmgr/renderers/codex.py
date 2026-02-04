@@ -47,6 +47,7 @@ class CodexRenderer( _RendererBase ):
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
+    item_types_available = frozenset( ( 'skills', ) )
 
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor for Codex CLI.
