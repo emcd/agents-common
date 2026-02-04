@@ -4,6 +4,16 @@
 
 ## Features
 
+- [ ] **Codex per-project support**: Update `agentsmgr` to generate Codex
+  per-project configuration (`.codex/config.toml`). Track via OpenSpec change
+  `add-codex-per-project-support`. (Skills are tracked separately in
+  `add-agent-skills-support`.)
+
+- [ ] **Agent Skills support**: Add a first-class `skills` item type and
+  generate Agent Skills–compatible directories under `.skills/` (symlink to
+  `.auxiliary/configuration/skills`). Track via OpenSpec change
+  `add-agent-skills-support`.
+
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.
   Current implementation (as of 2025-10-23) warns and skips missing content,
