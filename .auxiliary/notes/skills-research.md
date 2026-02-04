@@ -17,6 +17,16 @@ Sources reviewed (2026-02-04):
   `metadata`, and an experimental `allowed-tools` (tool-specific behavior).
 - In general, tools parse frontmatter and then load the skill body on demand
   (progressive disclosure).
+- The spec does **not** define any argument interpolation variables (for
+  example, `$ARGUMENTS`) or command-expansion syntax (for example, `!cmd`).
+  Those are tool-specific features (if supported at all).
+ 
+## Arguments (tool-specific)
+
+- The portable pattern is to list required inputs in the skill body and ask
+  the user when not provided in conversation context.
+- Some tools add invocation argument support beyond the standard. For example,
+  Claude documents `$ARGUMENTS` substitution for skills.
 
 ## Locations (tool-specific)
 

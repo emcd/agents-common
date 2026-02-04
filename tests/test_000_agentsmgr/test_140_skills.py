@@ -70,3 +70,23 @@ def test_200_skills_omit_allowed_tools_when_unsupported( tmp_path ):
         '.auxiliary/configuration/coders/codex/skills/project-triage/SKILL.md'
     )
     assert 'allowed-tools:' not in rendered.content
+
+
+def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
+    generator_module = __.cache_import_module( 'agentsmgr.generator' )
+    ContentGenerator = generator_module.ContentGenerator
+    generator = ContentGenerator(
+        location = _defaults_location( ),
+        configuration = {
+            'coders': [ 'opencode' ],
+            'languages': [ 'python' ],
+        },
+        application_configuration = { },
+        mode = 'per-project',
+    )
+    rendered = generator.render_single_item(
+        'skills', 'project-triage', 'opencode', tmp_path )
+    assert rendered.location == (
+        tmp_path /
+        '.auxiliary/configuration/coders/opencode/skills/project-triage/SKILL.md'
+    )
