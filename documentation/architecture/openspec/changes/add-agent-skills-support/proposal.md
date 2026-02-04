@@ -23,6 +23,9 @@ reusable instruction packages for **all** coders.
 - Add templates that emit valid Agent Skills `SKILL.md` files:
   - YAML frontmatter: `name`, `description`, optional `allowed-tools`
   - Markdown body: skill instructions
+  - Prefer a single shared `SKILL.md` template across coders (format is a
+    standard), only varying emission of tool-specific fields like
+    `allowed-tools`.
 - Add semantic-tool mapping support for `allowed-tools`, but format it per
   tool’s expectations (e.g. Claude uses `Read, Grep` style and accepts
   `Bash(gh *)`; OpenCode ignores unknown frontmatter fields and enforces skill

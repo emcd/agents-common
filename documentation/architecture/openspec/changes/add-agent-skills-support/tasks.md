@@ -3,8 +3,9 @@
 - [ ] 1.1 Add a `skills` item type to the generator and operations flow.
 - [ ] 1.2 Add default output layout under each coder:
       `.auxiliary/configuration/coders/<coder>/skills/<name>/SKILL.md`.
-- [ ] 1.3 Create Agent Skills templates under `defaults/templates/skills/` that
-      generate valid `SKILL.md` files (YAML frontmatter + Markdown body).
+- [ ] 1.3 Create a shared Agent Skills template under
+      `defaults/templates/skills/common.md.jinja` that generates a valid
+      `SKILL.md` file (YAML frontmatter + Markdown body).
 - [ ] 1.4 Create initial `defaults/configurations/skills/` and
       `defaults/contents/skills/common/` entries for a small starter set (or
       mechanically derive from existing items if we decide to “promote” them).

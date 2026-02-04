@@ -15,7 +15,7 @@ Add a new 3-tier source set:
 - `defaults/configurations/skills/<name>.toml`
 - `defaults/contents/skills/common/<name>.md` (tool-agnostic body)
   - optional overrides: `defaults/contents/skills/<coder>/<name>.md`
-- `defaults/templates/skills/<coder>.md.jinja`
+- `defaults/templates/skills/common.md.jinja` (shared SKILL.md template)
 
 This keeps parity with the existing `commands/` and `agents/` organization.
 

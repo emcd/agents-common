@@ -56,6 +56,13 @@ class RenderedItem( __.immut.DataclassObject ):
     location: __.Path
 
 
+class ItemRenderRequest( __.immut.DataclassObject ):
+    item_type: str
+    item_name: str
+    template_name: str
+    metadata: dict[ str, __.typx.Any ]
+
+
 class ContentGenerator( __.immut.DataclassObject ):
     ''' Generates coder-specific content from data sources.
 
@@ -83,49 +90,89 @@ class ContentGenerator( __.immut.DataclassObject ):
         fallbacks = content_config.get( 'fallbacks', { } )
         return __.immut.Dictionary( fallbacks )
 
-    def render_single_item(
-        self, item_type: str, item_name: str, coder: str, target: __.Path
-    ) -> RenderedItem:
-        ''' Renders a single item (command or agent) for a coder.
-
-            Combines TOML metadata, content body, and template to produce
-            final coder-specific file. Returns RenderedItem with content
-            and location.
-        '''
-        try: renderer = _renderers.RENDERERS[ coder ]
+    def _resolve_renderer( self, coder: str ) -> _renderers.RendererBase:
+        try: return _renderers.RENDERERS[ coder ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder ) from exception
-        if self.mode == 'default':
-            actual_mode = renderer.mode_default
-        elif self.mode in ( 'per-user', 'per-project' ):
-            actual_mode = self.mode
+
+    def _resolve_actual_mode(
+        self,
+        renderer: _renderers.RendererBase,
+        coder: str,
+    ) -> _renderers.ExplicitTargetMode:
+        if self.mode == 'default': return renderer.mode_default
+        if self.mode in ( 'per-user', 'per-project' ):
+            actual_mode: _renderers.ExplicitTargetMode = self.mode
             renderer.validate_mode( actual_mode )
-        else:
-            raise _exceptions.TargetModeNoSupport( coder, self.mode )
-        body = self._retrieve_content_with_fallback(
-            item_type, item_name, coder )
-        metadata = self._load_item_metadata( item_type, item_name, coder )
-        template_name = self._select_template_for_coder( item_type, coder )
+            return actual_mode
+        raise _exceptions.TargetModeNoSupport( coder, self.mode )
+
+    def _render_content(
+        self,
+        template_name: str,
+        body: str,
+        metadata: dict[ str, __.typx.Any ],
+    ) -> str:
         template = self.jinja_environment.get_template( template_name )
         normalized = _context.normalize_render_context(
             metadata[ 'context' ], metadata[ 'coder' ] )
-        variables: dict[ str, __.typx.Any ] = {
-            'content': body,
-            **normalized,
-        }
-        content = template.render( **variables )
-        extension = self._parse_template_extension( template_name )
+        variables: dict[ str, __.typx.Any ] = { 'content': body, **normalized }
+        return template.render( **variables )
+
+    def _produce_item_location(
+        self,
+        renderer: _renderers.RendererBase,
+        actual_mode: _renderers.ExplicitTargetMode,
+        target: __.Path,
+        request: ItemRenderRequest,
+    ) -> __.Path:
         base_directory = renderer.resolve_base_directory(
             mode = actual_mode,
             target = target,
             configuration = self.application_configuration,
             environment = __.os.environ,
         )
-        category = metadata[ 'context' ].get( 'category' )
-        if category is None:
-            category = __.absent
-        dirname = renderer.produce_output_structure( item_type, category )
-        location = base_directory / dirname / f"{item_name}.{extension}"
+        extension = self._parse_template_extension( request.template_name )
+        if request.item_type == 'skills':
+            dirname = renderer.produce_output_structure( request.item_type )
+            return (
+                base_directory / dirname / request.item_name /
+                f"SKILL.{extension}"
+            )
+        category = request.metadata[ 'context' ].get( 'category' )
+        if category is None: category = __.absent
+        dirname = renderer.produce_output_structure(
+            request.item_type, category )
+        return base_directory / dirname / f"{request.item_name}.{extension}"
+
+    def render_single_item(
+        self, item_type: str, item_name: str, coder: str, target: __.Path
+    ) -> RenderedItem:
+        ''' Renders a single item for a coder.
+
+            Combines TOML metadata, content body, and template to produce
+            final coder-specific file. Returns RenderedItem with content
+            and location.
+        '''
+        renderer = self._resolve_renderer( coder )
+        actual_mode = self._resolve_actual_mode( renderer, coder )
+        body = self._retrieve_content_with_fallback(
+            item_type, item_name, coder )
+        metadata = self._load_item_metadata( item_type, item_name, coder )
+        template_name = self._select_template_for_coder( item_type, coder )
+        request = ItemRenderRequest(
+            item_type = item_type,
+            item_name = item_name,
+            template_name = template_name,
+            metadata = metadata,
+        )
+        content = self._render_content( template_name, body, metadata )
+        location = self._produce_item_location(
+            renderer,
+            actual_mode,
+            target,
+            request,
+        )
         return RenderedItem( content = content, location = location )
 
     def _survey_available_templates(
@@ -162,6 +209,14 @@ class ContentGenerator( __.immut.DataclassObject ):
             This method is public to allow operations module to pre-check
             content availability without loading files.
         '''
+        if item_type == 'skills':
+            primary_path = (
+                self.location / "contents" / item_type / coder /
+                f"{item_name}.md" )
+            fallback_path = (
+                self.location / "contents" / item_type / 'common' /
+                f"{item_name}.md" )
+            return ( primary_path, fallback_path )
         primary_path = (
             self.location / "contents" / item_type / coder /
             f"{item_name}.md" )
@@ -187,6 +242,8 @@ class ContentGenerator( __.immut.DataclassObject ):
         if primary_path.exists( ):
             return primary_path.read_text( encoding = 'utf-8' )
         if fallback_path and fallback_path.exists( ):
+            if item_type == 'skills':
+                return fallback_path.read_text( encoding = 'utf-8' )
             fallback_coder = self._retrieve_fallback_mappings( ).get( coder )
             _scribe.debug( f"Using {fallback_coder} content for {coder}" )
             return fallback_path.read_text( encoding = 'utf-8' )
@@ -258,6 +315,13 @@ class ContentGenerator( __.immut.DataclassObject ):
         try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder ) from exception
+        if item_type == 'skills':
+            candidate = f"{item_type}/common.md.jinja"
+            available = self._survey_available_templates( item_type, coder )
+            if candidate in available: return candidate
+            raise _exceptions.TemplateError.for_missing_template(
+                coder, item_type
+            )
         flavor = renderer.get_template_flavor( item_type )
         available = self._survey_available_templates( item_type, coder )
         # Template paths always use plural item_type (commands, agents)

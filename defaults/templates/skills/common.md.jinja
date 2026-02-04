@@ -1,0 +1,8 @@
+---
+name: "{{ context.name | replace('\"', '\\\"') }}"
+description: "{{ context.description | replace('\"', '\\\"') }}"
+{%- if context.allowed_tools is defined and context.allowed_tools %}
+allowed-tools: "{{ context.allowed_tools | join(', ') | replace('\"', '\\\"') }}"
+{%- endif %}
+---
+{{ content }}

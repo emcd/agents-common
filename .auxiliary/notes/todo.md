@@ -5,9 +5,16 @@
 ## Features
 
 - [ ] **Agent Skills support**: Add a first-class `skills` item type and
-  generate Agent Skills–compatible directories under `.skills/` (symlink to
-  `.auxiliary/configuration/skills`). Track via OpenSpec change
+  generate Agent Skills–compatible directories under per-coder discovery roots
+  (e.g. `.claude/skills/`, `.opencode/skills/`, `.codex/skills/` via existing
+  symlinks into `.auxiliary/configuration/coders/<coder>/`). Track via OpenSpec change
   `add-agent-skills-support`.
+
+- [ ] **Per-resource archetypes**: Allow each coder to configure which
+  archetype/template family it uses per resource kind (commands, agents,
+  skills, etc.). Example: Qwen may want Gemini-style command resources and
+  Claude-style agent resources, while skills should use a shared `standard`
+  archetype across all coders.
 
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.

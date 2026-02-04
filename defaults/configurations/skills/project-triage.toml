@@ -1,0 +1,8 @@
+[context]
+name = "project-triage"
+description = "Triage a repository and propose a focused next step."
+allowed-tools = [
+  "read",
+  "glob",
+  "grep",
+]
