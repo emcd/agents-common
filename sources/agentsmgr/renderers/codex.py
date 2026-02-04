@@ -21,7 +21,6 @@
 ''' Codex CLI renderer implementation.
 
     Provides path resolution and targeting mode validation for Codex CLI.
-    Codex CLI only supports per-user configuration as of version 0.44.0.
 '''
 
 
@@ -34,15 +33,19 @@ from .base import RendererBase as _RendererBase
 class CodexRenderer( _RendererBase ):
     ''' Renderer for Codex CLI coder.
 
-        Only supports per-user configuration mode. Codex CLI does not
-        support per-project configuration as of version 0.44.0. Per-user
-        mode respects CODEX_HOME environment variable with fallback to
-        configuration overrides and default location.
+        Supports both per-user and per-project configuration modes.
+
+        Per-project mode stores configuration under
+        `.auxiliary/configuration/coders/codex/` and exposes it via a
+        `.codex` symlink at project root (created by population logic).
+
+        Per-user mode respects CODEX_HOME environment variable with fallback
+        to configuration overrides and default location.
     '''
 
     name = 'codex'
-    modes_available = frozenset( ( 'per-user', ) )
-    mode_default = 'per-user'
+    modes_available = frozenset( ( 'per-user', 'per-project' ) )
+    mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
 
     def get_template_flavor( self, item_type: str ) -> str:
@@ -58,10 +61,11 @@ class CodexRenderer( _RendererBase ):
     ) -> __.cabc.Sequence[ tuple[ __.Path, __.Path ] ]:
         ''' Provides symlinks required for Codex CLI in per-project mode.
 
-            Codex does not support per-project mode, so this method
-            returns empty sequence. Only per-user mode is supported.
+            Codex expects project configuration under `.codex/`. We keep the
+            canonical configuration under `.auxiliary/configuration/` and
+            expose it via the standard coder directory symlink.
         '''
-        return [ ]
+        return super( ).provide_project_symlinks( target )
 
     def resolve_base_directory(
         self,
@@ -72,19 +76,16 @@ class CodexRenderer( _RendererBase ):
     ) -> __.Path:
         ''' Resolves base output directory for Codex CLI.
 
-            Only per-user mode is supported. Respects precedence: CODEX_HOME
-            environment variable, configuration file override (home key), or
-            default ~/.codex location. Per-project mode raises error with
-            explanation of Codex CLI limitation.
+            Per-project: `.auxiliary/configuration/coders/codex/`
+            Per-user: respects precedence: CODEX_HOME environment variable,
+            configuration file override (home key), or default `~/.codex`.
         '''
         self.validate_mode( mode )
+        if mode == 'per-project':
+            return target / ".auxiliary/configuration/coders/codex"
         if mode == 'per-user':
             return self._resolve_user_directory( configuration, environment )
-        reason = (
-            "Codex CLI does not support per-project configuration. "
-            "Only per-user configuration in ~/.codex or $CODEX_HOME "
-            "is supported as of version 0.44.0." )
-        raise __.TargetModeNoSupport( self.name, mode, reason )
+        raise __.TargetModeNoSupport( self.name, mode )
 
     def _resolve_user_directory(
         self,

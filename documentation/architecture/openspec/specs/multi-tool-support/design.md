@@ -114,7 +114,9 @@ ContentGenerator implements intelligent fallback for coder-specific content bodi
 
 ### Targeting Mode Support
 
-Each renderer declares supported targeting modes via its `modes_available` attribute (e.g., Claude and OpenCode support both per-user and per-project; Codex only supports per-user).
+Each renderer declares supported targeting modes via its `modes_available`
+attribute (e.g., Claude, OpenCode, and Codex support both per-user and
+per-project).
 
 The population module filters coders by matching their `mode_default` against the requested target mode. This ensures `populate project` only processes per-project coders and `populate user` only processes per-user coders, respecting each tool's design constraints.
 
@@ -125,7 +127,7 @@ Renderers provide coder-specific symlinks for per-project mode via the `provide_
 **Additional symlinks** (coder-specific overrides):
 - **Claude**: `.mcp.json` → `.auxiliary/configuration/mcp-servers.json`
 - **OpenCode**: `opencode.jsonc` → `.auxiliary/configuration/coders/opencode/settings.jsonc`
-- **Codex**: None (per-project not supported)
+- **Codex**: None (uses the base `.{name}` symlink behavior)
 
 ## Module Contracts
 
