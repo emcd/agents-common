@@ -106,6 +106,7 @@ Use `openspec/AGENTS.md` to learn:
 
 - Use `git status` to ensure all relevant changes are in the changeset.
 - Do **not** commit without explicit user approval. Unless the user has requested the commit, **ask first** for a review of your work.
+- Do **not** bypass commit safety checks (e.g., `--no-verify`, `--no-gpg-sign`) unless the user explicitly approves doing so.
 - Use present tense, imperative mood verbs (e.g., "Fix" not "Fixed").
 - Write sentences with proper punctuation.
 - Include a `Co-Authored-By:` field as the final line. Should include the model name and a no-reply address.

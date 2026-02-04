@@ -1,6 +1,6 @@
 # Codex rules (Starlark): allow safe development commands outside the sandbox.
 #
-# Managed by the emcd-agents project template.
+# Generated from the emcd-agents Copier template.
 #
 # Notes:
 # - Rules match an argv *prefix* (not globs). For example:
@@ -94,4 +94,3 @@ prefix_rule(
     decision="allow",
     justification="Run Hatch-managed tooling in the develop environment.",
 )
-
