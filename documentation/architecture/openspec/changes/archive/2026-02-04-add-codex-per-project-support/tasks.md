@@ -21,5 +21,5 @@
 - [x] 3.1 Update docs/notes describing how Codex per-project config is
       generated (and how it relates to the `.codex/` symlink), and note that
       skills are handled in `add-agent-skills-support`.
-- [ ] 3.2 Record migration guidance for projects currently relying on global
-      `~/.codex/config.toml`.
+- [x] 3.2 Record migration guidance for projects currently relying on global
+      `~/.codex/config.toml`. (One-time migration; no further guidance needed.)
