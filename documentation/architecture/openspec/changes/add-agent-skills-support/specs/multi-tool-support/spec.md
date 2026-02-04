@@ -11,4 +11,6 @@ without restructuring existing data sources when new tools are added.
 - **WHEN** the Agent Skills format is added
 - **THEN** only the new `skills/` source directories and templates are added
 - **AND** existing `commands/` and `agents/` sources remain valid
-
+ - **AND** skill outputs are generated per coder under
+   `.auxiliary/configuration/coders/<coder>/skills/` without changing existing
+   output layouts

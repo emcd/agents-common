@@ -12,6 +12,12 @@ tool-specific outputs.
 - **WHEN** reusable expertise is added to the repository
 - **THEN** it can be represented as “skills” with:
   - tool-agnostic metadata
-  - tool-specific bodies where needed
-  - templates for the target format
+  - a tool-agnostic body by default (with optional tool-specific overrides)
+  - templates that emit tool-compatible frontmatter and discovery paths
 
+#### Scenario: Tool-specific permissions mapping
+- **WHEN** a skill specifies “allowed tools” in tool-agnostic semantic form
+- **THEN** the system maps/format those tool specifications per coder where
+  supported
+- **AND** the system omits or warns for fields that are unsupported by a given
+  target tool (without failing generation)

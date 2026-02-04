@@ -9,7 +9,7 @@ compatibility with downstream project deployment patterns.
 
 #### Scenario: Stable skill discovery path
 - **WHEN** skills are generated for a project
-- **THEN** they are discoverable at a stable root path (e.g. `.skills/`)
+- **THEN** they are discoverable via the tool’s expected project root path
+  (e.g. `.claude/skills/`, `.opencode/skills/`, `.codex/skills/`)
 - **AND** the underlying source of truth remains under
-  `.auxiliary/configuration/`
-
+  `.auxiliary/configuration/coders/<coder>/skills/`

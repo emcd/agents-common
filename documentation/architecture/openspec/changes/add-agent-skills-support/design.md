@@ -13,28 +13,28 @@ scans and activated by reading the `SKILL.md` body (progressive disclosure).
 Add a new 3-tier source set:
 
 - `defaults/configurations/skills/<name>.toml`
-- `defaults/contents/skills/<coder>/<name>.md`
-- `defaults/templates/skills/<flavor>.<ext>.jinja`
+- `defaults/contents/skills/common/<name>.md` (tool-agnostic body)
+  - optional overrides: `defaults/contents/skills/<coder>/<name>.md`
+- `defaults/templates/skills/<coder>.md.jinja`
 
 This keeps parity with the existing `commands/` and `agents/` organization.
 
 ## Output layout
 
-Project-scoped outputs:
+Project-scoped outputs (per coder, matching tool discovery roots):
 
-- `.auxiliary/configuration/skills/<name>/SKILL.md`
+- `.auxiliary/configuration/coders/<coder>/skills/<name>/SKILL.md`
 - Optional bundled resources:
-  - `.auxiliary/configuration/skills/<name>/scripts/...`
-  - `.auxiliary/configuration/skills/<name>/references/...`
-  - `.auxiliary/configuration/skills/<name>/assets/...`
+  - `.auxiliary/configuration/coders/<coder>/skills/<name>/scripts/...`
+  - `.auxiliary/configuration/coders/<coder>/skills/<name>/references/...`
+  - `.auxiliary/configuration/coders/<coder>/skills/<name>/assets/...`
 
-Discovery mount point:
+These are surfaced via existing top-level symlinks (e.g. `.claude`, `.opencode`,
+`.codex`), so tools discover skills at:
 
-- `.skills` → `.auxiliary/configuration/skills` (symlink)
-
-Coders that have their own expected skills directory can additionally symlink
-to `.skills` (handled in their renderer), but the shared mount point is the
-source of truth.
+- `.claude/skills/<name>/SKILL.md`
+- `.opencode/skills/<name>/SKILL.md`
+- `.codex/skills/<name>/SKILL.md`
 
 ## Templates
 
@@ -43,7 +43,7 @@ source of truth.
 - YAML frontmatter:
   - `name`: from TOML `context.name`
   - `description`: from TOML `context.description`
-  - `allowed-tools`: optional; space-delimited per the spec
+  - `allowed-tools`: optional; only where the target tool supports it
 - Markdown body:
   - tool-agnostic instructions, referencing bundled resources via relative
     paths when needed
@@ -59,6 +59,10 @@ Our existing semantic tool metadata should be mapped to Agent Skills
 Where a given tool cannot be expressed, omit it rather than emitting invalid
 tokens.
 
+Because `allowed-tools` appears to be tool-specific (and some tools ignore it),
+we should store a single tool-agnostic list in skill configuration (semantic
+tools + shell/MCP specifications) and map/format it per coder during rendering.
+
 ## Migration / interaction with existing items
 
 We should not automatically convert every existing `command` or `agent` into a
@@ -67,4 +71,3 @@ skill. Instead:
 - Introduce skills as a separate curated set.
 - Allow later work to “promote” selected high-value procedures into skills and
   optionally have commands/agents reference those skills.
-

@@ -14,16 +14,19 @@ reusable instruction packages for **all** coders.
 ## What Changes
 
 - Add a first-class **skills** item type to the `agentsmgr` generation model.
-- Define an Agent Skills–compatible output layout under
-  `.auxiliary/configuration/skills/<skill-name>/SKILL.md`.
-- Provide a compatibility “mount point” in project roots (e.g. `.skills`)
-  to make discovery easy for tools that expect a conventional skills
-  directory.
+- Define an Agent Skills–compatible output layout under each coder’s project
+  configuration directory (to match tool-specific discovery paths), e.g.:
+  - `.auxiliary/configuration/coders/claude/skills/<skill-name>/SKILL.md`
+  - `.auxiliary/configuration/coders/opencode/skills/<skill-name>/SKILL.md`
+  - `.auxiliary/configuration/coders/codex/skills/<skill-name>/SKILL.md`
+  (and reached via existing symlinks like `.claude`, `.opencode`, `.codex`).
 - Add templates that emit valid Agent Skills `SKILL.md` files:
   - YAML frontmatter: `name`, `description`, optional `allowed-tools`
   - Markdown body: skill instructions
-- Add semantic-tool mapping support for Agent Skills `allowed-tools` so our
-  existing tool-agnostic TOML metadata can populate it.
+- Add semantic-tool mapping support for `allowed-tools`, but format it per
+  tool’s expectations (e.g. Claude uses `Read, Grep` style and accepts
+  `Bash(gh *)`; OpenCode ignores unknown frontmatter fields and enforces skill
+  permissions elsewhere).
 - Update coder templates/configuration (where supported) to surface the skills
   directory for discovery.
 
@@ -41,7 +44,4 @@ reusable instruction packages for **all** coders.
 
 ## Notes
 
-- Codex per-project support should consume this capability by exposing
-  `.codex/skills` to the shared skills directory, rather than inventing a
-  Codex-only “skills from commands/agents” mapping.
-
+- We should not automatically map existing commands/subagents into skills.
