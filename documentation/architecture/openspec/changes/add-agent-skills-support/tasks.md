@@ -12,9 +12,11 @@
 - [ ] 1.5 Ensure Agent Skills `allowed-tools` mapping is supported:
       - store semantic tool specs in skill configuration
       - map/format per coder during rendering (omit when unsupported)
-- [ ] 1.6 Add per-project coder resources for skills directories (e.g.
-      `.auxiliary/configuration/coders/<coder>/skills/.gitignore`) so generated
-      skills remain untracked, consistent with `commands/` and `agents/`.
+- [ ] 1.6 Ensure generated directories remain untracked without placeholders:
+      - Consolidate coder root `.gitignore` patterns to ignore generated dirs
+        (`commands/`, `agents/`, `skills/`) and local settings files.
+      - Ensure `agentsmgr` creates output directories when missing (so we do
+        not rely on `.gitignore` files as directory placeholders).
 - [ ] 1.7 Update coder templates/configuration where a tool supports explicit
       skills directories (document and gate behind feature detection).
 

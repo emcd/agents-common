@@ -29,6 +29,7 @@
 from . import __
 from . import exceptions as _exceptions
 from . import generator as _generator
+from . import renderers as _renderers
 
 
 _MANAGED_BLOCK_BEGIN = '# BEGIN: Managed by agentsmgr (emcd-agents)'
@@ -49,6 +50,7 @@ def populate_directory(
     '''
     items_attempted = 0
     items_written = 0
+    _ensure_output_directories( generator, target, simulate )
     for coder_name in generator.configuration[ 'coders' ]:
         for item_type in ( 'commands', 'agents', 'skills' ):
             attempted, written = generate_coder_item_type(
@@ -56,6 +58,30 @@ def populate_directory(
             items_attempted += attempted
             items_written += written
     return ( items_attempted, items_written )
+
+def _ensure_output_directories(
+    generator: _generator.ContentGenerator,
+    target: __.Path,
+    simulate: bool,
+) -> None:
+    if simulate or generator.mode == 'nowhere': return
+    for coder_name in generator.configuration[ 'coders' ]:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        if generator.mode == 'default': actual_mode = renderer.mode_default
+        else: actual_mode = generator.mode
+        if actual_mode not in ( 'per-user', 'per-project' ): continue
+        if actual_mode not in renderer.modes_available: continue
+        base_directory = renderer.resolve_base_directory(
+            mode = actual_mode,
+            target = target,
+            configuration = generator.application_configuration,
+            environment = __.os.environ,
+        )
+        for item_type in ( 'commands', 'agents', 'skills' ):
+            dirname = renderer.produce_output_structure( item_type )
+            ( base_directory / dirname ).mkdir(
+                parents = True, exist_ok = True )
 
 
 def _content_exists(
