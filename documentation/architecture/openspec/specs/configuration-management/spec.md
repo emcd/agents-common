@@ -3,36 +3,26 @@
 ## Purpose
 
 Provides structured, data-driven storage for AI agent configurations that remain tool-agnostic while enabling generation of tool-specific outputs. Maintains single source of truth for commands, agents, and related tooling across multiple AI development environments.
-
 ## Requirements
-
 ### Requirement: Data-Driven Repository Structure
 
-The repository SHALL organize AI tool configurations as structured data sources with 3-tier separation to enable tool-agnostic maintenance while generating tool-specific outputs.
+The repository SHALL organize AI tool configurations as structured data sources
+with 3-tier separation to enable tool-agnostic maintenance while generating
+tool-specific outputs.
 
-Priority: Critical
+#### Scenario: Skills as a first-class item type
+- **WHEN** reusable expertise is added to the repository
+- **THEN** it can be represented as “skills” with:
+  - tool-agnostic metadata
+  - a tool-agnostic body by default (with optional tool-specific overrides)
+  - templates that emit tool-compatible frontmatter and discovery paths
 
-#### Scenario: Three-tier data organization
-- **WHEN** configurations are stored
-- **THEN** repository uses `defaults/` directory with three separate tiers
-- **AND** configurations/ contains tool-agnostic metadata
-- **AND** contents/ contains coder-specific content bodies
-- **AND** templates/ contains generic Jinja2 templates
-
-#### Scenario: Tool-agnostic metadata
-- **WHEN** slash command or agent metadata is defined
-- **THEN** TOML configurations provide semantic allowed-tools specifications
-- **AND** metadata remains independent of specific AI tool formats
-
-#### Scenario: Coder-specific content fallback
-- **WHEN** content is needed for a specific AI tool
-- **THEN** system uses appropriate coder-specific content
-- **AND** supports fallback strategies (Claude ↔ Opencode, Gemini isolated)
-
-#### Scenario: Consistent terminology
-- **WHEN** directories are created
-- **THEN** naming follows consistent terminology conventions
-- **AND** supports comprehensive slash command and agent metadata definitions
+#### Scenario: Tool-specific permissions mapping
+- **WHEN** a skill specifies “allowed tools” in tool-agnostic semantic form
+- **THEN** the system maps/format those tool specifications per coder where
+  supported
+- **AND** the system omits or warns for fields that are unsupported by a given
+  target tool (without failing generation)
 
 ### Requirement: Structured Source Data Management
 
@@ -59,3 +49,4 @@ Priority: Critical
 - **WHEN** hook scripts are distributed
 - **THEN** distributed via minimal Copier template
 - **AND** not dynamically generated
+

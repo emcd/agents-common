@@ -4,11 +4,11 @@
 
 ## Features
 
-- [ ] **Agent Skills support**: Add a first-class `skills` item type and
+- [x] **Agent Skills support**: Add a first-class `skills` item type and
   generate Agent Skills–compatible directories under per-coder discovery roots
   (e.g. `.claude/skills/`, `.opencode/skills/`, `.codex/skills/` via existing
   symlinks into `.auxiliary/configuration/coders/<coder>/`). Track via OpenSpec change
-  `add-agent-skills-support`.
+  `add-agent-skills-support`. (Archived: 2026-02-04)
 
 - [ ] **Per-resource archetypes**: Allow each coder to configure which
   archetype/template family it uses per resource kind (commands, agents,
