@@ -9,6 +9,8 @@
       "mcp__context7__get-library-docs",
       "mcp__librovore__query_content",
       "mcp__librovore__query_inventory",
+      "mcp__nb__nb",
+      "mcp__nb__help",
       "mcp__pyright__definition",
       "mcp__pyright__diagnostics",
       "mcp__pyright__hover",
@@ -32,6 +34,8 @@
       "mcp__context7__get-library-docs",
       "mcp__librovore__query_content",
       "mcp__librovore__query_inventory",
+      "mcp__nb__nb",
+      "mcp__nb__help",
       "mcp__pyright__definition",
       "mcp__pyright__diagnostics",
       "mcp__pyright__hover",
@@ -112,6 +116,10 @@
     "librovore": {
       "command": "uvx",
       "args": [ "librovore", "serve" ]
+    },
+    "nb": {
+      "command": "nb-mcp",
+      "args": ["--notebook", "agents-common"]
     }
   }
 }

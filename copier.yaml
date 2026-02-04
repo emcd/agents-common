@@ -34,6 +34,11 @@ coders:
         - claude
         - opencode
 
+support_local_models:
+    type: bool
+    help: Include support local models.
+    default: false
+
 provide_instructions:
     type: bool
     help: Download instructions for AI agents

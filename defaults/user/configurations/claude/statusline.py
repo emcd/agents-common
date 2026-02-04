@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 ''' Custom statusline for Claude Code showing token usage. '''
 
-from json import JSONDecodeError as _JSONDecodeError
 from json import loads as _json_loads
 from pathlib import Path
 from sys import stdin as _stdin
 
 
-BUDGET_TOKENS = 200000
-OVERHEAD_TOKENS = 30000
-CHUNK_SIZE_BYTES = 10000
 TOKEN_THRESHOLD_LOW = 50
 TOKEN_THRESHOLD_HIGH = 75
+AUTOCOMPACT_BUFFER_PERCENT = 22.5  # Reserved for auto-compaction summarization
+SYSTEM_OVERHEAD_TOKENS = 20000  # System prompt (~3k) + system tools (~16k)
 
 
 def _abbreviate_home_in_path( path: str ) -> str:
@@ -22,91 +20,114 @@ def _abbreviate_home_in_path( path: str ) -> str:
 
 
 def _detect_git_branch( cwd: str ) -> str | None:
-    ''' Detects current Git branch by parsing .git/HEAD. '''
-    git_dir = Path( cwd ).resolve( ) if cwd != '~' else Path.home( )
-    while git_dir != git_dir.parent:
-        git_head = git_dir / '.git' / 'HEAD'
-        if git_head.exists( ):
-            try:
-                content = git_head.read_text( ).strip( )
-                if content.startswith( 'ref: refs/heads/' ):
-                    return content[ len( 'ref: refs/heads/' ): ]
-                return f"detached@{content[:7]}"
-            except ( OSError, IOError ): return None
-        git_dir = git_dir.parent
+    ''' Detects current Git branch by parsing .git/HEAD.
+
+        Handles both regular repositories and worktrees. In worktrees,
+        .git is a file containing a gitdir reference rather than a directory.
+    '''
+    search_dir = Path( cwd ).resolve( ) if cwd != '~' else Path.home( )
+    while search_dir != search_dir.parent:
+        git_path = search_dir / '.git'
+        if git_path.exists( ):
+            git_dir = _resolve_git_directory( git_path )
+            if git_dir is None: return None
+            return _read_branch_from_head( git_dir / 'HEAD' )
+        search_dir = search_dir.parent
     return None
 
 
-def _extract_chunk_from_file( path: Path, size: int ) -> bytes:
-    ''' Reads last N bytes from file. '''
-    with open( path, 'rb' ) as f:
-        f.seek( 0, 2 )
-        file_size = f.tell( )
-        f.seek( max( 0, file_size - size ) )
-        return f.read( )
+def _resolve_git_directory( git_path: Path ) -> Path | None:
+    ''' Resolves actual git directory, handling worktrees.
 
-
-def _decode_chunk_safely( chunk: bytes ) -> list[ str ]:
-    ''' Decodes byte chunk to text lines, handling UTF-8 boundaries. '''
-    newline_index = chunk.find( b'\n' )
-    if newline_index != -1 and newline_index + 1 < len( chunk ):
-        chunk = chunk[ newline_index + 1: ]
-    return chunk.decode( 'utf-8' ).splitlines( )
-
-
-def _extract_token_usage( usage: dict[ str, int ] ) -> tuple[ int, float ]:
-    ''' Calculates total tokens and percentage from usage dictionary. '''
-    total = (
-        usage.get( 'input_tokens', 0 )
-        + usage.get( 'cache_creation_input_tokens', 0 )
-        + usage.get( 'cache_read_input_tokens', 0 )
-        + usage.get( 'output_tokens', 0 ) )
-    total_with_overhead = total + OVERHEAD_TOKENS
-    percentage = ( total_with_overhead / BUDGET_TOKENS ) * 100
-    return ( total_with_overhead, percentage )
-
-
-def _find_latest_token_info(
-    lines: list[ str ]
-) -> tuple[ int, float ] | None:
-    ''' Finds most recent assistant message with token usage. '''
-    for line in reversed( lines ):
-        if not line.strip( ): continue
-        try: msg = _json_loads( line )
-        except _JSONDecodeError: continue
-        if msg.get( 'type' ) == 'assistant' and 'message' in msg:
-            usage = msg[ 'message' ].get( 'usage' )
-            if usage: return _extract_token_usage( usage )
+        For regular repos, .git is a directory containing HEAD.
+        For worktrees, .git is a file with "gitdir: <path>" content.
+    '''
+    if git_path.is_dir( ):
+        return git_path
+    # Worktree: .git is a file containing gitdir reference
+    try:
+        content = git_path.read_text( ).strip( )
+    except ( OSError, IOError ):
+        return None
+    if content.startswith( 'gitdir: ' ):
+        gitdir_path = content[ len( 'gitdir: ' ): ]
+        resolved = Path( gitdir_path )
+        if not resolved.is_absolute( ):
+            resolved = ( git_path.parent / gitdir_path ).resolve( )
+        return resolved if resolved.is_dir( ) else None
     return None
+
+
+def _read_branch_from_head( head_path: Path ) -> str | None:
+    ''' Reads branch name from HEAD file. '''
+    try:
+        content = head_path.read_text( ).strip( )
+        if content.startswith( 'ref: refs/heads/' ):
+            return content[ len( 'ref: refs/heads/' ): ]
+        return f"detached@{content[:7]}"
+    except ( OSError, IOError ):
+        return None
+
+
+def _extract_token_info(
+    context_window: dict
+) -> tuple[ int, int, float ] | None:
+    ''' Extracts token usage from context_window field.
+
+        Uses current_usage to reflect actual context consumption after
+        compaction. Adds overhead (autocompact buffer + system prompt/tools)
+        to give accurate picture of total committed context space.
+    '''
+    current_usage = context_window.get( 'current_usage' )
+    context_size = context_window.get( 'context_window_size' )
+    if current_usage is None or context_size is None:
+        return None
+    if context_size == 0: return None
+
+    input_tokens = current_usage.get( 'input_tokens', 0 )
+    output_tokens = current_usage.get( 'output_tokens', 0 )
+    total = input_tokens + output_tokens
+
+    # Add overhead: autocompact buffer + fixed system overhead
+    autocompact_buffer = int( context_size * AUTOCOMPACT_BUFFER_PERCENT / 100 )
+    total_with_overhead = total + autocompact_buffer + SYSTEM_OVERHEAD_TOKENS
+    percentage = ( total_with_overhead / context_size ) * 100
+    return ( total_with_overhead, context_size, percentage )
 
 
 def _format_status(
-    cwd: str, branch: str | None, token_info: tuple[ int, float ] | None
+    cwd: str,
+    branch: str | None,
+    token_info: tuple[ int, int, float ] | None,
+    model_name: str | None,
 ) -> str:
-    ''' Formats status line with token usage, directory, and branch. '''
+    ''' Formats status line with token usage, directory, branch, and model. '''
     sections = [ ]
     if token_info:
-        total, percentage = token_info
+        total, context_size, percentage = token_info
         if percentage < TOKEN_THRESHOLD_LOW: emoji = '🟢'
         elif percentage < TOKEN_THRESHOLD_HIGH: emoji = '🟡'
         else: emoji = '🔴'
         total_k = total // 1000
-        sections.append( f"{emoji} {total_k}k/200k ({percentage:.0f}%)" )
+        context_k = context_size // 1000
+        pct = f"{percentage:.0f}"
+        sections.append( f"{emoji} {total_k}k/{context_k}k ({pct}%)" )
     sections.append( f"📁 {cwd}" )
     if branch: sections.append( f"🌿 {branch}" )
+    if model_name: sections.append( f"✨ {model_name}" )
     return ' | '.join( sections )
 
 
 def main( ) -> None:
-    ''' Parses transcript and displays token usage and current directory. '''
+    ''' Displays token usage from context_window and current directory. '''
     input_data = _json_loads( _stdin.read( ) )
-    transcript_path = Path( input_data[ 'transcript_path' ] )
     cwd = _abbreviate_home_in_path( input_data.get( 'cwd', '~' ) )
     branch = _detect_git_branch( input_data.get( 'cwd', '~' ) )
-    chunk = _extract_chunk_from_file( transcript_path, CHUNK_SIZE_BYTES )
-    lines = _decode_chunk_safely( chunk )
-    token_info = _find_latest_token_info( lines )
-    status = _format_status( cwd, branch, token_info )
+    context_window = input_data.get( 'context_window', { } )
+    token_info = _extract_token_info( context_window )
+    model_info = input_data.get( 'model', { } )
+    model_name = model_info.get( 'display_name' )
+    status = _format_status( cwd, branch, token_info, model_name )
     print( status, end = '' )
 
 

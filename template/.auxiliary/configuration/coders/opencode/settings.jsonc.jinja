@@ -1,18 +1,74 @@
 {
   "$schema": "https://opencode.ai/config.json",
 
+  {%- if support_local_models %}
+  // "provider": {
+  //   "ollama": {
+  //     "npm": "@ai-sdk/openai-compatible",
+  //     "name": "Ollama (local)",
+  //     "options": {
+  //       "baseURL": "http://localhost:11434/v1"
+  //     },
+  //     "models": {
+  //       "nemotron-3-nano": {
+  //         "name": "Nemotron 3 Nano",
+  //         "limit": {
+  //           "context": 262144,
+  //           "output": 262144
+  //         }
+  //       }
+  //     }
+  //   }
+  // },
+
+  "provider": {
+    "vllm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Vllm (local)",
+      "options": {
+        "baseURL": "http://localhost:13080/v1"
+      },
+      "models": {
+        "nemotron-3-nano": {
+          "name": "Nemotron 3 Nano",
+          "limit": {
+              "context": 262144,
+              "output": 262144
+          }
+        }
+      }
+    }
+  },
+  {%- endif %}
+
   "agent": {
+    {%- if support_local_models %}
+    "nemotron-build": {
+      "mode": "primary",
+      "model": "vllm/nemotron-3-nano",
+      "prompt": "{file:./.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md}"
+    },
+    {%- endif %}
     "build": {
       "mode": "primary",
-      "model": "zai-coding-plan/glm-4.6"
+      // "model": "zai-coding-plan/glm-4.7"
+      "model": "deepseek/deepseek-chat"
     },
     "plan": {
       "mode": "primary",
-      "model": "zai-coding-plan/glm-4.6"
+      // "model": "zai-coding-plan/glm-4.7"
+      "model": "deepseek/deepseek-chat"
     }
   },
 
   "mcp": {
+    {%- if "python" in languages %}
+    "pyright": {
+      "type": "local",
+      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "enabled": true
+    },
+    {%- endif %}
     {%- if "rust" in languages %}
     "rust-analyzer": {
       "type": "local",
@@ -29,18 +85,27 @@
       "type": "local",
       "command": ["uvx", "librovore", "serve"],
       "enabled": true
-    }{%- if "python" in languages %},
-    "pyright": {
+    },
+    "nb": {
       "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "command": ["nb-mcp", "--notebook", "{{ project_name }}"],
       "enabled": true
     }
-    {%- endif %}
   },
 
   "permission": {
-    "edit": "allow",
     "bash": {
+      "*": "ask",
+      {%- if "python" in languages %}
+      "hatch run *": "allow",
+      "hatch --env develop run *": "allow",
+      {%- endif %}
+      {%- if "rust" in languages %}
+      "cargo build *": "allow",
+      "cargo test *": "allow",
+      "cargo check *": "allow",
+      "cargo clippy *": "allow",
+      {%- endif %}
       "awk *": "allow",
       "cat *": "allow",
       "cut *": "allow",
@@ -68,18 +133,8 @@
       "git diff *": "allow",
       "git log *": "allow",
       "git show *": "allow",
-      "git status": "allow",
+      "git status *": "allow",
       "grep *": "allow",
-      {%- if "python" in languages %}
-      "hatch run python *": "allow",
-      "hatch --env develop run *": "allow",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "cargo build *": "allow",
-      "cargo test *": "allow",
-      "cargo check *": "allow",
-      "cargo clippy *": "allow",
-      {%- endif %}
       "head *": "allow",
       "ls *": "allow",
       "ps *": "allow",
@@ -91,7 +146,9 @@
       "uniq *": "allow",
       "wc *": "allow",
       "which *": "allow"
-    }
+    },
+    "edit": "allow",
+    "webfetch": "ask"
   },
 
   "formatter": {

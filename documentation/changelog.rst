@@ -23,6 +23,19 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a8 (2026-02-04)
+============================
+
+Enhancements
+------------
+
+- Add an `nb` MCP server to the generated coder configurations.
+- Add first-class Agent Skills (`SKILL.md`) generation for supported coders.
+- Codex: Add a project rules allowlist (`.codex/rules/`) to permit common safe development commands outside the sandbox.
+- Codex: Generate per-project configuration via `.codex/config.toml` by default (with `CODEX_HOME` support for per-user configs).
+- Codex: Merge TOML configuration updates instead of overwriting, and create backups when rewriting may drop comments.
+
+
 agentsmgr 1.0a7 (2025-12-01)
 ============================
 

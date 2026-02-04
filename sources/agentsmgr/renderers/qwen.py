@@ -41,6 +41,7 @@ class QwenRenderer( _base.RendererBase ):
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
     memory_filename = 'QWEN.md'
+    item_types_available = frozenset( ( 'commands', 'agents' ) )
 
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor for Qwen Code.

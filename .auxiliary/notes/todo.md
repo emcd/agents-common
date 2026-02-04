@@ -4,6 +4,12 @@
 
 ## Features
 
+- [ ] **Per-resource archetypes**: Allow each coder to configure which
+  archetype/template family it uses per resource kind (commands, agents,
+  skills, etc.). Example: Qwen may want Gemini-style command resources and
+  Claude-style agent resources, while skills should use a shared `standard`
+  archetype across all coders.
+
 - [ ] **Configurable content absence behavior**: Consider making failure
   behavior configurable when coder content is missing during populate operations.
   Current implementation (as of 2025-10-23) warns and skips missing content,

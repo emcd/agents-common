@@ -30,6 +30,7 @@ Table of Contents
    api
    changelog
    contribution
+   skills
    license
 
 

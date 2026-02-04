@@ -1,18 +1,67 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // "provider": {
+  //   "ollama": {
+  //     "npm": "@ai-sdk/openai-compatible",
+  //     "name": "Ollama (local)",
+  //     "options": {
+  //       "baseURL": "http://localhost:11434/v1"
+  //     },
+  //     "models": {
+  //       "nemotron-3-nano": {
+  //         "name": "Nemotron 3 Nano",
+  //         "limit": {
+  //           "context": 262144,
+  //           "output": 262144
+  //         }
+  //       }
+  //     }
+  //   }
+  // },
+
+  "provider": {
+    "vllm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Vllm (local)",
+      "options": {
+        "baseURL": "http://localhost:13080/v1"
+      },
+      "models": {
+        "nemotron-3-nano": {
+          "name": "Nemotron 3 Nano",
+          "limit": {
+              "context": 262144,
+              "output": 262144
+          }
+        }
+      }
+    }
+  },
 
   "agent": {
+    "nemotron-build": {
+      "mode": "primary",
+      "model": "vllm/nemotron-3-nano",
+      "prompt": "{file:./.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md}"
+    },
     "build": {
       "mode": "primary",
-      "model": "zai-coding-plan/glm-4.6"
+      // "model": "zai-coding-plan/glm-4.7"
+      "model": "deepseek/deepseek-chat"
     },
     "plan": {
       "mode": "primary",
-      "model": "zai-coding-plan/glm-4.6"
+      // "model": "zai-coding-plan/glm-4.7"
+      "model": "deepseek/deepseek-chat"
     }
   },
 
   "mcp": {
+    "pyright": {
+      "type": "local",
+      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "enabled": true
+    },
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],
@@ -23,16 +72,18 @@
       "command": ["uvx", "librovore", "serve"],
       "enabled": true
     },
-    "pyright": {
+    "nb": {
       "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
+      "command": ["nb-mcp", "--notebook", "agents-common"],
       "enabled": true
     }
   },
 
   "permission": {
-    "edit": "allow",
     "bash": {
+      "*": "ask",
+      "hatch run *": "allow",
+      "hatch --env develop run *": "allow",
       "awk *": "allow",
       "cat *": "allow",
       "cut *": "allow",
@@ -60,10 +111,8 @@
       "git diff *": "allow",
       "git log *": "allow",
       "git show *": "allow",
-      "git status": "allow",
+      "git status *": "allow",
       "grep *": "allow",
-      "hatch run python *": "allow",
-      "hatch --env develop run *": "allow",
       "head *": "allow",
       "ls *": "allow",
       "ps *": "allow",
@@ -75,7 +124,9 @@
       "uniq *": "allow",
       "wc *": "allow",
       "which *": "allow"
-    }
+    },
+    "edit": "allow",
+    "webfetch": "ask"
   },
 
   "formatter": {

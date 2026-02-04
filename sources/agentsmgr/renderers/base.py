@@ -33,6 +33,7 @@ TargetMode: __.typx.TypeAlias = __.typx.Literal[
     'default', 'per-user', 'per-project', 'nowhere' ]
 ExplicitTargetMode: __.typx.TypeAlias = __.typx.Literal[
     'per-user', 'per-project' ]
+ItemType: __.typx.TypeAlias = __.typx.Literal[ 'commands', 'agents', 'skills' ]
 
 
 class RendererBase( __.immut.Object ):
@@ -47,6 +48,7 @@ class RendererBase( __.immut.Object ):
     modes_available: frozenset[ ExplicitTargetMode ]
     mode_default: ExplicitTargetMode
     memory_filename: str
+    item_types_available: frozenset[ ItemType ]
 
     def validate_mode( self, mode: ExplicitTargetMode ) -> None:
         ''' Validates targeting mode is supported by this coder.

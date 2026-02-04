@@ -26,10 +26,12 @@
 
 
 from . import __
-from .base import RENDERERS, ExplicitTargetMode, RendererBase
+from .base import RENDERERS as _RENDERERS
+from .base import ExplicitTargetMode as _ExplicitTargetMode
+from .base import RendererBase as _RendererBase
 
 
-class OpencodeRenderer( RendererBase ):
+class OpencodeRenderer( _RendererBase ):
     ''' Renderer for OpenCode coder.
 
         Supports both per-user and per-project configuration modes.
@@ -41,6 +43,7 @@ class OpencodeRenderer( RendererBase ):
     modes_available = frozenset( ( 'per-user', 'per-project' ) )
     mode_default = 'per-project'
     memory_filename = 'AGENTS.md'
+    item_types_available = frozenset( ( 'commands', 'agents', 'skills' ) )
 
     _LOCATIONS_MAP = __.immut.Dictionary( {
         'agents': 'agent',
@@ -85,7 +88,7 @@ class OpencodeRenderer( RendererBase ):
 
     def resolve_base_directory(
         self,
-        mode: ExplicitTargetMode,
+        mode: _ExplicitTargetMode,
         target: __.Path,
         configuration: __.cabc.Mapping[ str, __.typx.Any ],
         environment: __.cabc.Mapping[ str, str ],
@@ -141,4 +144,4 @@ class OpencodeRenderer( RendererBase ):
         return { }
 
 
-RENDERERS[ 'opencode' ] = OpencodeRenderer( )
+_RENDERERS[ 'opencode' ] = OpencodeRenderer( )

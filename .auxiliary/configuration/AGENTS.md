@@ -1,34 +1,56 @@
 # Context
 
-- Project overview and quick start: README.rst
-- Product requirements and goals: documentation/prd.rst
-- System architecture and design: @documentation/architecture/
-- Development practices and style: @.auxiliary/instructions/
-- Current session notes and TODOs: @.auxiliary/notes/
+- Overview and Quick Start: README.{md,rst}
+- Architecture and Design: @documentation/architecture/
+- Development Practices: @.auxiliary/instructions/
+- Notes and TODOs: @.auxiliary/notes/
 
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
 - Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
+- Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
 - Update files under `.auxiliary/notes` during conversation, removing completed tasks and adding emergent items.
 
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
+## Purpose
 
-These instructions are for AI assistants working in this project.
+**emcd-agents** is a centralized, version-controlled system for managing AI
+agent configurations. It employs a hybrid distribution architecture that
+combines Copier templates for base configurations with a CLI tool (`agentsmgr`)
+for dynamic content generation. Its goal is to enable rapid iteration on agent
+configurations (slash commands, prompts, tool definitions) while ensuring
+consistency across multiple projects and users.
 
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
+## Tech Stack
 
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
+- **Language:** Python (>= 3.10)
+- **Build System:** Hatch (hatchling)
+- **Core Dependencies:**
+    - `emcd-appcore[cli]` (Application framework)
+    - `Jinja2` (Templating)
+    - `PyYAML` (Configuration parsing)
+    - `dulwich` (Git operations)
+    - `frigid`, `accretive`, `absence` (Immutable/specialized data structures)
+    - `dynadoc` (Documentation utilities)
+- **Development Tools:**
+    - `ruff` (Linting and formatting)
+    - `pyright` (Static type checking)
+    - `isort` (Import sorting)
+    - `pre-commit` (Git hooks)
+    - `pytest` (Testing)
+    - `coverage` (Test coverage)
+    - `sphinx` (Documentation)
+    - `towncrier` (Changelog management)
+    - `copier` (Project templating)
+    - `pyinstaller` (Standalone executable builds)
 
-Keep this managed block so 'openspec update' can refresh the instructions.
+# Development Standards
 
-<!-- OPENSPEC:END -->
+Before implementing code changes, consult these files in `.auxiliary/instructions/`:
+- `practices.rst` - General development principles (robustness, immutability, exception chaining)
+- `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
+- `nomenclature.rst` - Naming conventions for variables, functions, classes, exceptions
+- `style.rst` - Code formatting standards (spacing, line length, documentation mood)
+- `validation.rst` - Quality assurance requirements (linters, type checkers, tests)
 
 # Operation
 
@@ -42,10 +64,49 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - Do not write to paths outside the current project unless explicitly requested.
 - Use the `.auxiliary/scribbles` directory for scratch space instead of `/tmp`.
 
+## Note-Taking with nb MCP Server
+
+### When to Use
+- **Project coordination**: Track handoffs between LLMs, document decisions, maintain task lists
+- **Issue tracking**: Create and manage todos with status tracking
+- **Knowledge sharing**: Document patterns, APIs, and project-specific knowledge
+- **Meeting notes**: Record discussions and action items
+
+### Tagging Conventions (for multi-LLM coordination)
+Use consistent tags for discoverability:
+- **LLM Collaborator**: `#llm-<name>` (e.g., `#llm-claude`, `#llm-gpt`)
+- **Project Component**: `#component-<name>` (e.g., `#component-data-models`)
+- **Task Type**: `#task-<type>` (e.g., `#task-design`, `#task-bug`)
+- **Status**: `#status-<state>` (e.g., `#status-in-progress`, `#status-review`)
+- **Coordination**: `#handoff`, `#coordination`
+
+### Common Patterns
+- Check for handoffs: `nb.search` with `#handoff` and `#status-review` tags
+- Find work by specific LLM: `nb.search` with `#llm-<name>` tag
+- Track todos: Use `nb.todo`, `nb.tasks`, `nb.do`, `nb.undo`
+- Organize with folders: `nb.folders`, `nb.mkdir`
+
+## OpenSpec Instructions
+
+These instructions are for AI assistants working in this project.
+
+Workflow Guide: @openspec/AGENTS.md
+
+Always open `openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
+
 # Commits
 
 - Use `git status` to ensure all relevant changes are in the changeset.
 - Do **not** commit without explicit user approval. Unless the user has requested the commit, **ask first** for a review of your work.
+- Do **not** bypass commit safety checks (e.g., `--no-verify`, `--no-gpg-sign`) unless the user explicitly approves doing so.
 - Use present tense, imperative mood verbs (e.g., "Fix" not "Fixed").
 - Write sentences with proper punctuation.
 - Include a `Co-Authored-By:` field as the final line. Should include the model name and a no-reply address.

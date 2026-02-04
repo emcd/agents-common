@@ -9,6 +9,8 @@
       "mcp__context7__get-library-docs",
       "mcp__librovore__query_content",
       "mcp__librovore__query_inventory",
+      "mcp__nb__nb",
+      "mcp__nb__help",
       {%- if "python" in languages %}
       "mcp__pyright__definition",
       "mcp__pyright__diagnostics",
@@ -41,6 +43,8 @@
       "mcp__context7__get-library-docs",
       "mcp__librovore__query_content",
       "mcp__librovore__query_inventory",
+      "mcp__nb__nb",
+      "mcp__nb__help",
       {%- if "python" in languages %}
       "mcp__pyright__definition",
       "mcp__pyright__diagnostics",
@@ -147,6 +151,10 @@
     "librovore": {
       "command": "uvx",
       "args": [ "librovore", "serve" ]
+    },
+    "nb": {
+      "command": "nb-mcp",
+      "args": ["--notebook", "{{ project_name }}"]
     }
   }
 }

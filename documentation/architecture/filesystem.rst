@@ -130,7 +130,6 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │   │   ├── cs-design-python.toml      # Python API design
     │   │   ├── cs-plan-pytests.toml       # Test planning
     │   │   ├── cs-develop-pytests.toml    # Test implementation
-    │   │   ├── cs-manage-prd.toml         # Product requirements
     │   │   ├── cs-copier-update.toml      # Template updates
     │   │   ├── validate-custom-slash.toml # Slash command validation
     │   │   └── [20+ additional commands]
