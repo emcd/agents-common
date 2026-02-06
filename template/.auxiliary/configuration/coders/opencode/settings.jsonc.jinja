@@ -88,7 +88,12 @@
     },
     "nb": {
       "type": "local",
-      "command": ["nb-mcp", "--notebook", "{{ project_name }}"],
+      "command": [
+        "nb-mcp",
+        "--notebook",
+        "{{ project_name }}",
+        "--no-commit-signing"
+      ],
       "enabled": true
     }
   },

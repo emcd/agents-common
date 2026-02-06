@@ -19,7 +19,7 @@ args = ["librovore", "serve"]
 
 [mcp_servers.nb]
 command = "nb-mcp"
-args = ["--notebook", "agents-common"]
+args = ["--notebook", "agents-common", "--no-commit-signing"]
 
 [notice]
 hide_rate_limit_model_nudge = true
