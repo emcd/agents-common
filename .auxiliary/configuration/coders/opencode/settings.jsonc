@@ -74,7 +74,12 @@
     },
     "nb": {
       "type": "local",
-      "command": ["nb-mcp", "--notebook", "agents-common"],
+      "command": [
+        "nb-mcp",
+        "--notebook",
+        "agents-common",
+        "--no-commit-signing"
+      ],
       "enabled": true
     }
   },

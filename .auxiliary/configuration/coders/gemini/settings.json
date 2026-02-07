@@ -119,7 +119,10 @@
     },
     "nb": {
       "command": "nb-mcp",
-      "args": ["--notebook", "agents-common"]
+      "args": [
+        "--notebook", "agents-common",
+        "--no-commit-signing"
+      ]
     }
   }
 }
