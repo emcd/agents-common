@@ -9,14 +9,18 @@ trust_level = "trusted"
 
 {%- if "python" in languages %}
 [mcp_servers.pyright]
-command = "mcp-language-server"
-args = ["--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"]
+command = "/bin/bash"
+args = ["-lc", "mcp-language-server --lsp pyright-langserver --workspace . -- --stdio 2>/dev/null"]
+startup_timeout_sec = 30
+tool_timeout_sec = 90
 {%- endif %}
 
 {%- if "rust" in languages %}
 [mcp_servers.rust-analyzer]
-command = "mcp-language-server"
-args = ["--lsp", "rust-analyzer", "--workspace", "."]
+command = "/bin/bash"
+args = ["-lc", "mcp-language-server --lsp rust-analyzer --workspace . 2>/dev/null"]
+startup_timeout_sec = 30
+tool_timeout_sec = 90
 {%- endif %}
 
 [mcp_servers.context7]
