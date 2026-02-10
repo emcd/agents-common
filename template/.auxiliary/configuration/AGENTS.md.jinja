@@ -9,7 +9,7 @@
 - Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
 - Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
-- Track notes and todos in `nb` during conversation, removing completed tasks and adding emergent items.
+- Track durable notes and todos in `nb` during conversation (for example: research findings, coordination context, and deferred follow-up items), and remove or close items as they are completed.
 
 ## Purpose
 [Describe your project's purpose and goals]
@@ -57,6 +57,11 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 - **Issue tracking**: Create and manage todos with status tracking
 - **Knowledge sharing**: Document patterns, APIs, and project-specific knowledge
 - **Meeting notes**: Record discussions and action items
+
+### Scope and Noise Control
+- Prefer updating an existing related note/todo over creating a new one when context already exists.
+- Avoid logging routine, immediately completed mechanical actions in separate notes.
+- Create new notes/todos when information is likely to be useful across sessions or for other collaborators.
 
 ### Tagging Conventions (for multi-LLM coordination)
 Use consistent tags for discoverability:
