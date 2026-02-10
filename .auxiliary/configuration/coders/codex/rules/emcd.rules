@@ -82,6 +82,11 @@ prefix_rule(
     decision="allow",
     justification="Read GitHub Actions runs.",
 )
+prefix_rule(
+    pattern=["gh", "search", "issues"],
+    decision="allow",
+    justification="Search GitHub issues.",
+)
 
 # Python workflows.
 prefix_rule(

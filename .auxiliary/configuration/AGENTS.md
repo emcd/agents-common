@@ -9,7 +9,7 @@
 - Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
 - Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
-- Track notes and todos in `nb` during conversation, removing completed tasks and adding emergent items.
+- Track durable notes and todos in `nb` during conversation (for example: research findings, coordination context, and deferred follow-up items), and remove or close items as they are completed.
 
 ## Purpose
 
@@ -72,6 +72,11 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 - **Knowledge sharing**: Document patterns, APIs, and project-specific knowledge
 - **Meeting notes**: Record discussions and action items
 
+### Scope and Noise Control
+- Prefer updating an existing related note/todo over creating a new one when context already exists.
+- Avoid logging routine, immediately completed mechanical actions in separate notes.
+- Create new notes/todos when information is likely to be useful across sessions or for other collaborators.
+
 ### Tagging Conventions (for multi-LLM coordination)
 Use consistent tags for discoverability:
 - **LLM Collaborator**: `#llm-<name>` (e.g., `#llm-claude`, `#llm-gpt`)
@@ -85,6 +90,20 @@ Use consistent tags for discoverability:
 - Find work by specific LLM: `nb.search` with `#llm-<name>` tag
 - Track todos: Use `nb.todo`, `nb.tasks`, `nb.do`, `nb.undo`
 - Organize with folders: `nb.folders`, `nb.mkdir`
+
+### Tracking Rubric (`nb` vs OpenSpec)
+- Use **OpenSpec proposals** for cross-cutting changes, contract-shaping work, architecture shifts, or work that needs explicit design discussion.
+- Use **`nb` todos/notes** for scoped, self-contained implementation tasks where the path is straightforward.
+- For each active OpenSpec proposal, keep **exactly one** linked `nb` todo as the tracking anchor (with proposal reference), rather than duplicating full task trees in both systems.
+- When in doubt, prefer OpenSpec first for design clarity, then track execution updates in the linked `nb` todo.
+
+### Recommended `nb` Organization (Project-Defined)
+- Prefer a folder taxonomy of `<issue-type>/<component>` (max depth 2) and avoid mixing top-level component folders with top-level issue-type folders.
+- Recommended top-level issue types are `todos/`, `handoffs/`, `coordination/`, and optionally `decisions/` for durable rationale notes.
+- Example component names include `engine`, `mcp`, `tui`, `web`, `handbook`, and `data-models`.
+- Each downstream project should define and document its specific component-folder conventions in the **Project Notes** section.
+- For cross-component work, prefer `coordination/general` and use multiple `#component-*` tags.
+- Keep notebook lifecycle hygiene: prune completed todos quickly, keep only active/near-term handoffs, and remove stale history-only notes with no owner or action.
 
 ## OpenSpec Instructions
 
@@ -101,6 +120,7 @@ Use `openspec/AGENTS.md` to learn:
 - How to create and apply change proposals
 - Spec format and conventions
 - Project structure and guidelines
+- How to keep a single linked `nb` tracking todo per active proposal.
 
 # Commits
 
