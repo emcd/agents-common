@@ -8,8 +8,6 @@ from sys import stdin as _stdin
 
 TOKEN_THRESHOLD_LOW = 50
 TOKEN_THRESHOLD_HIGH = 75
-AUTOCOMPACT_BUFFER_PERCENT = 22.5  # Reserved for auto-compaction summarization
-SYSTEM_OVERHEAD_TOKENS = 20000  # System prompt (~3k) + system tools (~16k)
 
 
 def _abbreviate_home_in_path( path: str ) -> str:
@@ -69,52 +67,23 @@ def _read_branch_from_head( head_path: Path ) -> str | None:
         return None
 
 
-def _extract_token_info(
-    context_window: dict
-) -> tuple[ int, int, float ] | None:
-    ''' Extracts token usage from context_window field.
-
-        Uses current_usage to reflect actual context consumption after
-        compaction. Adds overhead (autocompact buffer + system prompt/tools)
-        to give accurate picture of total committed context space.
-    '''
-    current_usage = context_window.get( 'current_usage' )
-    context_size = context_window.get( 'context_window_size' )
-    if current_usage is None or context_size is None:
-        return None
-    if context_size == 0: return None
-
-    input_tokens = current_usage.get( 'input_tokens', 0 )
-    output_tokens = current_usage.get( 'output_tokens', 0 )
-    total = input_tokens + output_tokens
-
-    # Add overhead: autocompact buffer + fixed system overhead
-    autocompact_buffer = int( context_size * AUTOCOMPACT_BUFFER_PERCENT / 100 )
-    total_with_overhead = total + autocompact_buffer + SYSTEM_OVERHEAD_TOKENS
-    percentage = ( total_with_overhead / context_size ) * 100
-    return ( total_with_overhead, context_size, percentage )
-
-
 def _format_status(
     cwd: str,
     branch: str | None,
-    token_info: tuple[ int, int, float ] | None,
+    used_percentage: float | None,
     model_name: str | None,
 ) -> str:
     ''' Formats status line with token usage, directory, branch, and model. '''
     sections = [ ]
-    if token_info:
-        total, context_size, percentage = token_info
-        if percentage < TOKEN_THRESHOLD_LOW: emoji = '🟢'
-        elif percentage < TOKEN_THRESHOLD_HIGH: emoji = '🟡'
-        else: emoji = '🔴'
-        total_k = total // 1000
-        context_k = context_size // 1000
-        pct = f"{percentage:.0f}"
-        sections.append( f"{emoji} {total_k}k/{context_k}k ({pct}%)" )
     sections.append( f"📁 {cwd}" )
     if branch: sections.append( f"🌿 {branch}" )
     if model_name: sections.append( f"✨ {model_name}" )
+    if used_percentage is not None:
+        pct = int( used_percentage )
+        if pct < TOKEN_THRESHOLD_LOW: emoji = '🟢'
+        elif pct < TOKEN_THRESHOLD_HIGH: emoji = '🟡'
+        else: emoji = '🔴'
+        sections.append( f"{emoji} {pct}%" )
     return ' | '.join( sections )
 
 
@@ -124,10 +93,10 @@ def main( ) -> None:
     cwd = _abbreviate_home_in_path( input_data.get( 'cwd', '~' ) )
     branch = _detect_git_branch( input_data.get( 'cwd', '~' ) )
     context_window = input_data.get( 'context_window', { } )
-    token_info = _extract_token_info( context_window )
+    used_percentage = context_window.get( 'used_percentage' )
     model_info = input_data.get( 'model', { } )
     model_name = model_info.get( 'display_name' )
-    status = _format_status( cwd, branch, token_info, model_name )
+    status = _format_status( cwd, branch, used_percentage, model_name )
     print( status, end = '' )
 
 
