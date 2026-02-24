@@ -2,12 +2,19 @@
 ''' Custom statusline for Claude Code showing token usage. '''
 
 from json import loads as _json_loads
+from os import environ as _environ
 from pathlib import Path
 from sys import stdin as _stdin
 
 
 TOKEN_THRESHOLD_LOW = 50
 TOKEN_THRESHOLD_HIGH = 75
+
+# Default autocompact buffer as observed via /context (33K / 200K = 16.5%).
+# When CLAUDE_AUTOCOMPACT_PCT_OVERRIDE is set, that value is the trigger
+# threshold (the percentage of the raw window at which compaction fires),
+# so the effective usable fraction equals override / 100.
+_DEFAULT_AUTOCOMPACT_BUFFER_PCT = 16.5
 
 
 def _abbreviate_home_in_path( path: str ) -> str:
@@ -67,6 +74,25 @@ def _read_branch_from_head( head_path: Path ) -> str | None:
         return None
 
 
+def _adjust_for_autocompact_buffer( used_percentage: float ) -> float:
+    ''' Renormalizes raw context percentage against the effective window.
+
+        The API's used_percentage is calculated against the full model context
+        window. Claude Code reserves an autocompact buffer at the top of that
+        window, making the effective usable window smaller. This function
+        scales the raw percentage to reflect the fraction of the usable window
+        consumed, matching the built-in Claude Code status display.
+    '''
+    override = _environ.get( 'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE' )
+    if override is not None:
+        try: effective_fraction = float( override ) / 100
+        except ValueError:
+            effective_fraction = 1.0 - _DEFAULT_AUTOCOMPACT_BUFFER_PCT / 100
+    else: effective_fraction = 1.0 - _DEFAULT_AUTOCOMPACT_BUFFER_PCT / 100
+    if effective_fraction <= 0: return used_percentage
+    return min( used_percentage / effective_fraction, 100.0 )
+
+
 def _format_status(
     cwd: str,
     branch: str | None,
@@ -94,6 +120,8 @@ def main( ) -> None:
     branch = _detect_git_branch( input_data.get( 'cwd', '~' ) )
     context_window = input_data.get( 'context_window', { } )
     used_percentage = context_window.get( 'used_percentage' )
+    if used_percentage is not None:
+        used_percentage = _adjust_for_autocompact_buffer( used_percentage )
     model_info = input_data.get( 'model', { } )
     model_name = model_info.get( 'display_name' )
     status = _format_status( cwd, branch, used_percentage, model_name )
