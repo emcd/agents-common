@@ -7,15 +7,8 @@
     "core": [
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__librovore__query_content",
-      "mcp__librovore__query_inventory",
       "mcp__nb__nb",
       "mcp__nb__help",
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol",
       "edit",
       "glob",
       "google_web_search",
@@ -32,15 +25,8 @@
     "allowed": [
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__librovore__query_content",
-      "mcp__librovore__query_inventory",
       "mcp__nb__nb",
       "mcp__nb__help",
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol",
       "edit",
       "glob",
       "google_web_search",
@@ -102,21 +88,9 @@
     }
   },
   "mcpServers": {
-    "pyright": {
-      "command": "mcp-language-server",
-      "args": [
-        "--lsp", "pyright-langserver", "--workspace", ".",
-        "--", "--stdio"
-      ],
-      "excludeTools": [ "edit_file" ]
-    },
     "context7": {
       "command": "npx",
       "args": [ "-y", "@upstash/context7-mcp" ]
-    },
-    "librovore": {
-      "command": "uvx",
-      "args": [ "librovore", "serve" ]
     },
     "nb": {
       "command": "nb-mcp",
