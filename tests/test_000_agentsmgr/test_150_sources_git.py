@@ -22,6 +22,7 @@
 
 
 import dulwich.porcelain as _dulwich_porcelain
+import pytest
 
 from . import __
 
@@ -86,6 +87,72 @@ def test_130_parse_git_url_extracts_ref_for_https_suffix( ):
     assert location.git_url == 'https://github.com/owner/repo.git'
     assert location.ref == 'v2.0.0'
     assert location.subdir is None
+
+
+def test_140_parse_git_url_rejects_empty_ref_suffix( ):
+    module = __.cache_import_module( 'agentsmgr.sources.git' )
+    handler = module.GitSourceHandler( )
+    source_spec = 'https://github.com/owner/repo@'
+    with pytest.raises( module.__.DataSourceNoSupport ) as exc_info:
+        handler._parse_git_url( source_spec )
+    assert str( exc_info.value ) == (
+        "Unsupported source format: "
+        "https://github.com/owner/repo@ "
+        "(invalid Git source specification: empty ref after '@')"
+    )
+
+
+def test_150_parse_git_url_rejects_empty_subdirectory_fragment( ):
+    module = __.cache_import_module( 'agentsmgr.sources.git' )
+    handler = module.GitSourceHandler( )
+    source_spec = 'https://github.com/owner/repo#'
+    with pytest.raises( module.__.DataSourceNoSupport ) as exc_info:
+        handler._parse_git_url( source_spec )
+    assert str( exc_info.value ) == (
+        "Unsupported source format: "
+        "https://github.com/owner/repo# "
+        "(invalid Git source specification: "
+        "empty subdirectory fragment after '#')"
+    )
+
+
+def test_160_parse_git_url_rejects_absolute_subdirectory_fragment( ):
+    module = __.cache_import_module( 'agentsmgr.sources.git' )
+    handler = module.GitSourceHandler( )
+    source_spec = 'https://github.com/owner/repo#/tmp'
+    with pytest.raises( module.__.DataSourceNoSupport ) as exc_info:
+        handler._parse_git_url( source_spec )
+    assert str( exc_info.value ) == (
+        "Unsupported source format: "
+        "https://github.com/owner/repo#/tmp "
+        "(invalid Git source specification: "
+        "absolute subdirectory fragments are not allowed)"
+    )
+
+
+def test_170_parse_git_url_rejects_parent_traversal_subdirectory( ):
+    module = __.cache_import_module( 'agentsmgr.sources.git' )
+    handler = module.GitSourceHandler( )
+    source_spec = 'https://github.com/owner/repo#../../outside'
+    with pytest.raises( module.__.DataSourceNoSupport ) as exc_info:
+        handler._parse_git_url( source_spec )
+    assert str( exc_info.value ) == (
+        "Unsupported source format: "
+        "https://github.com/owner/repo#../../outside "
+        "(invalid Git source specification: "
+        "parent-path traversal in subdirectory is not allowed)"
+    )
+
+
+def test_180_resolve_source_location_supports_relative_local_paths(
+    tmp_path, monkeypatch
+):
+    sources = __.cache_import_module( 'agentsmgr.sources' )
+    defaults_path = tmp_path / 'defaults'
+    defaults_path.mkdir( )
+    monkeypatch.chdir( tmp_path )
+    resolved = sources.resolve_source_location( './defaults' )
+    assert resolved == defaults_path.resolve( )
 
 
 def test_200_standard_clone_checks_out_explicit_ref( tmp_path ):

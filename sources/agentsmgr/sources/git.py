@@ -136,34 +136,18 @@ class GitSourceHandler:
         subdir = None
         if '#' in url_part:
             url_part, subdir = url_part.split( '#', 1 )
+            self._validate_subdirectory_fragment( subdir, source_spec )
         ref_separator = self._locate_ref_separator( url_part )
         if ref_separator is not None:
             ref = url_part[ ref_separator + 1 : ]
+            if not ref:
+                self._raise_invalid_source_spec(
+                    source_spec, "empty ref after '@'" )
             url_part = url_part[ :ref_separator ]
-        # Map URL schemes to Git URLs
-        if url_part.startswith( 'github:' ):
-            repo_path = url_part[ len( 'github:' ): ]
-            git_url = f"https://github.com/{repo_path}.git"
-        elif url_part.startswith( 'gitlab:' ):
-            repo_path = url_part[ len( 'gitlab:' ): ]
-            git_url = f"https://gitlab.com/{repo_path}.git"
-        elif url_part.startswith( 'git+https:' ):
-            git_url = url_part[ len( 'git+' ): ]
-        elif url_part.startswith( 'https://github.com/' ):
-            # Convert GitHub web URLs to Git URLs
-            if url_part.endswith( '.git' ):
-                git_url = url_part
-            else:
-                git_url = f"{url_part.rstrip( '/' )}.git"
-        elif url_part.startswith( 'https://gitlab.com/' ):
-            # Convert GitLab web URLs to Git URLs
-            if url_part.endswith( '.git' ):
-                git_url = url_part
-            else:
-                git_url = f"{url_part.rstrip( '/' )}.git"
-        else:
-            # Direct git URLs (git@github.com:user/repo.git)
-            git_url = url_part
+        if not url_part:
+            self._raise_invalid_source_spec(
+                source_spec, "missing repository URL" )
+        git_url = self._normalize_git_url( url_part )
         return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
 
     def _locate_ref_separator(
@@ -191,6 +175,56 @@ class GitSourceHandler:
             if separator < authority_end:
                 return None
         return separator
+
+    def _normalize_git_url( self, url_part: str ) -> str:
+        ''' Normalizes shorthand and web URLs to clone-ready Git URLs. '''
+        if url_part.startswith( 'github:' ):
+            repo_path = url_part[ len( 'github:' ): ]
+            return f"https://github.com/{repo_path}.git"
+        if url_part.startswith( 'gitlab:' ):
+            repo_path = url_part[ len( 'gitlab:' ): ]
+            return f"https://gitlab.com/{repo_path}.git"
+        if url_part.startswith( 'git+https:' ):
+            return url_part[ len( 'git+' ): ]
+        if url_part.startswith( 'https://github.com/' ):
+            return self._normalize_git_web_url( url_part )
+        if url_part.startswith( 'https://gitlab.com/' ):
+            return self._normalize_git_web_url( url_part )
+        # Direct git URLs (git@github.com:user/repo.git)
+        return url_part
+
+    def _normalize_git_web_url( self, url_part: str ) -> str:
+        ''' Converts GitHub/GitLab web URLs to clone URL form. '''
+        if url_part.endswith( '.git' ):
+            return url_part
+        return f"{url_part.rstrip( '/' )}.git"
+
+    def _raise_invalid_source_spec(
+        self, source_spec: str, reason: str
+    ) -> None:
+        ''' Raises DataSourceNoSupport with stable malformed-spec details. '''
+        source_spec_with_reason = (
+            f"{source_spec} (invalid Git source specification: {reason})"
+        )
+        raise __.DataSourceNoSupport( source_spec_with_reason )
+
+    def _validate_subdirectory_fragment(
+        self, subdir: str, source_spec: str
+    ) -> None:
+        ''' Validates parsed #subdir fragment for safety and structure. '''
+        if not subdir:
+            self._raise_invalid_source_spec(
+                source_spec, "empty subdirectory fragment after '#'" )
+        subdir_path = __.Path( subdir )
+        if subdir_path.is_absolute( ):
+            self._raise_invalid_source_spec(
+                source_spec, "absolute subdirectory fragments are not allowed"
+            )
+        if '..' in subdir_path.parts:
+            self._raise_invalid_source_spec(
+                source_spec, "parent-path traversal in subdirectory is "
+                "not allowed"
+            )
 
     def _create_temp_directory( self ) -> __.Path:
         ''' Creates temporary directory for repository cloning. '''
