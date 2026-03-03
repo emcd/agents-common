@@ -62,28 +62,9 @@
   },
 
   "mcp": {
-    {%- if "python" in languages %}
-    "pyright": {
-      "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
-      "enabled": true
-    },
-    {%- endif %}
-    {%- if "rust" in languages %}
-    "rust-analyzer": {
-      "type": "local",
-      "command": ["mcp-language-server", "--lsp", "rust-analyzer", "--workspace", "."],
-      "enabled": true
-    },
-    {%- endif %}
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],
-      "enabled": true
-    },
-    "librovore": {
-      "type": "local",
-      "command": ["uvx", "librovore", "serve"],
       "enabled": true
     },
     "nb": {

@@ -5,7 +5,6 @@
 - Development Practices: @.auxiliary/instructions/
 
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
-- Use the 'librovore' MCP server to search structured documentation sites with object inventories (Sphinx-based, compatible MkDocs with mkdocstrings). This bridges curated documentation (context7) and raw scraping (firecrawl).
 - Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture, constraints, and TODO items.
 
@@ -33,16 +32,6 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 
 - Use `rg --line-number --column` to get precise coordinates for MCP tools that require line/column positions.
 - Choose appropriate editing tools based on the task complexity and your familiarity with the tools.
-{%- if "python" in languages %}
-- Use the 'pyright' MCP server where appropriate:
-    - `rename_symbol` for refactors
-    - `references` for precise symbol analysis
-{%- endif %}
-{%- if "rust" in languages %}
-- Use the 'rust-analyzer' MCP server where appropriate:
-    - `rename_symbol` for refactors
-    - `references` for precise symbol analysis
-{%- endif %}
 - Batch related changes together when possible to maintain consistency.
 - Use relative paths rather than absolute paths when possible.
 - Do not write to paths outside the current project unless explicitly requested.
