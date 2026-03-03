@@ -36,6 +36,8 @@ GitApiTag: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
 
 _scribe = __.provide_scribe( __name__ )
 
+_WINDOWS_ABSOLUTE_PREFIX_LENGTH = 3
+
 
 class GitLocation( __.immut.DataclassObject ):
     ''' Git source location with URL, optional ref, and optional subdir. '''
@@ -150,6 +152,17 @@ class GitSourceHandler:
         git_url = self._normalize_git_url( url_part )
         return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
 
+    def _is_absolute_subdirectory_fragment( self, subdir: str ) -> bool:
+        ''' Detects absolute path fragments across POSIX and Windows forms. '''
+        if subdir.startswith( ( '/', '\\' ) ):
+            return True
+        return (
+            len( subdir ) >= _WINDOWS_ABSOLUTE_PREFIX_LENGTH
+            and subdir[ 0 ].isalpha( )
+            and subdir[ 1 ] == ':'
+            and subdir[ 2 ] in ( '/', '\\' )
+        )
+
     def _locate_ref_separator(
         self, url_part: str
     ) -> __.typx.Optional[ int ]:
@@ -215,11 +228,11 @@ class GitSourceHandler:
         if not subdir:
             self._raise_invalid_source_spec(
                 source_spec, "empty subdirectory fragment after '#'" )
-        subdir_path = __.Path( subdir )
-        if subdir_path.is_absolute( ):
+        if self._is_absolute_subdirectory_fragment( subdir ):
             self._raise_invalid_source_spec(
                 source_spec, "absolute subdirectory fragments are not allowed"
             )
+        subdir_path = __.Path( subdir )
         if '..' in subdir_path.parts:
             self._raise_invalid_source_spec(
                 source_spec, "parent-path traversal in subdirectory is "

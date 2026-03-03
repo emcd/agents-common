@@ -130,6 +130,20 @@ def test_160_parse_git_url_rejects_absolute_subdirectory_fragment( ):
     )
 
 
+def test_165_parse_git_url_rejects_windows_absolute_subdirectory( ):
+    module = __.cache_import_module( 'agentsmgr.sources.git' )
+    handler = module.GitSourceHandler( )
+    source_spec = 'https://github.com/owner/repo#C:/tmp'
+    with pytest.raises( module.__.DataSourceNoSupport ) as exc_info:
+        handler._parse_git_url( source_spec )
+    assert str( exc_info.value ) == (
+        "Unsupported source format: "
+        "https://github.com/owner/repo#C:/tmp "
+        "(invalid Git source specification: "
+        "absolute subdirectory fragments are not allowed)"
+    )
+
+
 def test_170_parse_git_url_rejects_parent_traversal_subdirectory( ):
     module = __.cache_import_module( 'agentsmgr.sources.git' )
     handler = module.GitSourceHandler( )
