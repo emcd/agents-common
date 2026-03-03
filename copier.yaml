@@ -53,8 +53,21 @@ instructions_target:
 instructions_sources:
     type: yaml
     help: Git sources for documentation instructions
-    default:
+    default: |
+      {%- if "rust" in languages and "python" not in languages %}
+      - source: "github:emcd/python-project-common@docs-1#documentation/common"
+        files:
+          "architecture.rst": {strip_header_lines: 20}
+          "conduct.rst": {strip_header_lines: 20}
+          "maintenance.rst": {strip_header_lines: 20}
+          "nomenclature.rst": {strip_header_lines: 20}
+          "practices.rst": {strip_header_lines: 20}
+          "practices-rust.rst": {strip_header_lines: 20}
+          "requirements.rst": {strip_header_lines: 20}
+          "style.rst": {strip_header_lines: 20}
+      {%- else %}
       - source: "github:emcd/python-project-common@docs-1#documentation/common"
         files:
           "*.rst": {strip_header_lines: 20}
+      {%- endif %}
     when: "{{ provide_instructions }}"
