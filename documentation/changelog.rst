@@ -23,6 +23,18 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a9 (2026-03-03)
+============================
+
+Repairs
+-------
+
+- CLI: Fix Git source parsing and checkout behavior for explicit refs, SSH URLs,
+  and malformed `@ref` or `#subdir` fragments with clearer validation errors.
+- CLI: Support `coders` configured as either string lists or mapping entries
+  when resolving per-user renderer settings.
+
+
 agentsmgr 1.0a8 (2026-02-04)
 ============================
 
