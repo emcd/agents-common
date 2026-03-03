@@ -29,6 +29,7 @@ from . import __
 from .base import RENDERERS as _RENDERERS
 from .base import ExplicitTargetMode as _ExplicitTargetMode
 from .base import RendererBase as _RendererBase
+from .base import extract_coder_configuration as _extract_coder_configuration
 
 
 class OpencodeRenderer( _RendererBase ):
@@ -137,11 +138,7 @@ class OpencodeRenderer( _RendererBase ):
 
             Looks for coder entry in configuration coders array by name.
         '''
-        coders = configuration.get( 'coders', ( ) )
-        for coder in coders:
-            if coder.get( 'name' ) == self.name:
-                return coder
-        return { }
+        return _extract_coder_configuration( configuration, self.name )
 
 
 _RENDERERS[ 'opencode' ] = OpencodeRenderer( )

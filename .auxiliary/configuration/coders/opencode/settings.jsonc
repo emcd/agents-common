@@ -57,24 +57,19 @@
   },
 
   "mcp": {
-    "pyright": {
-      "type": "local",
-      "command": ["mcp-language-server", "--lsp", "pyright-langserver", "--workspace", ".", "--", "--stdio"],
-      "enabled": true
-    },
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],
       "enabled": true
     },
-    "librovore": {
-      "type": "local",
-      "command": ["uvx", "librovore", "serve"],
-      "enabled": true
-    },
     "nb": {
       "type": "local",
-      "command": ["nb-mcp", "--notebook", "agents-common"],
+      "command": [
+        "nb-mcp",
+        "--notebook",
+        "agents-common",
+        "--no-commit-signing"
+      ],
       "enabled": true
     }
   },
@@ -105,6 +100,7 @@
       "gh run list *": "allow",
       "gh run view *": "allow",
       "gh run watch *": "allow",
+      "gh search issues *": "allow",
       "gh status *": "allow",
       "git add *": "allow",
       "git branch *": "allow",

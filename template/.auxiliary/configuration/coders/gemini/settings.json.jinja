@@ -7,24 +7,8 @@
     "core": [
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__librovore__query_content",
-      "mcp__librovore__query_inventory",
       "mcp__nb__nb",
       "mcp__nb__help",
-      {%- if "python" in languages %}
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "mcp__rust-analyzer__definition",
-      "mcp__rust-analyzer__diagnostics",
-      "mcp__rust-analyzer__hover",
-      "mcp__rust-analyzer__references",
-      "mcp__rust-analyzer__rename_symbol",
-      {%- endif %}
       "edit",
       "glob",
       "google_web_search",
@@ -41,24 +25,8 @@
     "allowed": [
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "mcp__librovore__query_content",
-      "mcp__librovore__query_inventory",
       "mcp__nb__nb",
       "mcp__nb__help",
-      {%- if "python" in languages %}
-      "mcp__pyright__definition",
-      "mcp__pyright__diagnostics",
-      "mcp__pyright__hover",
-      "mcp__pyright__references",
-      "mcp__pyright__rename_symbol",
-      {%- endif %}
-      {%- if "rust" in languages %}
-      "mcp__rust-analyzer__definition",
-      "mcp__rust-analyzer__diagnostics",
-      "mcp__rust-analyzer__hover",
-      "mcp__rust-analyzer__references",
-      "mcp__rust-analyzer__rename_symbol",
-      {%- endif %}
       "edit",
       "glob",
       "google_web_search",
@@ -96,6 +64,7 @@
       "run_shell_command(gh run list)",
       "run_shell_command(gh run view)",
       "run_shell_command(gh run watch)",
+      "run_shell_command(gh search issues)",
       "run_shell_command(gh status)",
       "run_shell_command(git add)",
       "run_shell_command(git diff)",
@@ -127,34 +96,16 @@
     }
   },
   "mcpServers": {
-    {%- if "python" in languages %}
-    "pyright": {
-      "command": "mcp-language-server",
-      "args": [
-        "--lsp", "pyright-langserver", "--workspace", ".",
-        "--", "--stdio"
-      ],
-      "excludeTools": [ "edit_file" ]
-    },
-    {%- endif %}
-    {%- if "rust" in languages %}
-    "rust-analyzer": {
-      "command": "mcp-language-server",
-      "args": [ "--lsp", "rust-analyzer", "--workspace", "." ],
-      "excludeTools": [ "edit_file" ]
-    },
-    {%- endif %}
     "context7": {
       "command": "npx",
       "args": [ "-y", "@upstash/context7-mcp" ]
     },
-    "librovore": {
-      "command": "uvx",
-      "args": [ "librovore", "serve" ]
-    },
     "nb": {
       "command": "nb-mcp",
-      "args": ["--notebook", "{{ project_name }}"]
+      "args": [
+        "--notebook", "{{ project_name }}",
+        "--no-commit-signing"
+      ]
     }
   }
 }

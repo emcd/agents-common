@@ -36,6 +36,8 @@ GitApiTag: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
 
 _scribe = __.provide_scribe( __name__ )
 
+_WINDOWS_ABSOLUTE_PREFIX_LENGTH = 3
+
 
 class GitLocation( __.immut.DataclassObject ):
     ''' Git source location with URL, optional ref, and optional subdir. '''
@@ -136,33 +138,106 @@ class GitSourceHandler:
         subdir = None
         if '#' in url_part:
             url_part, subdir = url_part.split( '#', 1 )
-        if '@' in url_part:
-            url_part, ref = url_part.split( '@', 1 )
-        # Map URL schemes to Git URLs
+            self._validate_subdirectory_fragment( subdir, source_spec )
+        ref_separator = self._locate_ref_separator( url_part )
+        if ref_separator is not None:
+            ref = url_part[ ref_separator + 1 : ]
+            if not ref:
+                self._raise_invalid_source_spec(
+                    source_spec, "empty ref after '@'" )
+            url_part = url_part[ :ref_separator ]
+        if not url_part:
+            self._raise_invalid_source_spec(
+                source_spec, "missing repository URL" )
+        git_url = self._normalize_git_url( url_part )
+        return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
+
+    def _is_absolute_subdirectory_fragment( self, subdir: str ) -> bool:
+        ''' Detects absolute path fragments across POSIX and Windows forms. '''
+        if subdir.startswith( ( '/', '\\' ) ):
+            return True
+        return (
+            len( subdir ) >= _WINDOWS_ABSOLUTE_PREFIX_LENGTH
+            and subdir[ 0 ].isalpha( )
+            and subdir[ 1 ] == ':'
+            and subdir[ 2 ] in ( '/', '\\' )
+        )
+
+    def _locate_ref_separator(
+        self, url_part: str
+    ) -> __.typx.Optional[ int ]:
+        ''' Locates @ref separator while preserving URL authentication syntax.
+
+            Distinguishes ref suffixes from '@' used in SSH URLs
+            (git@host:path) and URL authority userinfo (user@host).
+        '''
+        separator = url_part.rfind( '@' )
+        if separator < 0:
+            return None
+        if url_part.startswith( 'git@' ):
+            host_separator = url_part.find( ':' )
+            if host_separator < 0 or separator < host_separator:
+                return None
+            return separator
+        scheme_separator = url_part.find( '://' )
+        if scheme_separator >= 0:
+            authority_start = scheme_separator + 3
+            authority_end = url_part.find( '/', authority_start )
+            if authority_end < 0:
+                authority_end = len( url_part )
+            if separator < authority_end:
+                return None
+        return separator
+
+    def _normalize_git_url( self, url_part: str ) -> str:
+        ''' Normalizes shorthand and web URLs to clone-ready Git URLs. '''
         if url_part.startswith( 'github:' ):
             repo_path = url_part[ len( 'github:' ): ]
-            git_url = f"https://github.com/{repo_path}.git"
-        elif url_part.startswith( 'gitlab:' ):
+            return f"https://github.com/{repo_path}.git"
+        if url_part.startswith( 'gitlab:' ):
             repo_path = url_part[ len( 'gitlab:' ): ]
-            git_url = f"https://gitlab.com/{repo_path}.git"
-        elif url_part.startswith( 'git+https:' ):
-            git_url = url_part[ len( 'git+' ): ]
-        elif url_part.startswith( 'https://github.com/' ):
-            # Convert GitHub web URLs to Git URLs
-            if url_part.endswith( '.git' ):
-                git_url = url_part
-            else:
-                git_url = f"{url_part.rstrip( '/' )}.git"
-        elif url_part.startswith( 'https://gitlab.com/' ):
-            # Convert GitLab web URLs to Git URLs
-            if url_part.endswith( '.git' ):
-                git_url = url_part
-            else:
-                git_url = f"{url_part.rstrip( '/' )}.git"
-        else:
-            # Direct git URLs (git@github.com:user/repo.git)
-            git_url = url_part
-        return GitLocation( git_url = git_url, ref = ref, subdir = subdir )
+            return f"https://gitlab.com/{repo_path}.git"
+        if url_part.startswith( 'git+https:' ):
+            return url_part[ len( 'git+' ): ]
+        if url_part.startswith( 'https://github.com/' ):
+            return self._normalize_git_web_url( url_part )
+        if url_part.startswith( 'https://gitlab.com/' ):
+            return self._normalize_git_web_url( url_part )
+        # Direct git URLs (git@github.com:user/repo.git)
+        return url_part
+
+    def _normalize_git_web_url( self, url_part: str ) -> str:
+        ''' Converts GitHub/GitLab web URLs to clone URL form. '''
+        if url_part.endswith( '.git' ):
+            return url_part
+        return f"{url_part.rstrip( '/' )}.git"
+
+    def _raise_invalid_source_spec(
+        self, source_spec: str, reason: str
+    ) -> None:
+        ''' Raises DataSourceNoSupport with stable malformed-spec details. '''
+        source_spec_with_reason = (
+            f"{source_spec} (invalid Git source specification: {reason})"
+        )
+        raise __.DataSourceNoSupport( source_spec_with_reason )
+
+    def _validate_subdirectory_fragment(
+        self, subdir: str, source_spec: str
+    ) -> None:
+        ''' Validates parsed #subdir fragment for safety and structure. '''
+        if not subdir:
+            self._raise_invalid_source_spec(
+                source_spec, "empty subdirectory fragment after '#'" )
+        if self._is_absolute_subdirectory_fragment( subdir ):
+            self._raise_invalid_source_spec(
+                source_spec, "absolute subdirectory fragments are not allowed"
+            )
+        subdir_path = __.Path( subdir )
+        if '..' in subdir_path.parts:
+            self._raise_invalid_source_spec(
+                source_spec, "parent-path traversal in subdirectory is "
+                "not allowed"
+            )
 
     def _create_temp_directory( self ) -> __.Path:
         ''' Creates temporary directory for repository cloning. '''
@@ -354,12 +429,25 @@ class GitSourceHandler:
             return commit
 
     def _checkout_ref( self, repo_dir: __.Path, ref: str ) -> None:
-        ''' Checks out a specific reference by cloning with branch param. '''
+        ''' Checks out a specific branch, tag, or commit in cloned repo. '''
         from dulwich.repo import Repo
         try:
             repo = Repo( str( repo_dir ) )
         except Exception as exception:
             raise GitRefAbsence( ref, str( repo_dir ) ) from exception
+        checkout = getattr( _dulwich_porcelain, 'checkout', None )
+        if checkout is None:
+            self._validate_ref_presence( repo, ref, str( repo_dir ) )
+            return
+        try:
+            checkout( repo, ref )
+        except ( KeyError, ValueError ):
+            self._raise_ref_not_found( ref, str( repo_dir ) )
+
+    def _validate_ref_presence(
+        self, repo: __.typx.Any, ref: str, repo_dir: str
+    ) -> None:
+        ''' Validates branch, tag, or commit reference exists in repo. '''
         ref_bytes = ref.encode( )
         tag_ref = f"refs/tags/{ref}".encode( )
         branch_ref = f"refs/heads/{ref}".encode( )
@@ -368,7 +456,7 @@ class GitSourceHandler:
         try:
             repo[ ref_bytes ]
         except KeyError:
-            self._raise_ref_not_found( ref, str( repo_dir ) )
+            self._raise_ref_not_found( ref, repo_dir )
 
     def _raise_ref_not_found( self, ref: str, repo_dir: str ) -> None:
         ''' Raises GitRefAbsence for invalid reference. '''

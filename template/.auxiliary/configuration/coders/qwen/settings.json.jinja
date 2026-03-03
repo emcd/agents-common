@@ -1,27 +1,9 @@
 {
   "mcpServers": {
-    {%- if "rust" in languages %}
-    "rust-analyzer": {
-      "command": "mcp-language-server",
-      "args": ["--lsp", "rust-analyzer", "--workspace", "."]
-    },
-    {%- endif %}
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
-    },
-    "librovore": {
-      "command": "uvx",
-      "args": ["librovore", "serve"]
-    }{%- if "python" in languages %},
-    "pyright": {
-      "command": "mcp-language-server",
-      "args": [
-        "--lsp", "pyright-langserver", "--workspace", ".",
-        "--", "--stdio"
-      ]
     }
-    {%- endif %}
   },
 
   "coreTools": [
@@ -64,22 +46,7 @@
     "web_fetch",
     "web_search",
     "mcp__context7__resolve-library-id",
-    "mcp__context7__get-library-docs",
-    {%- if "python" in languages %}
-    "mcp__pyright__definition",
-    "mcp__pyright__diagnostics",
-    "mcp__pyright__edit_file",
-    "mcp__pyright__hover",
-    "mcp__pyright__references",
-    "mcp__pyright__rename_symbol"
-    {%- endif %}
-    {%- if "rust" in languages %}
-    {%- if "python" in languages %},{% endif %}
-    "mcp__rust-analyzer__definition",
-    "mcp__rust-analyzer__diagnostics",
-    "mcp__rust-analyzer__hover",
-    "mcp__rust-analyzer__references"
-    {%- endif %}
+    "mcp__context7__get-library-docs"
   ],
 
   "approvalMode": "auto-edit",

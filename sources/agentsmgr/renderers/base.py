@@ -126,3 +126,27 @@ class RendererBase( __.immut.Object ):
 
 RENDERERS: __.accret.Dictionary[ str, RendererBase ] = (
     __.accret.Dictionary( ) )
+
+
+def extract_coder_configuration(
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    coder_name: str,
+) -> __.cabc.Mapping[ str, __.typx.Any ]:
+    ''' Extracts coder-specific configuration from mixed coder formats.
+
+        Supports both list-of-name and list-of-mapping coders formats:
+        - coders = [ 'codex', 'claude' ]
+        - coders = [ { 'name': 'codex', ... }, ... ]
+    '''
+    coders = configuration.get( 'coders', ( ) )
+    for coder in coders:
+        if isinstance( coder, str ):
+            if coder == coder_name:
+                return { }
+            continue
+        if not isinstance( coder, dict ):
+            continue
+        candidate = __.typx.cast( dict[ str, __.typx.Any ], coder )
+        if candidate.get( 'name' ) == coder_name:
+            return candidate
+    return { }
