@@ -104,11 +104,7 @@ class GeminiRenderer( _base.RendererBase ):
 
             Looks for coder entry in configuration coders array by name.
         '''
-        coders = configuration.get( 'coders', ( ) )
-        for coder in coders:
-            if coder.get( 'name' ) == self.name:
-                return coder
-        return { }
+        return _base.extract_coder_configuration( configuration, self.name )
 
 
 _base.RENDERERS[ 'gemini' ] = GeminiRenderer( )

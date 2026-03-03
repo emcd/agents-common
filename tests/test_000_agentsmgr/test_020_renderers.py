@@ -21,6 +21,8 @@
 ''' Assert correct behavior of coder renderers. '''
 
 
+import pytest
+
 from . import __
 
 
@@ -61,3 +63,29 @@ def test_022_codex_renderer_provides_codex_symlink( tmp_path ):
             tmp_path / '.codex',
         ),
     )
+
+
+@pytest.mark.parametrize(
+    ( 'coder_name', 'expected_tail' ),
+    (
+        ( 'claude', '.claude' ),
+        ( 'codex', '.codex' ),
+        ( 'gemini', '.gemini' ),
+        ( 'opencode', '.config/opencode' ),
+        ( 'qwen', '.qwen' ),
+    ),
+)
+def test_023_renderers_accept_string_coders_for_per_user_defaults(
+    tmp_path,
+    coder_name,
+    expected_tail,
+):
+    renderers = __.cache_import_module( 'agentsmgr.renderers' )
+    renderer = renderers.RENDERERS[ coder_name ]
+    base = renderer.resolve_base_directory(
+        mode = 'per-user',
+        target = tmp_path,
+        configuration = { 'coders': [ coder_name ] },
+        environment = { },
+    )
+    assert base == __.Path.home( ) / expected_tail
