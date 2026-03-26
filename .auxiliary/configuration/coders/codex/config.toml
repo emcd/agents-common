@@ -18,6 +18,8 @@ trust_level = "trusted"
 # Use legacy Landlock for now; remove this once robust Bubblewrap fixes land.
 use_legacy_landlock = true
 
+## MCP Servers
+
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
