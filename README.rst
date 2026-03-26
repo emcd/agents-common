@@ -105,7 +105,7 @@ or, run directly with `uvx
 
     uvx --from emcd-agents agentsmgr
 
-Or, install via `pipx <https://pipx.pypa.io/stable/installation/>`_:
+Or, install via `pipx <https://pipx.pypa.io/stable/how-to/install-pipx/>`_:
 
 ::
 
