@@ -10,6 +10,15 @@ project_name:
         Project name must contain only lowercase letters, numbers, and hyphens
         {% endif %}
 
+project_bundle_name:
+    type: str
+    help: Coordination bundle name (for shared multi-project workflows)
+    default: "{{ project_name }}"
+    validator: >-
+        {% if not (project_bundle_name | regex_search("^[a-z][a-z0-9-]*$")) %}
+        Bundle name must contain only lowercase letters, numbers, and hyphens
+        {% endif %}
+
 languages:
     type: str
     help: Programming languages used in this project

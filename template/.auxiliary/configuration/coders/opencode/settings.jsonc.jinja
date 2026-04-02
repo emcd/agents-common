@@ -64,6 +64,18 @@
   },
 
   "mcp": {
+    "agentmux": {
+      "type": "local",
+      "command": [
+        "agentmux",
+        "host",
+        "mcp",
+        "--bundle",
+        "{{ project_bundle_name }}"
+      ],
+      "enabled": true,
+      "timeout": 900000
+    },
     "context7": {
       "type": "local",
       "command": ["npx", "-y", "@upstash/context7-mcp"],

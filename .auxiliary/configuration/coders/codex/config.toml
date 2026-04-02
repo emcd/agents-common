@@ -27,3 +27,21 @@ args = ["-y", "@upstash/context7-mcp"]
 [mcp_servers.nb]
 command = "nb-mcp"
 args = ["--notebook", "agents-common", "--no-commit-signing"]
+
+[mcp_servers.nb.tools.help]
+approval_mode = "approve"
+
+[mcp_servers.nb.tools.nb]
+approval_mode = "approve"
+
+[mcp_servers.agentmux]
+command = "agentmux"
+args = ["host", "mcp", "--bundle", "infrastructure"]
+startup_timeout_sec = 60
+tool_timeout_sec = 900
+
+[mcp_servers.agentmux.tools.list]
+approval_mode = "approve"
+
+[mcp_servers.agentmux.tools.send]
+approval_mode = "approve"
