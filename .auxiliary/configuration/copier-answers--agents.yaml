@@ -1,12 +1,11 @@
 # Changes here will be overwritten by Copier
-_commit: v1.0a9-5-gb64c243
+_commit: v1.0a9-12-g2af1ccb
 _src_path: .
 coders:
 - claude
 - codex
 - gemini
 - opencode
-- qwen
 instructions_sources:
 -   files:
         '*.rst':
@@ -15,6 +14,7 @@ instructions_sources:
 instructions_target: .auxiliary/instructions
 languages:
 - python
+project_bundle_name: infrastructure
 project_name: agents-common
 provide_instructions: true
 support_local_models: true
