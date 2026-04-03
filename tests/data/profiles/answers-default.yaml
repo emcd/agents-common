@@ -1,4 +1,15 @@
+project_name: agents-template-default
+project_bundle_name: agents-template-default
 coders:
 - claude
+- opencode
 languages:
 - python
+support_local_models: false
+provide_instructions: true
+instructions_target: .auxiliary/instructions
+instructions_sources:
+- source: github:emcd/python-project-common@docs-1#documentation/common
+  files:
+    '*.rst':
+      strip_header_lines: 20

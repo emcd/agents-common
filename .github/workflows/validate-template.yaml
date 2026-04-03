@@ -1,0 +1,57 @@
+name: copier
+
+on:
+  pull_request:
+    branches: [ '*' ]
+    paths:
+      - '.github/workflows/validate-template.yaml'
+      - 'copier.yaml'
+      - 'template/**'
+      - 'tests/data/profiles/**'
+      - 'sources/agentsmgr/cmdbase.py'
+      - 'sources/agentsmgr/maintenance/**'
+  push:
+    branches: [ 'master' ]
+    paths:
+      - '.github/workflows/validate-template.yaml'
+      - 'copier.yaml'
+      - 'template/**'
+      - 'tests/data/profiles/**'
+      - 'sources/agentsmgr/cmdbase.py'
+      - 'sources/agentsmgr/maintenance/**'
+  workflow_dispatch: {}
+
+jobs:
+
+  initialize:
+    uses: ./.github/workflows/core--initializer.yaml
+
+  validate-template:
+    needs: [ initialize ]
+    name: Validate Copier Template (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [ 'default', 'maximum' ]
+
+    steps:
+
+      - name: Prepare Python
+        uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
+        with:
+          python-version: ${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}
+
+      - name: Install Copier
+        run: pip install copier
+
+      - name: Validate Content Variant
+        run: |
+          hatch --env develop run \
+            agentsmgr-maintain content validate \
+            ${{ matrix.variant }}
+
+      - name: Validate Template Variant
+        run: |
+          hatch --env develop run \
+            agentsmgr-maintain template validate \
+            ${{ matrix.variant }}

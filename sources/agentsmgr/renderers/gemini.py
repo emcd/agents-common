@@ -46,9 +46,8 @@ class GeminiRenderer( _base.RendererBase ):
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor for Gemini CLI.
 
-            Gemini shares TOML command format with Qwen
-            (via gemini.toml.jinja for TOML). Gemini CLI does not
-            support agents/subagents, only commands.
+            Gemini uses the gemini TOML command template flavor.
+            Gemini CLI does not support agents/subagents, only commands.
         '''
         if item_type == 'commands':
             return 'gemini'

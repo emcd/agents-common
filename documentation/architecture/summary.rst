@@ -143,7 +143,7 @@ The system implements a dual-channel distribution model:
 
 4. **Coder-Specific Rendering** (agentsmgr.renderers):
    - Claude renderer with per-user and per-project targeting
-   - Opencode, Codex, and Qwen renderers for multi-tool support
+   - Opencode, Codex, and Gemini renderers for multi-tool support
    - Base renderer class defining target mode contracts and template flavor selection
 
 5. **Target Projects**:

@@ -18,11 +18,12 @@
 #============================================================================#
 
 
-''' Maintainer-facing command-line interface with validate command. '''
+''' Maintainer-facing command-line interface. '''
 
 
 from . import __
-from .validation import ValidateCommand as _ValidateCommand
+from . import content as _content
+from . import template as _template
 
 
 class MaintainerApplication( __.appcore_cli.Application ):
@@ -30,10 +31,16 @@ class MaintainerApplication( __.appcore_cli.Application ):
 
     display: __.core.DisplayOptions = __.dcls.field(
         default_factory = __.core.DisplayOptions )
-    command: __.typx.Annotated[
-        _ValidateCommand,
-        __.tyro.conf.subcommand( 'validate', prefix_name = False ),
-    ] = __.dcls.field( default_factory = _ValidateCommand )
+    command: __.typx.Union[
+        __.typx.Annotated[
+            _content.CommandDispatcher,
+            __.tyro.conf.subcommand( 'content', prefix_name = False ),
+        ],
+        __.typx.Annotated[
+            _template.CommandDispatcher,
+            __.tyro.conf.subcommand( 'template', prefix_name = False ),
+        ],
+    ] = __.dcls.field( default_factory = _content.CommandDispatcher )
 
     async def execute( self, auxdata: __.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
