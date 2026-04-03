@@ -72,7 +72,6 @@ def test_022_codex_renderer_provides_codex_symlink( tmp_path ):
         ( 'codex', '.codex' ),
         ( 'gemini', '.gemini' ),
         ( 'opencode', '.config/opencode' ),
-        ( 'qwen', '.qwen' ),
     ),
 )
 def test_023_renderers_accept_string_coders_for_per_user_defaults(

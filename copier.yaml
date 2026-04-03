@@ -38,7 +38,6 @@ coders:
         - codex
         - gemini
         - opencode
-        - qwen
     default:
         - claude
         - opencode

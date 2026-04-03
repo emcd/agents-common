@@ -5,7 +5,6 @@ coders:
 - codex
 - gemini
 - opencode
-- qwen
 languages:
 - python
 - rust

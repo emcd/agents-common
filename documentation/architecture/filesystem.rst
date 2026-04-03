@@ -92,7 +92,7 @@ The main Python package follows the standard ``sources/`` directory pattern:
     │   │   ├── claude.py            # Claude-specific rendering logic
     │   │   ├── opencode.py          # Opencode-specific rendering logic
     │   │   ├── codex.py             # Codex rendering logic
-    │   │   └── qwen.py              # Qwen rendering logic
+    │   │   └── gemini.py            # Gemini rendering logic
     │   ├── __init__.py              # Package entry point
     │   ├── py.typed                 # Type checking marker
     │   ├── __main__.py              # CLI entry point for `python -m agentsmgr`
@@ -142,14 +142,11 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │   │   │   ├── cs-release-final.md
     │   │   │   ├── cs-architect.md
     │   │   │   └── [22+ additional command contents]
-    │   │   ├── gemini/            # Gemini-specific content (minimal)
-    │   │   └── qwen/              # Qwen-specific content (shares Gemini format)
+    │   │   └── gemini/            # Gemini-specific content (minimal)
     │   └── agents/
     │       ├── claude/
     │       │   └── python-conformer.md
     │       ├── opencode/          # Opencode-specific agent content
-    │       ├── qwen/              # Qwen-specific agent content
-    │       │   └── python-conformer.md
     │       └── gemini/            # Gemini-specific agent content
     ├── user/                      # Per-user files and executables
     │   ├── configurations/        # Per-user global settings
@@ -160,11 +157,10 @@ directory, implementing a 3-tier separation for structured agent configurations:
     └── templates/                 # Pioneer-named template flavors by coder
         ├── commands/
         │   ├── claude.md.jinja    # Markdown commands (Claude, Opencode, Codex)
-        │   └── gemini.toml.jinja  # TOML commands (Gemini, Qwen)
+        │   └── gemini.toml.jinja  # TOML commands (Gemini)
         └── agents/
             ├── claude.md.jinja    # Claude agent format
-            ├── opencode.md.jinja  # Opencode agent format
-            └── qwen.md.jinja      # Qwen agent format with YAML frontmatter
+            └── opencode.md.jinja  # Opencode agent format
 
     data/                          # Additional configuration data
     └── configuration/
@@ -187,16 +183,11 @@ directory, implementing a 3-tier separation for structured agent configurations:
         │   │   ├── .gitignore
         │   │   ├── command/.gitignore   # Singular directory name
         │   │   └── agent/.gitignore     # Singular directory name
-        │   ├── gemini/
-        │   │   ├── settings.json.jinja   # Gemini base settings template
-        │   │   ├── .gitignore
-        │   │   ├── commands/.gitignore
-        │   │   └── agents/.gitignore
-        │   └── qwen/
-        │       ├── settings.json.jinja   # Qwen base settings template
-        │       ├── .gitignore            # Ignore generated content
-        │       ├── commands/.gitignore   # Generated commands ignored
-        │       └── agents/.gitignore     # Generated agents ignored
+        │   └── gemini/
+        │       ├── settings.json.jinja   # Gemini base settings template
+        │       ├── .gitignore
+        │       ├── commands/.gitignore
+        │       └── agents/.gitignore
         ├── mcp-servers.json.jinja        # Base MCP configuration
         └── {{ _copier_conf.answers_file }}.jinja  # Copier answers template
 
@@ -314,7 +305,7 @@ The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable arch
         ├── claude.py             # Claude-specific rendering
         ├── opencode.py           # Opencode-specific rendering
         ├── codex.py              # Codex rendering
-        └── qwen.py               # Qwen rendering
+        └── gemini.py             # Gemini rendering
 
 **Key Integration Features:**
 
