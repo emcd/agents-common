@@ -23,6 +23,27 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a10 (2026-04-02)
+=============================
+
+Enhancements
+------------
+
+- - CLI: Add ``agentsmgr-maintain template survey`` and
+    ``agentsmgr-maintain template validate <variant>`` commands for Copier
+    template workflows, and move generated-content validation to
+    ``agentsmgr-maintain content validate``.
+  - CI: Add ``.github/workflows/validate-template.yaml`` to exercise
+    maintainer template/content validators across variant profiles.
+
+
+Removals
+--------
+
+- - Remove Qwen Code support from Copier choices, renderer registration,
+    template coder settings, and bundled default content/templates.
+
+
 agentsmgr 1.0a9 (2026-03-03)
 ============================
 

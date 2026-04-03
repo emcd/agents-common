@@ -1,8 +1,5 @@
 # Release Final
 
-**NOTE: This is an experimental workflow! If anything seems unclear or missing,
-please stop for consultation with the user.**
-
 For execution of a fully-automated final release.
 
 Below is a validated process to create a final release with automated

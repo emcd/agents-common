@@ -40,6 +40,7 @@ coders:
         - opencode
     default:
         - claude
+        - codex
         - opencode
 
 support_local_models:
