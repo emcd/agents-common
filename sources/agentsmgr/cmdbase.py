@@ -171,11 +171,37 @@ def retrieve_variant_answers_file(
         Validates file existence and raises ConfigurationAbsence if not
         found.
     '''
-    data_directory = auxdata.provide_data_location( )
-    project_root = data_directory.parent
-    answers_file = (
-        project_root / 'tests' / 'data' / 'profiles'
-        / f"answers-{variant}.yaml" )
+    profiles_directory = provide_variant_profiles_directory( auxdata )
+    answers_file = profiles_directory / f"answers-{variant}.yaml"
     if not answers_file.exists( ):
         raise _exceptions.ConfigurationAbsence( )
     return answers_file
+
+
+def provide_variant_profiles_directory( auxdata: _core.Globals ) -> __.Path:
+    ''' Provides directory containing variant answers files. '''
+    for directory in _produce_variant_profiles_candidates( auxdata ):
+        if directory.is_dir( ): return directory
+    raise _exceptions.ConfigurationAbsence( )
+
+
+def survey_variant_names( auxdata: _core.Globals ) -> tuple[ str, ... ]:
+    ''' Surveys variant names from available answers files. '''
+    profiles_directory = provide_variant_profiles_directory( auxdata )
+    return tuple(
+        sorted(
+            fsent.stem.lstrip( 'answers-' )
+            for fsent in profiles_directory.glob( 'answers-*.yaml' )
+            if fsent.is_file( ) ) )
+
+
+def _produce_variant_profiles_candidates(
+    auxdata: _core.Globals,
+) -> tuple[ __.Path, ... ]:
+    ''' Produces candidate locations for variant answers files. '''
+    data_directory = auxdata.provide_data_location( )
+    project_root = data_directory.parent
+    return tuple( dict.fromkeys( (
+        __.Path.cwd( ) / 'tests' / 'data' / 'profiles',
+        project_root / 'tests' / 'data' / 'profiles',
+    ) ) )

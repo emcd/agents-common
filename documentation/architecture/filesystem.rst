@@ -285,7 +285,9 @@ The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable arch
 
 * ``agentsmgr detect``: Configuration detection and analysis
 * ``agentsmgr populate``: Dynamic content generation from sources
-* ``agentsmgr validate``: Configuration validation and diagnostics
+* ``agentsmgr-maintain content validate``: Content generation validation
+* ``agentsmgr-maintain template survey``: Copier variant discovery
+* ``agentsmgr-maintain template validate``: Copier template validation
 
 **Architecture Patterns:**
 

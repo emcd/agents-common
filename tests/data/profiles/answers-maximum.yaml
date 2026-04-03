@@ -1,7 +1,19 @@
+project_name: agents-template-maximum
+project_bundle_name: agents-template-maximum
 coders:
 - claude
-- opencode
+- codex
 - gemini
+- opencode
+- qwen
 languages:
 - python
 - rust
+support_local_models: true
+provide_instructions: true
+instructions_target: .auxiliary/instructions
+instructions_sources:
+- source: github:emcd/python-project-common@docs-1#documentation/common
+  files:
+    '*.rst':
+      strip_header_lines: 20

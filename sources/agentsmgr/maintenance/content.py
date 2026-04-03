@@ -18,7 +18,7 @@
 #============================================================================#
 
 
-''' Command for validating template generation in temporary directories. '''
+''' Commands for validating generated content in temporary directories. '''
 
 
 import yaml as _yaml
@@ -30,13 +30,12 @@ _scribe = __.provide_scribe( __name__ )
 
 
 class ValidateCommand( __.appcore_cli.Command ):
-    ''' Validates template generation in temporary directory. '''
+    ''' Validates content generation in temporary directory. '''
 
     variant: __.typx.Annotated[
         str,
-        __.tyro.conf.arg(
-            help = "Configuration variant to test.",
-            prefix_name = False ),
+        __.typx.Doc( ''' Configuration variant to test. ''' ),
+        __.tyro.conf.Positional,
     ] = 'default'
     preserve: __.typx.Annotated[
         bool,
@@ -47,10 +46,10 @@ class ValidateCommand( __.appcore_cli.Command ):
 
     @__.cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        ''' Validates template generation and displays result. '''
+        ''' Validates content generation and displays result. '''
         if not isinstance( auxdata, __.Globals ):  # pragma: no cover
             raise __.ContextInvalidity
-        _scribe.info( f"Validating template generation for {self.variant}" )
+        _scribe.info( f"Validating content generation for {self.variant}" )
         try: temporary_directory = __.Path( __.tempfile.mkdtemp(
             prefix = f"agents-validate-{self.variant}-" ) )
         except ( OSError, IOError ) as exception:
@@ -105,3 +104,38 @@ class ValidateCommand( __.appcore_cli.Command ):
         if not isinstance( configuration, __.cabc.Mapping ):
             raise __.ConfigurationInvalidity( )
         return __.immut.Dictionary( configuration )
+
+
+class SurveyCommand( __.appcore_cli.Command ):
+    ''' Surveys available configuration variants for content validation. '''
+
+    @__.cmdbase.intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        if not isinstance( auxdata, __.Globals ):  # pragma: no cover
+            raise __.ContextInvalidity
+        stream = await auxdata.display.provide_stream( auxdata.exits )
+        for variant in survey_variants( auxdata ):
+            print( variant, file = stream )
+
+
+class CommandDispatcher( __.appcore_cli.Command ):
+    ''' Dispatches maintainer commands for generated content validation. '''
+
+    command: __.typx.Union[
+        __.typx.Annotated[
+            SurveyCommand,
+            __.tyro.conf.subcommand( 'survey', prefix_name = False ),
+        ],
+        __.typx.Annotated[
+            ValidateCommand,
+            __.tyro.conf.subcommand( 'validate', prefix_name = False ),
+        ],
+    ] = __.dcls.field( default_factory = ValidateCommand )
+
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        await self.command( auxdata )
+
+
+def survey_variants( auxdata: __.Globals ) -> tuple[ str, ... ]:
+    ''' Surveys available configuration variants. '''
+    return __.cmdbase.survey_variant_names( auxdata )
