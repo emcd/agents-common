@@ -26,8 +26,8 @@ from pathlib import Path
 import tyro
 
 from agentsmgr import cmdbase as _cmdbase
-from agentsmgr.maintenance import content as _content
 from agentsmgr.maintenance import cli as _cli
+from agentsmgr.maintenance import content as _content
 from agentsmgr.maintenance import template as _template
 
 
