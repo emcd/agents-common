@@ -9,6 +9,9 @@ trust_level = "trusted"
 # web_search = "cached"
 
 [features]
+# Temporary mitigation for Bubblewrap/symlink approval-loop regressions.
+# Related issues: #14936 and #14694.
+use_legacy_landlock = true
 # Keep reviewer routing explicit: always surface approval requests to user.
 guardian_approval = false
 
