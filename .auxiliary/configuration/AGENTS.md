@@ -77,6 +77,9 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
 ### Scope and Noise Control
 - Prefer to update an existing related note/todo over creating a new one when context already exists.
 - Avoid logging routine, immediately completed mechanical actions in separate notes.
+  Treat rolling handoffs as checkpoint notes, not activity logs: update them near
+  compaction, after a major milestone, or after an agenda/ownership change
+  discussed with the human.
 - Create new notes/todos when information is likely to be useful across sessions or for other collaborators.
 
 ### Tagging Conventions
@@ -104,11 +107,16 @@ Use consistent tags for discoverability:
 - Recommended top-level issue types are:
     - `todos/`
     - `coordination/`
+    - `designs/` (pre-OpenSpec drafts; use `designs/<component>/` until scaffolded into `openspec/`)
     - `decisions/` (optional for durable rationale notes)
+    - `ideas/`
+    - `procedures/`
+    - `reviews/`
+    - `artifacts/` (preserved reference material: completed POCs, historical analysis)
 - Example component names include `engine`, `mcp`, `tui`, `web`, `handbook`, and `data-models`.
 - This project should define and document its specific component-folder conventions in the **Project Notes** section.
 - For cross-component work, prefer `coordination/general` and use multiple `#component-*` tags.
-- For per-component rolling handoffs, prefer `coordination/<component>` (single continuously updated note) instead of creating history chains under `handoffs/*`.
+- For per-component rolling handoffs, prefer `coordination/<component>` (one stable note updated at checkpoints).
 - Keep notebook lifecycle hygiene:
     - prune completed todos quickly,
     - keep only active/near-term coordination checkpoints,
@@ -136,9 +144,14 @@ Use consistent tags for discoverability:
 
 ## Agentmux Coordination Noise Control
 - Default to low-noise coordination. Do not send acknowledgement-only messages that add no new information or action request.
-- Send messages when you are blocked and need input, when requesting concrete review, when handing off completed work with validation, or when reporting material risk/scope change.
+- Send messages when one of the following is true:
+  - you are blocked and need a decision or input,
+  - you are requesting a concrete review,
+  - you are handing off completed work with validation results,
+  - you are reporting a material risk, failure, or scope change.
 - Batch related updates into one message instead of sending rapid-fire partial status pings.
-- Use `Cc` only for agents who need to act or review.
+- Use `Cc` only for agents who need to act or review; avoid broad `Cc` by default.
+- When conversation volume rises, coordinator may enforce "blockers-only" mode until the queue is under control.
 
 ## OpenSpec Instructions
 
@@ -159,6 +172,7 @@ Use `openspec/AGENTS.md` to learn:
 - Use `git status` to ensure all relevant changes are in the changeset.
 - Do **not** commit without explicit user approval. Unless the user has requested the commit, **ask first** for a review of your work.
 - Do **not** bypass commit safety checks (e.g., `--no-verify`, `--no-gpg-sign`) unless the user explicitly approves doing so.
+- If a commit hook rejects a commit, fix the issue, restage the intended files, and rerun `git commit` with the same message. Do **not** amend a previous commit unless the user explicitly asked for an amend.
 - Use present tense, imperative mood verbs (e.g., "Fix" not "Fixed").
 - Write sentences with proper punctuation.
 - Include a `Co-Authored-By:` field as the final line. Should include the model name and a no-reply address.
