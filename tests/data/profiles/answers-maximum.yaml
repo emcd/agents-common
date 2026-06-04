@@ -3,7 +3,6 @@ project_bundle_name: agents-template-maximum
 coders:
 - claude
 - codex
-- gemini
 - opencode
 languages:
 - python

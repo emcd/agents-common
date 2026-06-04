@@ -34,4 +34,4 @@ from .base import (
 )
 
 # Import renderer modules to populate registry
-from . import claude, codex, gemini, opencode
+from . import claude, codex, opencode

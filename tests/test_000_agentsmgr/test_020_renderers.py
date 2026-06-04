@@ -70,7 +70,6 @@ def test_022_codex_renderer_provides_codex_symlink( tmp_path ):
     (
         ( 'claude', '.claude' ),
         ( 'codex', '.codex' ),
-        ( 'gemini', '.gemini' ),
         ( 'opencode', '.config/opencode' ),
     ),
 )

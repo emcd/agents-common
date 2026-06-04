@@ -36,7 +36,6 @@ coders:
     choices:
         - claude
         - codex
-        - gemini
         - opencode
     default:
         - claude
