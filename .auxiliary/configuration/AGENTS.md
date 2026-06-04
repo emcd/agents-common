@@ -185,13 +185,34 @@ Use `openspec/AGENTS.md` to learn:
 # Commits
 
 - Use `git status` to ensure all relevant changes are in the changeset.
-- Do **not** commit without explicit user approval. Unless the user has requested the commit, **ask first** for a review of your work.
+- Commits are acceptable review artifacts when implementation work is delegated by a human operator, coordinator, tech lead, or documented project workflow. Otherwise, ask before committing.
+- Do **not** merge, push, publish review branches, or modify shared branches without explicit human approval.
 - Do **not** bypass commit safety checks (e.g., `--no-verify`, `--no-gpg-sign`) unless the user explicitly approves doing so.
 - If a commit hook rejects a commit, fix the issue, restage the intended files, and rerun `git commit` with the same message. Do **not** amend a previous commit unless the user explicitly asked for an amend.
 - Use present tense, imperative mood verbs (e.g., "Fix" not "Fixed").
 - Write sentences with proper punctuation.
 - Include a `Co-Authored-By:` field as the final line. Should include the model name and a no-reply address.
 - Avoid using `backticks` in commit messages as shell tools may evaluate them as subshell captures.
+
+## Delegated Review Flow
+
+Use this flow when multiple team members can access the same repository through branches or linked worktrees.
+
+Engineer flow:
+
+1. Implement the scoped change and run validation.
+2. Create a local/private review commit so the diff is hash-stable and hook-checked.
+3. Rebase the review branch onto the agreed base.
+4. Send the commit hash, changed-file summary, validation results, and any blockers/design questions.
+5. The reviewer approves the commit or requests changes.
+6. Amend or add a follow-up review commit when requested.
+
+Coordinator/tech-lead flow:
+
+1. Review the submitted commit and any included validation evidence.
+2. Merge/push only after explicit human approval.
+
+Prefer reviewing commits by hash. Use an explicit worktree path only for uncommitted diffs or commits in a different repository. Use patch artifacts only as a fallback when the reviewer cannot access the repository, branch, or worktree directly.
 
 # Project Notes
 
