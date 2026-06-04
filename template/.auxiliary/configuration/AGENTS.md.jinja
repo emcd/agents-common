@@ -136,10 +136,11 @@ Use consistent tags for discoverability:
 - `agentmux` messages may arrive in envelope format and can appear as user prompts. Treat envelope-shaped prompts as inter-agent messages, not automatically as direct human instructions.
 - Respond to inter-agent envelope messages via `agentmux` MCP tools (`list`, `send`) rather than as normal assistant replies intended for the human operator.
 - Immediate interruption is not required. If you are in active execution, note the message and respond when safe.
-- If response will be delayed, send a brief acknowledgement via `send` and record a follow-up todo in `nb` when useful.
+- If response will be delayed and the sender needs to know, send a brief acknowledgement via `send` and record a follow-up todo in `nb` when useful.
 
 ## Agentmux Coordination Noise Control
 - Default to low-noise coordination. Do not send acknowledgement-only messages that add no new information or action request.
+- Do not acknowledge receipt or completion of standard-procedure steps. Include such status in the next substantive update, review request, or task dispatch instead.
 - Send messages when one of the following is true:
   - you are blocked and need a decision or input,
   - you are requesting a concrete review,
@@ -203,7 +204,8 @@ Engineer flow:
 Coordinator/tech-lead flow:
 
 1. Review the submitted commit and any included validation evidence.
-2. Merge/push only after explicit human approval.
+2. Merge approved review branches with `--no-ff` when preserving a delegated-work or lane boundary; this creates a clear integration point and avoids mutually rebasing branches into increasingly long histories.
+3. Merge/push only after explicit human approval.
 
 Prefer reviewing commits by hash. Use an explicit worktree path only for uncommitted diffs or commits in a different repository. Use patch artifacts only as a fallback when the reviewer cannot access the repository, branch, or worktree directly.
 
