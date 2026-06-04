@@ -92,7 +92,6 @@ The main Python package follows the standard ``sources/`` directory pattern:
     │   │   ├── claude.py            # Claude-specific rendering logic
     │   │   ├── opencode.py          # Opencode-specific rendering logic
     │   │   ├── codex.py             # Codex rendering logic
-    │   │   └── gemini.py            # Gemini rendering logic
     │   ├── __init__.py              # Package entry point
     │   ├── py.typed                 # Type checking marker
     │   ├── __main__.py              # CLI entry point for `python -m agentsmgr`
@@ -137,17 +136,15 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │       └── python-conformer.toml      # Python code review agent
     ├── contents/                  # Coder-specific content bodies
     │   ├── commands/
-    │   │   ├── claude/            # Claude-specific content (25+ files)
-    │   │   │   ├── cs-conform-python.md
-    │   │   │   ├── cs-release-final.md
-    │   │   │   ├── cs-architect.md
-    │   │   │   └── [22+ additional command contents]
-    │   │   └── gemini/            # Gemini-specific content (minimal)
+    │   │   └── claude/            # Claude-specific content (25+ files)
+    │   │       ├── cs-conform-python.md
+    │   │       ├── cs-release-final.md
+    │   │       ├── cs-architect.md
+    │   │       └── [22+ additional command contents]
     │   └── agents/
     │       ├── claude/
     │       │   └── python-conformer.md
-    │       ├── opencode/          # Opencode-specific agent content
-    │       └── gemini/            # Gemini-specific agent content
+    │       └── opencode/          # Opencode-specific agent content
     ├── user/                      # Per-user files and executables
     │   ├── configurations/        # Per-user global settings
     │   │   └── claude/
@@ -156,8 +153,7 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │   └── executables/           # Wrapper scripts for user bin directory
     └── templates/                 # Pioneer-named template flavors by coder
         ├── commands/
-        │   ├── claude.md.jinja    # Markdown commands (Claude, Opencode, Codex)
-        │   └── gemini.toml.jinja  # TOML commands (Gemini)
+        │   └── claude.md.jinja    # Markdown commands (Claude, Opencode, Codex)
         └── agents/
             ├── claude.md.jinja    # Claude agent format
             └── opencode.md.jinja  # Opencode agent format
@@ -178,16 +174,11 @@ directory, implementing a 3-tier separation for structured agent configurations:
         │   │   │   └── pre-bash-git-commit-check
         │   │   ├── commands/.gitignore   # Generated commands ignored
         │   │   └── agents/.gitignore     # Generated agents ignored
-        │   ├── opencode/
-        │   │   ├── settings.jsonc.jinja  # Opencode base settings template
-        │   │   ├── .gitignore
-        │   │   ├── command/.gitignore   # Singular directory name
-        │   │   └── agent/.gitignore     # Singular directory name
-        │   └── gemini/
-        │       ├── settings.json.jinja   # Gemini base settings template
+        │   └── opencode/
+        │       ├── settings.jsonc.jinja  # Opencode base settings template
         │       ├── .gitignore
-        │       ├── commands/.gitignore
-        │       └── agents/.gitignore
+        │       ├── command/.gitignore   # Singular directory name
+        │       └── agent/.gitignore     # Singular directory name
         ├── mcp-servers.json.jinja        # Base MCP configuration
         └── {{ _copier_conf.answers_file }}.jinja  # Copier answers template
 
@@ -305,7 +296,6 @@ The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable arch
         ├── claude.py             # Claude-specific rendering
         ├── opencode.py           # Opencode-specific rendering
         ├── codex.py              # Codex rendering
-        └── gemini.py             # Gemini rendering
 
 **Key Integration Features:**
 

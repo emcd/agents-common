@@ -4,7 +4,6 @@ _src_path: .
 coders:
 - claude
 - codex
-- gemini
 - opencode
 instructions_sources:
 -   files:

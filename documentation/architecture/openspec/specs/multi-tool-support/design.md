@@ -97,20 +97,19 @@ def get_template_flavor(self, item_type: str) -> str:
 **Flavor mappings**:
 - `'claude'`: Markdown format pioneered by Claude Code (used by Claude, Codex, OpenCode commands)
 - `'opencode'`: OpenCode-specific agent format (used by OpenCode agents only)
-- `'gemini'`: TOML format pioneered by Gemini (future use)
 
 ContentGenerator uses the flavor system when resolving template paths, looking up the renderer's preferred flavor and constructing the template path accordingly. This enables Claude and OpenCode to share command templates while using different agent formats.
 
 ### Content Fallback Mechanism
 
-ContentGenerator implements intelligent fallback for coder-specific content bodies. Configuration specifies fallback mappings (e.g., Claude ↔ OpenCode bidirectional fallback, Gemini isolated).
+ContentGenerator implements intelligent fallback for coder-specific content bodies. Configuration specifies fallback mappings (e.g., Claude ↔ OpenCode bidirectional fallback).
 
 **Resolution logic**:
 1. Try `contents/{coder}/{item_type}/{item_name}.md`
 2. If missing and fallback configured, try `contents/{fallback_coder}/{item_type}/{item_name}.md`
 3. If still missing, raise ContentAbsence exception
 
-**Design rationale**: Reduces duplication for coders with compatible markdown formats (Claude ↔ OpenCode) while maintaining isolation for incompatible formats (Gemini).
+**Design rationale**: Reduces duplication for coders with compatible markdown formats (Claude ↔ OpenCode) while maintaining isolation for incompatible formats.
 
 ### Targeting Mode Support
 

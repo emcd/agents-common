@@ -100,7 +100,7 @@ class RendererBase( __.immut.Object ):
 
             Returns the name of the pioneering coder whose template format
             should be used for this item type. For example, Claude pioneered
-            the markdown command format, Gemini pioneered the TOML format.
+            the markdown command format.
             Each coder specifies which flavor it uses for each item type.
         '''
         return 'claude'
