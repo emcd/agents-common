@@ -31,7 +31,7 @@ def _defaults_location( ) -> Path:
     return project_root / 'defaults'
 
 
-def test_100_skills_render_to_skill_md_under_skill_directory( tmp_path ):
+def test_100_skills_copy_to_skill_md_under_skill_directory( tmp_path ):
     generator_module = __.cache_import_module( 'agentsmgr.generator' )
     ContentGenerator = generator_module.ContentGenerator
     generator = ContentGenerator(
@@ -41,20 +41,20 @@ def test_100_skills_render_to_skill_md_under_skill_directory( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'project-triage', 'claude', tmp_path )
+        'skills', 'cs-review-todos', 'claude', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/claude/skills/project-triage/SKILL.md'
+        '.auxiliary/configuration/coders/claude/skills/cs-review-todos/SKILL.md'
     )
-    assert 'name: "project-triage"' in rendered.content
+    assert 'name: "cs-review-todos"' in rendered.content
     assert (
-        'description: "Triage a repository and propose a focused next step."'
+        'description: "Review open todos and issues in the project'
+        ' notebook using the nb MCP server."'
         in rendered.content
     )
-    assert 'allowed-tools: "Glob, Grep, Read"' in rendered.content
 
 
-def test_200_skills_omit_allowed_tools_when_unsupported( tmp_path ):
+def test_200_skills_are_portable_across_coders( tmp_path ):
     generator_module = __.cache_import_module( 'agentsmgr.generator' )
     ContentGenerator = generator_module.ContentGenerator
     generator = ContentGenerator(
@@ -64,12 +64,12 @@ def test_200_skills_omit_allowed_tools_when_unsupported( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'project-triage', 'codex', tmp_path )
+        'skills', 'cs-review-todos', 'codex', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/codex/skills/project-triage/SKILL.md'
+        '.auxiliary/configuration/coders/codex/skills/cs-review-todos/SKILL.md'
     )
-    assert 'allowed-tools:' not in rendered.content
+    assert 'name: "cs-review-todos"' in rendered.content
 
 
 def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
@@ -85,8 +85,8 @@ def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'project-triage', 'opencode', tmp_path )
+        'skills', 'cs-review-todos', 'opencode', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/opencode/skills/project-triage/SKILL.md'
+        '.auxiliary/configuration/coders/opencode/skills/cs-review-todos/SKILL.md'
     )
