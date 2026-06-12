@@ -1,8 +1,5 @@
 # Release Patch
 
-**NOTE: This is an experimental workflow! If anything seems unclear or missing,
-please stop for consultation with the user.**
-
 For execution of a fully-automated postrelease patch.
 
 Below is a validated process to create patch releases with automated monitoring

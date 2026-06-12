@@ -1,8 +1,5 @@
 # Release Checkpoint
 
-**NOTE: This is an experimental workflow! If anything seems unclear or missing,
-please stop for consultation with the user.**
-
 For execution of an automated alpha checkpoint release on master branch.
 
 Below is a validated process to create an alpha checkpoint release with automated

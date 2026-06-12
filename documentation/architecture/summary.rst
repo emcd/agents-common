@@ -88,7 +88,7 @@ The system implements a template-of-templates architecture for dynamic content g
 - Copier template for settings.json.jinja and directory structure
 - Hook scripts for pre/post tool use validation
 - .gitignore files prevent committing generated content
-- Multi-coder support (Claude, Opencode, Gemini base templates)
+- Multi-coder support (Claude, Opencode base templates)
 
 Hybrid Distribution Architecture
 -------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ The system implements a dual-channel distribution model:
 
 4. **Coder-Specific Rendering** (agentsmgr.renderers):
    - Claude renderer with per-user and per-project targeting
-   - Opencode, Codex, and Gemini renderers for multi-tool support
+   - Opencode and Codex renderers for multi-tool support
    - Base renderer class defining target mode contracts and template flavor selection
 
 5. **Target Projects**:

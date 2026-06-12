@@ -1,10 +1,9 @@
 # Changes here will be overwritten by Copier
-_commit: v1.0a9-12-g2af1ccb
+_commit: v1.0a10-19-gc9fa099
 _src_path: .
 coders:
 - claude
 - codex
-- gemini
 - opencode
 instructions_sources:
 -   files:
