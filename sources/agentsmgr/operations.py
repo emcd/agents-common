@@ -114,14 +114,18 @@ def generate_coder_item_type(
     ''' Generates items of specific type for a coder.
 
         Generates all items (commands or agents) for specified coder by
-        iterating through configuration files. Pre-checks content
-        availability and skips items with missing content. Returns tuple
-        of (items_attempted, items_written).
+        iterating through configuration files. For skills, discovers
+        items from contents/skills/*.md since skills have no TOML
+        configuration. Pre-checks content availability and skips items
+        with missing content. Returns tuple of (items_attempted,
+        items_written).
     '''
     items_attempted = 0
     items_written = 0
     if generator.mode == 'nowhere':
         return ( items_attempted, items_written )
+    if item_type == 'skills':
+        return _generate_skills( generator, coder, target, simulate )
     configuration_directory = (
         generator.location / 'configurations' / item_type )
     if not configuration_directory.exists( ):
@@ -136,6 +140,34 @@ def generate_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, target )
+        if save_content( result.content, result.location, simulate ):
+            items_written += 1
+    return ( items_attempted, items_written )
+
+
+def _generate_skills(
+    generator: _generator.ContentGenerator,
+    coder: str,
+    target: __.Path,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Generates skills for a coder from contents/skills/*.md.
+
+        Skills are portable across coders and have no TOML
+        configuration files. Discovery iterates markdown files in the
+        contents/skills directory. Returns tuple of (items_attempted,
+        items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    skills_directory = generator.location / 'contents' / 'skills'
+    if not skills_directory.exists( ):
+        return ( items_attempted, items_written )
+    for skill_file in skills_directory.glob( '*.md' ):
+        item_name = skill_file.stem
+        items_attempted += 1
+        result = generator.render_single_item(
+            'skills', item_name, coder, target )
         if save_content( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
