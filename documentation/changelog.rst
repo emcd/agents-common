@@ -23,6 +23,16 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a11 (2026-06-11)
+=============================
+
+Removals
+--------
+
+- Remove Gemini CLI support from Copier choices, renderer registration,
+  template coder settings, and bundled default content/templates.
+
+
 agentsmgr 1.0a10 (2026-04-02)
 =============================
 
