@@ -87,3 +87,47 @@ def test_023_renderers_accept_string_coders_for_per_user_defaults(
         environment = { },
     )
     assert base == __.Path.home( ) / expected_tail
+
+
+def test_024_filter_coders_by_mode_warns_on_unknown_coder( ):
+    population = __.cache_import_module( 'agentsmgr.population' )
+    filtered = population._filter_coders_by_mode(
+        [ 'claude', 'nonexistent_coder', 'codex' ],
+        'per-project',
+    )
+    assert 'claude' in filtered
+    assert 'codex' in filtered
+    assert 'nonexistent_coder' not in filtered
+
+
+def test_025_resolve_coders_yields_known_coders( ):
+    resolver = __.cache_import_module( 'agentsmgr.resolver' )
+    results = dict( resolver.resolve_coders( [ 'claude', 'codex' ] ) )
+    assert 'claude' in results
+    assert 'codex' in results
+    assert len( results ) == 2
+
+
+def test_026_resolve_coders_skips_unknown_coders( ):
+    resolver = __.cache_import_module( 'agentsmgr.resolver' )
+    results = dict( resolver.resolve_coders(
+        [ 'claude', 'nonexistent_coder', 'codex' ] ) )
+    assert 'claude' in results
+    assert 'codex' in results
+    assert 'nonexistent_coder' not in results
+    assert len( results ) == 2
+
+
+def test_027_resolve_coders_filters_by_mode( ):
+    resolver = __.cache_import_module( 'agentsmgr.resolver' )
+    results = dict( resolver.resolve_coders(
+        [ 'claude', 'codex' ], mode = 'per-project' ) )
+    assert 'claude' in results
+    assert 'codex' in results
+
+
+def test_028_resolve_coders_excludes_non_matching_mode( ):
+    resolver = __.cache_import_module( 'agentsmgr.resolver' )
+    results = dict( resolver.resolve_coders(
+        [ 'claude', 'codex' ], mode = 'per-user' ) )
+    assert len( results ) == 0

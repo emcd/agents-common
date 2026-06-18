@@ -32,7 +32,7 @@ import toml as _toml
 
 from . import __
 from . import exceptions as _exceptions
-from . import renderers as _renderers
+from . import resolver as _resolver
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -65,13 +65,10 @@ def populate_globals(
         return ( 0, 0 )
     files_attempted = 0
     files_updated = 0
-    for coder in coders:
+    for coder, renderer in _resolver.resolve_coders( coders ):
         coder_globals = globals_directory / coder
         if not coder_globals.exists( ):
             continue
-        try: renderer = _renderers.RENDERERS[ coder ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder ) from exception
         per_user_directory = renderer.resolve_base_directory(
             mode = 'per-user',
             target = __.Path.cwd( ),

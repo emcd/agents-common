@@ -30,6 +30,7 @@ from . import instructions as _instructions
 from . import memorylinks as _memorylinks
 from . import operations as _operations
 from . import renderers as _renderers
+from . import resolver as _resolver
 from . import results as _results
 from . import userdata as _userdata
 
@@ -50,7 +51,6 @@ TargetArgument: __.typx.TypeAlias = __.typx.Annotated[
 def _filter_coders_by_mode(
     coders: __.cabc.Sequence[ str ],
     target_mode: _renderers.ExplicitTargetMode,
-    renderers: __.cabc.Mapping[ str, __.typx.Any ],
 ) -> tuple[ str, ... ]:
     ''' Filters coders by their default targeting mode.
 
@@ -59,18 +59,11 @@ def _filter_coders_by_mode(
         and populate user only handles per-user coders, respecting each
         renderer's designed usage pattern.
     '''
-    filtered: list[ str ] = [ ]
-    for coder_name in coders:
-        try: renderer = renderers[ coder_name ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder_name ) from exception
-        if renderer.mode_default == target_mode:
-            filtered.append( coder_name )
-        else:
-            _scribe.debug(
-                f"Skipping {coder_name} for {target_mode} mode: "
-                f"default mode is {renderer.mode_default}" )
-    return tuple( filtered )
+    return tuple(
+        name
+        for name, _renderer in _resolver.resolve_coders(
+            coders, mode = target_mode )
+    )
 
 
 def _create_all_symlinks(
@@ -92,7 +85,6 @@ def _create_all_symlinks(
         _memorylinks.create_memory_symlinks_for_coders(
             coders = configuration[ 'coders' ],
             target = target,
-            renderers = _renderers.RENDERERS,
             simulate = simulate,
         ) )
     all_symlink_names.extend( symlink_names_memory )
@@ -102,7 +94,8 @@ def _create_all_symlinks(
     needs_coder_symlinks = (
         mode == 'per-project'
         or ( mode == 'default' and any(
-            _renderers.RENDERERS[ coder ].mode_default == 'per-project'
+            coder in _renderers.RENDERERS
+            and _renderers.RENDERERS[ coder ].mode_default == 'per-project'
             for coder in configuration[ 'coders' ] ) ) )
     if needs_coder_symlinks:
         (   coder_symlinks_attempted,
@@ -111,7 +104,6 @@ def _create_all_symlinks(
             _create_coder_directory_symlinks(
                 coders = configuration[ 'coders' ],
                 target = target,
-                renderers = _renderers.RENDERERS,
                 simulate = simulate,
             ) )
         all_symlink_names.extend( coder_symlink_names )
@@ -178,10 +170,7 @@ def _populate_per_user_content(
     '''
     items_attempted = 0
     items_generated = 0
-    for coder_name in coders:
-        try: renderer = _renderers.RENDERERS[ coder_name ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder_name ) from exception
+    for coder_name, renderer in _resolver.resolve_coders( coders ):
         coder_configuration = { 'coders': [ coder_name ] }
         generator = _generator.ContentGenerator(
             location = location,
@@ -201,7 +190,6 @@ def _populate_per_user_content(
 def _create_coder_directory_symlinks(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
-    renderers: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool = False,
 ) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Creates symlinks from .{coder} to .auxiliary/configuration/coders/.
@@ -226,15 +214,9 @@ def _create_coder_directory_symlinks(
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
-    for coder_name in coders:
-        try: renderer = renderers[ coder_name ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder_name ) from exception
-        if renderer.mode_default != 'per-project':
-            _scribe.debug(
-                f"Skipping directory symlink for {coder_name}: "
-                f"default mode is {renderer.mode_default}" )
-            continue
+    for coder_name, renderer in _resolver.resolve_coders(
+        coders, mode = 'per-project'
+    ):
         for source, link_path in renderer.provide_project_symlinks( target ):
             attempted += 1
             was_created, symlink_name = (
@@ -335,7 +317,7 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         configuration = await _cmdbase.retrieve_configuration(
             self.target, self.profile )
         per_project_coders = _filter_coders_by_mode(
-            configuration[ 'coders' ], 'per-project', _renderers.RENDERERS )
+            configuration[ 'coders' ], 'per-project' )
         if not per_project_coders:
             _scribe.warning(
                 "No per-project default coders found in configuration" )
@@ -415,7 +397,7 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         configuration = await _cmdbase.retrieve_configuration(
             __.Path.cwd( ), self.profile )
         per_user_coders = _filter_coders_by_mode(
-            configuration[ 'coders' ], 'per-user', _renderers.RENDERERS )
+            configuration[ 'coders' ], 'per-user' )
         if not per_user_coders:
             _scribe.warning(
                 "No per-user default coders found in configuration" )
