@@ -46,17 +46,15 @@
     },
     "build": {
       "mode": "primary",
-      // "model": "zai-coding-plan/glm-4.7"
-      // "model": "deepseek/deepseek-chat"
-      // "model": "minimax-coding-plan/MiniMax-M2.7"
-      "model": "openai/gpt-5.5"
+      // "model": "openai/gpt-5.5"
+      // "model": "xiaomi-token-plan-sgp/mimo-v2.5-pro"
+      "model": "minimax-coding-plan/MiniMax-M3"
     },
     "plan": {
       "mode": "primary",
-      // "model": "zai-coding-plan/glm-4.7"
-      // "model": "deepseek/deepseek-chat"
-      // "model": "minimax-coding-plan/MiniMax-M2.7"
-      "model": "openai/gpt-5.5"
+      // "model": "openai/gpt-5.5"
+      // "model": "xiaomi-token-plan-sgp/mimo-v2.5-pro"
+      "model": "minimax-coding-plan/MiniMax-M3"
     }
   },
 
