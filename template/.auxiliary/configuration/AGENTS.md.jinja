@@ -209,7 +209,26 @@ Coordinator/tech-lead flow:
 
 Prefer reviewing commits by hash. Use an explicit worktree path only for uncommitted diffs or commits in a different repository. Use patch artifacts only as a fallback when the reviewer cannot access the repository, branch, or worktree directly.
 
+## Review Request Packet
+
+For non-trivial delegated work, review requests should include:
+
+- Base branch and intended merge target.
+- Complete commit list with hashes and one-line descriptions.
+- Validation commands run and results, including skipped checks or known gaps.
+- Intended contract: what must be true after the change lands.
+- Review concerns, if any: genuine uncertainty or risky areas only.
+- Known risks, accepted tradeoffs, deferred items, or intentional branch staleness.
+
+Author-provided review concerns are supplemental context, not a limit on review scope. Independent inspection remains the reviewer responsibility.
+
 # Project Notes
 
 <!-- This section accumulates project-specific knowledge, constraints, and deviations.
-     For structured items, use documentation/architecture/decisions/ and `nb`. -->
+     For structured items, use `nb`.
+
+     TODO: If this project uses multiple agent/worktree roles, create a stable
+     team-organization note in `nb`, modeled after one of the examples at:
+     https://raw.githubusercontent.com/emcd/agents-common/master/examples/nb-notes/team-organization/README.md
+     Then link the note here, for example:
+     - Team org, role ownership, signoff policy, and merge workflow: `coordination/general/<n>` -->
