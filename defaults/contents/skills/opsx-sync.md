@@ -1,5 +1,5 @@
 ---
-name: "cs-opsx-sync"
+name: "opsx-sync"
 description: "Sync delta specs from an OpenSpec change to main specs."
 ---
 

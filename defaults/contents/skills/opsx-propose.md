@@ -1,5 +1,5 @@
 ---
-name: "cs-opsx-propose"
+name: "opsx-propose"
 description: "Propose a new OpenSpec change - create it and generate all artifacts in one step."
 ---
 
@@ -12,7 +12,7 @@ Artifacts created:
 - design.md (how)
 - tasks.md (implementation steps)
 
-When ready to implement, use `cs-opsx-apply`.
+When ready to implement, use `opsx-apply`.
 
 ## Process
 

@@ -1,5 +1,5 @@
 ---
-name: "cs-opsx-apply"
+name: "opsx-apply"
 description: "Implement tasks from an approved OpenSpec change."
 ---
 

@@ -7,8 +7,8 @@ The system SHALL distribute OPSX workflow skills as portable agentsmgr defaults 
 #### Scenario: OPSX skill set
 - **WHEN** OPSX skills are distributed through agentsmgr
 - **THEN** skills cover the complete OPSX workflow (`propose`, `apply`, `archive`, `explore`, `sync`)
-- **AND** skills use the `cs-opsx-*` naming convention
-- **AND** skills are discovered from `defaults/contents/skills/cs-opsx-*.md`
+- **AND** skills use the `opsx-*` naming convention
+- **AND** skills are discovered from `defaults/contents/skills/opsx-*.md`
 
 #### Scenario: Skill portability
 - **WHEN** OPSX skills are generated for a coder

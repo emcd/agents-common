@@ -5,11 +5,11 @@ deliver workflow instructions through the agentsmgr distribution pipeline.
 
 ## Workflow
 
-- `cs-opsx-propose` -- create a complete change proposal in one step.
-- `cs-opsx-explore` -- think through ideas before committing to a change.
-- `cs-opsx-apply` -- implement tasks from an approved change.
-- `cs-opsx-sync` -- sync delta specs into main specs.
-- `cs-opsx-archive` -- archive a completed change.
+- `opsx-propose` -- create a complete change proposal in one step.
+- `opsx-explore` -- think through ideas before committing to a change.
+- `opsx-apply` -- implement tasks from an approved change.
+- `opsx-sync` -- sync delta specs into main specs.
+- `opsx-archive` -- archive a completed change.
 
 ## CLI State Queries
 

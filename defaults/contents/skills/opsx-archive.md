@@ -1,5 +1,5 @@
 ---
-name: "cs-opsx-archive"
+name: "opsx-archive"
 description: "Archive a completed OpenSpec change and update specs."
 ---
 
@@ -42,7 +42,7 @@ Prompt options:
 - If changes needed: "Sync now (recommended)", "Archive without syncing"
 - If already synced: "Archive now", "Sync anyway", "Cancel"
 
-If user chooses sync, invoke `cs-opsx-sync` for the change. Proceed to archive regardless of choice.
+If user chooses sync, invoke `opsx-sync` for the change. Proceed to archive regardless of choice.
 
 ### 5. Perform the Archive
 

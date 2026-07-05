@@ -13,8 +13,8 @@ transition to nbspec via OpenSpec 1.5 flexible schemata.
 
 - Delete old `openspec-*` commands (proposal, apply, archive) from
   `defaults/per-project/resources/` for both coders.
-- Add curated OPSX skills (`cs-opsx-propose`, `cs-opsx-apply`,
-  `cs-opsx-archive`, `cs-opsx-explore`, `cs-opsx-sync`) under
+- Add curated OPSX skills (`opsx-propose`, `opsx-apply`,
+  `opsx-archive`, `opsx-explore`, `opsx-sync`) under
   `defaults/contents/skills/` for portable distribution across coders.
   Skills cover the same workflow as the old commands; explicit coder-specific
   command defaults are not needed since the body content is identical.
@@ -37,7 +37,7 @@ transition to nbspec via OpenSpec 1.5 flexible schemata.
 - Affected code:
   - `defaults/per-project/resources/opencode/command/openspec-*.md` (delete)
   - `defaults/per-project/resources/claude/commands/openspec/*.md` (delete)
-  - `defaults/contents/skills/cs-opsx-*.md` (add)
+  - `defaults/contents/skills/opsx-*.md` (add)
   - `template/documentation/architecture/openspec/AGENTS.md` (delete)
   - `template/documentation/architecture/openspec/config.yaml.jinja` (add)
   - `template/documentation/agents/openspec.md` (rewrite)
