@@ -6,10 +6,12 @@ Use this flow when multiple team members can access the same repository through 
 
 1. Implement the scoped change and run validation.
 2. Create a local/private review commit so the diff is hash-stable and hook-checked.
-3. Rebase the review branch onto the agreed base.
+3. Rebase the review branch onto the agreed local integration base.
 4. Send the commit hash, changed-file summary, validation results, and any blockers/design questions.
 5. The reviewer approves the commit or requests changes.
 6. Amend or add a follow-up review commit when requested.
+
+The agreed local integration base is a Git ref in the current repository, such as local `master` or a local lane integration branch. It is not a filesystem path and is not a remote-tracking ref. Do not use `origin/master`, another `origin/*` ref, a path like `/path/to/repo/master`, or a raw commit hash as the rebase base unless the coordinator explicitly names that exact ref or hash. When in doubt, ask for the local branch/ref name before rebasing.
 
 ## Coordinator/Tech-Lead Flow
 
@@ -23,7 +25,7 @@ Prefer reviewing commits by hash. Use an explicit worktree path only for uncommi
 
 For non-trivial delegated work, review requests should include:
 
-- Base branch and intended merge target.
+- Local rebase base and intended merge target. These may differ; the rebase base is usually a local branch/ref, while the merge target may be a shared branch.
 - Complete commit list with hashes and one-line descriptions.
 - Validation commands run and results, including skipped checks or known gaps.
 - Intended contract: what must be true after the change lands.
@@ -34,14 +36,16 @@ Author-provided review concerns are supplemental context, not a limit on review 
 
 # Reviewing Stacked Commits
 
-When feedback targets a specific commit inside a **stack** of multiple unmerged, unpushed commits, use `git commit --fixup <target-hash>` instead of manually editing history to reach a non-HEAD commit. Fold the stack with `--autosquash`, which requires `-i` explicitly — `--autosquash` alone is a silent no-op.
+When feedback targets a specific commit inside a **stack** of multiple unmerged, unpushed commits, use `git commit --fixup <target-hash>` instead of manually editing history to reach a non-HEAD commit. Fold the stack with `--autosquash`, which requires `-i` explicitly — `--autosquash` alone is a silent no-op. Use the local integration base as the rebase base.
 
 Preview the fold before applying:
 
 ```sh
-GIT_SEQUENCE_EDITOR="sh -c 'cat \"$1\" >&2; exit 1' --" git rebase -i --autosquash <base>
+GIT_SEQUENCE_EDITOR="sh -c 'cat \"$1\" >&2; exit 1' --" git rebase -i --autosquash <local-integration-base>
 ```
 
 This prints the rebase plan to stderr and aborts cleanly (no rebase state left behind). Read the plan before running for real.
 
-To apply the fold: `git rebase -i --autosquash <base>`. If the result is wrong, recover with `git reset --hard ORIG_HEAD` — git sets `ORIG_HEAD` to the exact pre-rebase position regardless of how far back `<base>` was.
+To apply the fold: `git rebase -i --autosquash <local-integration-base>`. If the result is wrong, recover with `git reset --hard ORIG_HEAD` — git sets `ORIG_HEAD` to the exact pre-rebase position regardless of how far back `<local-integration-base>` was.
+
+For example, run `git rebase master` from the worktree branch when the coordinator says to rebase onto local `master`. Do not write `git rebase /path/to/repo/master`; that is a filesystem path, not a Git ref.
