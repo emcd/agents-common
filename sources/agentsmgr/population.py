@@ -448,7 +448,7 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
                 location,
                 filtered_configuration[ 'coders' ],
                 self.target,
-                configuration,
+                filtered_configuration,
                 'per-project',
                 self.simulate ) )
         if items_attempted > 0:

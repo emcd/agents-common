@@ -28,6 +28,8 @@
 
 from pathlib import Path
 
+import tyro
+
 from . import __
 
 
@@ -39,6 +41,55 @@ def _distribution_location( ) -> Path:
 def _components_location( ) -> Path:
     project_root = Path( __file__ ).resolve( ).parents[ 2 ]
     return project_root / 'components'
+
+
+def _project_root( ) -> Path:
+    return Path( __file__ ).resolve( ).parents[ 2 ]
+
+
+def _repository_git_directory( ) -> Path:
+    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
+    return ( project_root / '.git' ).resolve( )
+
+
+def _create_agents_answers_file( target: Path ) -> None:
+    configuration_directory = target / '.auxiliary' / 'configuration'
+    configuration_directory.mkdir( parents = True, exist_ok = True )
+    ( configuration_directory / 'copier-answers--agents.yaml' ).write_text(
+        '\n'.join( (
+            'coders:',
+            '- claude',
+            '- opencode',
+            'languages:',
+            '- python',
+            'provide_instructions: true',
+            'instructions_target: .auxiliary/instructions',
+        ) ) + '\n',
+        encoding = 'utf-8' )
+    ( configuration_directory / 'AGENTS.md' ).write_text(
+        'test', encoding = 'utf-8' )
+
+
+def _populate_project( distribution: Path, target: Path ) -> None:
+    ''' Populates a project through the public application command path. '''
+    import asyncio as _asyncio
+    import contextlib as _contextlib
+    cli_module = __.cache_import_module( 'agentsmgr.cli' )
+    async def run_application( ) -> None:
+        application = tyro.cli(
+            cli_module.Application,
+            args = [
+                '--display.no-colorize',
+                'populate',
+                'project',
+                str( distribution ),
+                str( target ),
+            ],
+        )
+        async with _contextlib.AsyncExitStack( ) as exits:
+            auxdata = await application.prepare( exits )
+            await application.execute( auxdata )
+    _asyncio.run( run_application( ) )
 
 
 def test_100_populate_accepts_distribution_shape( tmp_path ):
@@ -161,8 +212,6 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
         distribution files are removed.
     '''
     import shutil
-    population_module = __.cache_import_module( 'agentsmgr.population' )
-    operations_module = __.cache_import_module( 'agentsmgr.operations' )
     # Use a temp copy of distribution to avoid mutating tracked files
     source_location = _distribution_location( )
     location = tmp_path / 'distribution'
@@ -174,23 +223,10 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     if not has_git:
         import pytest
         pytest.skip( "git not available in test environment" )
+    _create_agents_answers_file( target )
     exclude_file = target / '.git' / 'info' / 'exclude'
-    configuration = {
-        'coders': [ 'claude', 'opencode' ],
-        'languages': [ 'python' ],
-    }
     # First populate
-    _, _, exclude_entries = (
-        population_module._copy_distribution_items(
-            location,
-            [ 'claude', 'opencode' ],
-            target,
-            configuration,
-            'per-project',
-            simulate = False,
-        ) )
-    operations_module.update_git_exclude(
-        target, exclude_entries, simulate = False )
+    _populate_project( location, target )
     # Read exclude file
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
@@ -200,6 +236,13 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     assert (
         '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
         in exclude_content )
+    assert '/.claude' in exclude_content
+    assert '/.opencode' in exclude_content
+    assert '/.mcp.json' in exclude_content
+    assert '/AGENTS.md' in exclude_content
+    assert '/CLAUDE.md' in exclude_content
+    assert '/opencode.jsonc' in exclude_content
+    assert '/openspec' in exclude_content
     # Verify no directory-level entries for generated artifacts
     assert (
         '/.auxiliary/configuration/coders/claude/commands\n'
@@ -212,17 +255,7 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
         location / 'per-project' / 'coders' / 'claude' / 'commands'
         / 'cs-architect.md' )
     stale_file.unlink( )
-    _, _, exclude_entries2 = (
-        population_module._copy_distribution_items(
-            location,
-            [ 'claude', 'opencode' ],
-            target,
-            configuration,
-            'per-project',
-            simulate = False,
-        ) )
-    operations_module.update_git_exclude(
-        target, exclude_entries2, simulate = False )
+    _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
@@ -232,6 +265,27 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     assert (
         '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
         in exclude_content2 )
+    assert '/.opencode' in exclude_content2
+
+
+def test_650_git_exclude_ignores_ambient_git_dir( tmp_path, monkeypatch ):
+    ''' Explicit target should control which git exclude file is updated. '''
+    operations_module = __.cache_import_module( 'agentsmgr.operations' )
+    decoy = tmp_path / 'decoy'
+    decoy.mkdir( )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    if not _init_git_repo( decoy ) or not _init_git_repo( target ):
+        import pytest
+        pytest.skip( "git not available in test environment" )
+    decoy_exclude = decoy / '.git' / 'info' / 'exclude'
+    target_exclude = target / '.git' / 'info' / 'exclude'
+    decoy_before = decoy_exclude.read_text( encoding = 'utf-8' )
+    monkeypatch.setenv( 'GIT_DIR', str( decoy / '.git' ) )
+    operations_module.update_git_exclude(
+        target, ( '.codex', ), simulate = False )
+    assert decoy_exclude.read_text( encoding = 'utf-8' ) == decoy_before
+    assert '/.codex' in target_exclude.read_text( encoding = 'utf-8' )
 
 
 def test_700_instructions_copied_from_distribution( tmp_path ):
@@ -339,23 +393,24 @@ def _init_git_repo( path: Path ) -> bool:
         directory structure if git is not available.
         Returns True if a real git repo was created, False otherwise.
     '''
+    import os as _os
     import shutil as _shutil
     import subprocess as _sp
+    assert path.resolve( ) != _project_root( )
+    assert path.resolve( ) != _repository_git_directory( )
+    assert ( path / '.git' ).resolve( ) != _repository_git_directory( )
     git = _shutil.which( 'git' )
     if git:
+        environment = {
+            key: value for key, value in _os.environ.items( )
+            if not key.startswith( 'GIT_' )
+        }
         result = _sp.run(  # noqa: S603
             [ git, 'init' ], cwd = str( path ),
-            capture_output = True, check = False )
-        if result.returncode == 0:
-            _sp.run(  # noqa: S603
-                [ git, 'config', 'user.email', 'test@test.com' ],
-                cwd = str( path ), capture_output = True, check = True )
-            _sp.run(  # noqa: S603
-                [ git, 'config', 'user.name', 'Test' ],
-                cwd = str( path ), capture_output = True, check = True )
-            # Verify git created the exclude file
-            if ( path / '.git' / 'info' / 'exclude' ).exists( ):
-                return True
+            capture_output = True, check = False, env = environment )
+        if ( result.returncode == 0
+             and ( path / '.git' / 'info' / 'exclude' ).exists( ) ):
+            return True
     # Fallback: create minimal git structure for dulwich
     git_dir = path / '.git'
     info_dir = git_dir / 'info'

@@ -179,9 +179,8 @@ def update_git_exclude(
         lexicographically within the block. User entries outside the
         managed block are preserved.
 
-        Handles GIT_DIR environment variable and git worktrees by
-        resolving the actual git directory location and using the common
-        git directory for shared resources.
+        Uses repository discovery from the explicit target and uses the
+        common git directory for shared resources in worktrees.
 
         Returns count of entries in managed block.
     '''
@@ -289,20 +288,15 @@ def _partition_around_managed_block(
 def _resolve_git_directory(
     start_path: __.Path
 ) -> __.typx.Optional[ __.Path ]:
-    ''' Resolves git directory location, handling GIT_DIR and worktrees.
+    ''' Resolves git directory location, handling worktrees.
 
-        Checks GIT_DIR environment variable first, then uses Dulwich to
-        discover repository. Returns common git directory (shared across
-        worktrees) for access to shared resources like info/exclude.
+        Uses Dulwich to discover the repository from the explicit target.
+        Returns common git directory (shared across worktrees) for access
+        to shared resources like info/exclude.
 
         Returns None if not in a git repository or on error.
     '''
     from dulwich.repo import Repo
-    git_dir_env = __.os.environ.get( 'GIT_DIR' )
-    if git_dir_env:
-        git_dir_path = __.Path( git_dir_env )
-        if git_dir_path.exists( ) and git_dir_path.is_dir( ):
-            return _discover_common_git_directory( git_dir_path )
     try: repo = Repo.discover( str( start_path ) )
     except Exception: return None
     git_dir_path = __.Path( repo.controldir( ) )
