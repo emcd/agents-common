@@ -21,13 +21,14 @@ Priority: High
 
 #### Scenario: Dynamic content generation
 - **WHEN** tool-specific content is needed
-- **THEN** agentsmgr CLI generates content from structured data
-- **AND** supports detect, populate, and validate commands
+- **THEN** agentsmgr generate produces distribution artifacts from components/
+- **AND** agentsmgr populate copies distribution artifacts to downstream targets
+- **AND** supports detect, generate, populate, and validate commands
 
 #### Scenario: Generated content management
 - **WHEN** content is generated
-- **THEN** generated content ignored via .gitignore patterns
-- **AND** not committed to project repositories
+- **THEN** pre-generated artifacts are committed in distribution/ for review visibility
+- **AND** downstream populate copies files and manages `.git/info/exclude` at file level
 
 #### Scenario: Configuration detection
 - **WHEN** agentsmgr CLI runs

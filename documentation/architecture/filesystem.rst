@@ -114,14 +114,16 @@ AI Agent Configuration Structure
 Data-Driven Organization
 -------------------------------------------------------------------------------
 
-The primary content of this repository is organized under the ``defaults/``
-directory, implementing a 3-tier separation for structured agent configurations:
+The primary content of this repository is organized under two directories:
+
+- ``components/``: Source material for the 3-tier generation pipeline
+- ``distribution/``: Distribution artifacts consumed by downstream ``agentsmgr populate``
 
 .. code-block::
 
-    defaults/
-    ├── configurations/            # Tool-agnostic TOML configurations
-    │   ├── commands/              # Command metadata (25+ slash commands)
+    components/                        # Source material (3-tier pipeline)
+    ├── configurations/                # Tool-agnostic TOML configurations
+    │   ├── commands/                  # Command metadata (25+ slash commands)
     │   │   ├── cs-conform-python.toml     # Python code conformance
     │   │   ├── cs-release-final.toml      # Final release management
     │   │   ├── cs-architect.toml          # Architecture documentation
@@ -132,48 +134,62 @@ directory, implementing a 3-tier separation for structured agent configurations:
     │   │   ├── cs-copier-update.toml      # Template updates
     │   │   ├── validate-custom-slash.toml # Slash command validation
     │   │   └── [20+ additional commands]
-    │   └── agents/                # Agent metadata
+    │   └── agents/                    # Agent metadata
     │       └── python-conformer.toml      # Python code review agent
-    ├── contents/                  # Coder-specific content bodies
+    ├── contents/                      # Coder-specific content bodies
     │   ├── commands/
-    │   │   └── claude/            # Claude-specific content (25+ files)
+    │   │   └── claude/                # Claude-specific content (25+ files)
     │   │       ├── cs-conform-python.md
     │   │       ├── cs-release-final.md
     │   │       ├── cs-architect.md
     │   │       └── [22+ additional command contents]
     │   └── agents/
-    │       ├── claude/
-    │       │   └── python-conformer.md
-    │       └── opencode/          # Opencode-specific agent content
-    ├── user/                      # Per-user files and executables
-    │   ├── configurations/        # Per-user global settings
-    │   │   └── claude/
-    │   │       ├── statusline.py      # Python-based statusline configuration
-    │   │       └── settings.json      # Base Claude settings
-    │   └── executables/           # Wrapper scripts for user bin directory
-    └── templates/                 # Pioneer-named template flavors by coder
+    │       └── claude/
+    │           └── python-conformer.md
+    └── templates/                     # Pioneer-named template flavors by coder
         ├── commands/
-        │   └── claude.md.jinja    # Markdown commands (Claude, Opencode, Codex)
+        │   └── claude.md.jinja        # Markdown commands (Claude, Opencode, Codex)
         └── agents/
-            ├── claude.md.jinja    # Claude agent format
-            └── opencode.md.jinja  # Opencode agent format
+            ├── claude.md.jinja        # Claude agent format
+            └── opencode.md.jinja      # Opencode agent format
 
-    data/                          # Additional configuration data
+    distribution/                      # Distribution artifacts (consumed by populate)
+    ├── per-project/
+    │   ├── general/
+    │   │   ├── skills/                # Portable skills (opsx-*, cs-review-todos)
+    │   │   └── instructions/          # Synced instruction artifacts (.rst files)
+    │   └── coders/
+    │       ├── claude/                # Claude-specific artifacts
+    │       │   ├── commands/          # Pre-generated commands (18 files)
+    │       │   └── agents/            # Pre-generated agents (2 files)
+    │       ├── codex/                 # Codex-specific artifacts
+    │       └── opencode/              # OpenCode-specific artifacts
+    │           ├── command/           # Pre-generated commands (singular)
+    │           ├── agent/             # Pre-generated agents (singular)
+    │           └── prompt/            # Static prompt resources
+    └── per-user/
+        ├── general/                   # User-level executables
+        └── coders/
+            ├── claude/                # Per-user Claude config
+            ├── codex/                 # Per-user Codex config
+            └── opencode/              # Per-user OpenCode config
+
+    data/                              # Additional configuration data
     └── configuration/
-        └── general.toml           # General configuration defaults
+        └── general.toml               # General configuration defaults
 
-    template/                      # Copier template for base configuration
+    template/                          # Copier template for base configuration
     └── .auxiliary/configuration/
-        ├── coders/                # Coder-specific base templates
+        ├── coders/                    # Coder-specific base templates
         │   ├── claude/
         │   │   ├── settings.json.jinja   # Claude base settings template
-        │   │   ├── .gitignore            # Ignore generated content
+        │   │   ├── .gitignore            # Base template hygiene
         │   │   ├── scripts/              # Hook executables
         │   │   │   ├── pre-bash-python-check
         │   │   │   ├── post-edit-linter
         │   │   │   └── pre-bash-git-commit-check
-        │   │   ├── commands/.gitignore   # Generated commands ignored
-        │   │   └── agents/.gitignore     # Generated agents ignored
+        │   │   ├── commands/.gitignore   # Base template hygiene
+        │   │   └── agents/.gitignore     # Base template hygiene
         │   └── opencode/
         │       ├── settings.jsonc.jinja  # Opencode base settings template
         │       ├── .gitignore
@@ -207,13 +223,18 @@ The system uses dual-channel distribution combining Copier templates and dynamic
     ↓ (copier copy)
     target-project/.auxiliary/configuration/
 
-    # Dynamic Content Generation (agentsmgr)
-    agents-common/defaults/
-    ↓ (agentsmgr populate project --source=agents-common@agents-N)
+    # Dynamic Content Generation (agentsmgr generate)
+    agents-common/components/
+    ↓ (agentsmgr generate)
+    agents-common/distribution/
+
+    # Downstream Population (agentsmgr populate)
+    agents-common/distribution/
+    ↓ (agentsmgr populate project)
     target-project/.auxiliary/configuration/coders/[tool]/commands/
     target-project/.auxiliary/configuration/coders/[tool]/agents/
 
-    ↓ (agentsmgr populate user --source=agents-common@agents-N)
+    ↓ (agentsmgr populate user)
     ~/.config/[tool]/            # Per-user configuration files
     ~/.local/bin/                # Wrapper executables
 
@@ -223,12 +244,12 @@ Content generation combines structured sources with generic templates:
 
 .. code-block::
 
-    # Source Data Structure
-    defaults/configurations/commands/cs-release-final.toml  (metadata)
-    + defaults/contents/commands/claude/cs-release-final.md  (content body)
-    + defaults/templates/command.md.jinja                    (format template)
-    ↓ (agentsmgr populate)
-    target/.auxiliary/configuration/claude/commands/cs-release-final.md
+    # Source Data Structure (components/)
+    components/configurations/commands/cs-release-final.toml  (metadata)
+    + components/contents/commands/claude/cs-release-final.md  (content body)
+    + components/templates/commands/claude.md.jinja            (format template)
+    ↓ (agentsmgr generate)
+    distribution/per-project/coders/claude/commands/cs-release-final.md
 
 **Configuration Normalization:**
 
@@ -249,10 +270,10 @@ Variable transformation for template access:
 
 .. code-block::
 
-    agents-common (defaults/ + template/)
+    agents-common (components/ + distribution/ + template/)
     ↓ (tag: agents-N)
     agentsmgr populate --source=agents-common@agents-N
-    ↓ (git fetch + template rendering)
+    ↓ (git fetch + file copy)
     target-project (.auxiliary/configuration/)
 
 Component Integration
@@ -266,7 +287,8 @@ The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable arch
 **Core Commands:**
 
 * ``agentsmgr detect``: Configuration detection and analysis
-* ``agentsmgr populate``: Dynamic content generation from sources
+* ``agentsmgr generate``: Generate distribution artifacts from components/
+* ``agentsmgr populate``: Copy distribution artifacts to downstream targets
 * ``agentsmgr-maintain content validate``: Content generation validation
 * ``agentsmgr-maintain template survey``: Copier variant discovery
 * ``agentsmgr-maintain template validate``: Copier template validation

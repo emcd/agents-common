@@ -53,14 +53,14 @@ def populate_globals(
 ) -> tuple[ int, int ]:
     ''' Populates per-user global files for configured coders.
 
-        Surveys defaults/user/configurations directory for coder-specific
+        Surveys distribution/per-user/coders directory for coder-specific
         files and populates them to per-user locations. Handles two types
         of files: direct copy for non-settings files and merge for settings
         files (preserving user values).
 
         Returns tuple of (files_attempted, files_updated) counts.
     '''
-    globals_directory = data_location / 'user' / 'configurations'
+    globals_directory = data_location / 'per-user' / 'coders'
     if not globals_directory.exists( ):
         return ( 0, 0 )
     files_attempted = 0
@@ -284,7 +284,7 @@ def populate_user_wrappers(
         making them executable. Returns tuple of (files_attempted,
         files_installed) counts.
     '''
-    wrappers_dir = data_location / 'user' / 'executables'
+    wrappers_dir = data_location / 'per-user' / 'general'
     user_bin = __.Path.home( ) / '.local' / 'bin'
     if not wrappers_dir.exists( ):
         return ( 0, 0 )

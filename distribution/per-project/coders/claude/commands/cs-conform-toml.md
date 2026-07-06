@@ -1,3 +1,8 @@
+---
+allowed-tools: Bash(git:*), Edit, Glob, Grep, LS, MultiEdit, Read, Write
+description: Systematically conform TOML files to project style and practice standards
+---
+
 # TOML Configuration Conformance
 
 For bringing existing TOML configuration files into full compliance with project standards.
@@ -105,7 +110,7 @@ pattern = "user-.*"
 **✅ Prefer:**
 ```toml
 name = 'example-service'
-description = 'A service for processing data'  
+description = 'A service for processing data'
 pattern = 'user-.*'
 
 # Use double quotes when escapes are needed
@@ -132,7 +137,7 @@ database = { host = 'localhost', port = 5432 }
 # For longer arrays
 allowed-origins = [
     'https://example.com',
-    'https://api.example.com', 
+    'https://api.example.com',
     'https://admin.example.com',
 ]
 ```
@@ -153,7 +158,7 @@ port = 5432
 connection_timeout = 30
 retry_attempts = 3
 
-[server_config.database_replica]  
+[server_config.database_replica]
 host = "localhost"
 port = 5433
 connection_timeout = 15
@@ -200,7 +205,7 @@ allowed-hosts = [
 ]
 
 description = '''
-This is a multi-line description that explains what this service does 
+This is a multi-line description that explains what this service does
 and how it should be configured.
 '''
 ```
@@ -237,7 +242,7 @@ Apply fixes in systematic order:
 5. **Array Formatting**: Split long arrays across multiple lines with proper indentation
 6. **Nomenclature**: Apply naming guidelines to keys and table names
 
-**Requirements**: 
+**Requirements**:
 - Maintain exact functionality while improving standards adherence
 - Validate that configuration files remain syntactically valid
 - Preserve all semantic meaning of configuration values

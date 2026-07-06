@@ -18,7 +18,11 @@
 #============================================================================#
 
 
-''' Command for populating agent content from data sources. '''
+''' Command for populating agent content from data sources.
+
+    Also provides the generate command for maintainer-facing generation
+    from components/ to distribution/.
+'''
 
 
 from . import __
@@ -26,7 +30,6 @@ from . import cmdbase as _cmdbase
 from . import core as _core
 from . import exceptions as _exceptions
 from . import generator as _generator
-from . import instructions as _instructions
 from . import memorylinks as _memorylinks
 from . import operations as _operations
 from . import renderers as _renderers
@@ -36,6 +39,20 @@ from . import userdata as _userdata
 
 
 _scribe = __.provide_scribe( __name__ )
+
+
+def _produce_default_configuration(
+    location: __.Path,
+) -> __.cabc.Mapping[ str, __.typx.Any ]:
+    ''' Produces default configuration for generate command.
+
+        Uses all known coders from the renderer registry so that
+        fallback content is generated for all coders, not just those
+        with direct component content.
+    '''
+    from . import renderers as _renderers
+    coders = sorted( _renderers.RENDERERS.keys( ) )
+    return { 'coders': coders, 'languages': [ 'python' ] }
 
 
 SourceArgument: __.typx.TypeAlias = __.typx.Annotated[
@@ -123,68 +140,57 @@ def _create_all_symlinks(
     return tuple( all_symlink_names )
 
 
-def _populate_instructions_if_configured(
-    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+def _copy_instructions_from_distribution(
+    distribution: __.Path,
     target: __.Path,
-    tag_prefix: __.Absential[ str ],
+    instructions_target: str,
     simulate: bool,
-) -> tuple[ bool, str ]:
-    ''' Populates instructions if configured and returns status.
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies instruction files from distribution/ to target.
 
-        Returns tuple of (sources_present, instructions_target_path).
-        sources_present indicates whether instruction sources were
-        configured and processed.
+        Reads from distribution/per-project/general/instructions/ and
+        copies to the configured instructions target path.
+        Returns tuple of (files_attempted, files_written, exclude_entries).
     '''
-    if not configuration.get( 'provide_instructions', False ):
-        return ( False, '' )
-    instructions_sources = configuration.get( 'instructions_sources', [ ] )
-    instructions_target = configuration.get(
-        'instructions_target', '.auxiliary/instructions' )
-    if not instructions_sources:
-        return ( False, instructions_target )
-    instructions_attempted, instructions_updated = (
-        _instructions.populate_instructions(
-            instructions_sources,
-            target / instructions_target,
-            tag_prefix,
+    import contextlib as _contextlib
+    source_dir = distribution / 'per-project' / 'general' / 'instructions'
+    if not source_dir.exists( ):
+        return ( 0, 0, ( ) )
+    target_dir = target / instructions_target
+    files_attempted = 0
+    files_written = 0
+    exclude_entries: list[ str ] = [ ]
+    for source_file in source_dir.glob( '*' ):
+        if not source_file.is_file( ): continue
+        files_attempted += 1
+        dest_path = target_dir / source_file.name
+        if _operations.save_content(
+            source_file.read_text( encoding = 'utf-8' ),
+            dest_path,
             simulate,
-        ) )
-    _scribe.info(
-        f"Updated {instructions_updated}/{instructions_attempted} "
-        "instruction files" )
-    return ( True, instructions_target )
+        ):
+            files_written += 1
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( target ) ) )
+    return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
 def _populate_per_user_content(
     location: __.Path,
     coders: __.cabc.Sequence[ str ],
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
-    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool,
 ) -> tuple[ int, int ]:
-    ''' Populates commands and agents for per-user coders.
+    ''' Populates commands, agents, and skills for per-user coders.
 
-        Generates content to each coder's per-user directory using
-        renderer's resolve_base_directory() with per-user mode.
-        Returns tuple of (items_attempted, items_generated).
+        Copies distribution items to each coder's per-user directory.
+        Returns tuple of (items_attempted, items_written).
     '''
-    items_attempted = 0
-    items_generated = 0
-    for coder_name, renderer in _resolver.resolve_coders( coders ):
-        coder_configuration = { 'coders': [ coder_name ] }
-        generator = _generator.ContentGenerator(
-            location = location,
-            configuration = coder_configuration,
-            application_configuration = application_configuration,
-            mode = 'per-user',
-        )
-        target = renderer.resolve_base_directory(
-            'per-user', __.Path.cwd( ), configuration, dict( __.os.environ ) )
-        attempted, generated = _operations.populate_directory(
-            generator, target, simulate )
-        items_attempted += attempted
-        items_generated += generated
-    return ( items_attempted, items_generated )
+    attempted, written, _ = _copy_distribution_items(
+        location, coders, __.Path.cwd( ), configuration,
+        'per-user', simulate )
+    return ( attempted, written )
 
 
 def _create_coder_directory_symlinks(
@@ -227,43 +233,151 @@ def _create_coder_directory_symlinks(
     return ( attempted, created, tuple( symlink_names ) )
 
 
-def _copy_coder_resources(
-    location: __.Path,
-    target: __.Path,
+def _copy_distribution_items(  # noqa: PLR0913
+    distribution: __.Path,
     coders: __.cabc.Sequence[ str ],
-    simulate: bool
-) -> tuple[ int, int ]:
-    ''' Copies static resources for coders.
+    target: __.Path,
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    mode: _renderers.ExplicitTargetMode,
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies distribution items to downstream target paths.
 
-        Copies resources from defaults/per-project/resources/<coder>
-        to target directory. Returns tuple of (coders_attempted,
-        coders_processed).
+        For each coder, copies the entire
+        distribution/<mode>/coders/<coder>/ tree to the target.
+        Skills are copied separately from
+        distribution/per-project/general/skills/.
+
+        The distribution tree mirrors downstream layout, so this is
+        a single copy operation per coder.
+
+        Returns tuple of (items_attempted, items_written, exclude_entries).
     '''
-    resources_source = location / 'per-project' / 'resources'
-    if not resources_source.exists( ):
-        _scribe.debug(
-            f"No per-project resources found at {resources_source}" )
-        return ( 0, 0 )
-    coders_target = target / '.auxiliary' / 'configuration' / 'coders'
-    return _operations.copy_coder_resources(
-        resources_source, coders_target, coders, simulate )
+    items_attempted = 0
+    items_written = 0
+    exclude_entries: list[ str ] = [ ]
+    for coder_name, manager in _resolver.resolve_coders(
+        coders, mode = mode
+    ):
+        base_directory = manager.resolve_base_directory(
+            mode = mode,
+            target = target,
+            configuration = configuration,
+            environment = __.os.environ,
+        )
+        coder_source = distribution / mode / 'coders' / coder_name
+        # Copy entire coder tree (commands, agents, resources).
+        if coder_source.exists( ):
+            attempted, written, entries = _copy_tree(
+                coder_source, base_directory, target, simulate )
+            items_attempted += attempted
+            items_written += written
+            exclude_entries.extend( entries )
+        # Copy skills from general directory.
+        if mode == 'per-project':
+            attempted, written, entries = _copy_skills(
+                distribution, base_directory, manager, target, simulate )
+            items_attempted += attempted
+            items_written += written
+            exclude_entries.extend( entries )
+    return ( items_attempted, items_written, tuple( exclude_entries ) )
+
+
+def _copy_tree(
+    source: __.Path,
+    target: __.Path,
+    project_root: __.Path,
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies directory tree from source to target.
+
+        Recursively copies all files and subdirectories.
+        Returns tuple of (files_attempted, files_written, exclude_entries).
+    '''
+    import contextlib as _contextlib
+    files_attempted = 0
+    files_written = 0
+    exclude_entries: list[ str ] = [ ]
+    for source_file in source.rglob( '*' ):
+        if not source_file.is_file( ): continue
+        files_attempted += 1
+        relative = source_file.relative_to( source )
+        dest_path = target / relative
+        if _operations.save_content(
+            source_file.read_text( encoding = 'utf-8' ),
+            dest_path,
+            simulate,
+        ):
+            files_written += 1
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( project_root ) ) )
+    return ( files_attempted, files_written, tuple( exclude_entries ) )
+
+
+def _copy_skills(
+    distribution: __.Path,
+    base_directory: __.Path,
+    manager: _renderers.RendererBase,
+    project_root: __.Path,
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies skill files directly from distribution/ to target paths.
+
+        Skills are static artifacts that require no rendering.
+        Copies from distribution/per-project/general/skills/<name>.md to
+        <base>/skills/<name>/SKILL.md. Returns tuple of (attempted,
+        written, exclude_entries).
+    '''
+    import contextlib as _contextlib
+    items_attempted = 0
+    items_written = 0
+    exclude_entries: list[ str ] = [ ]
+    skills_dir = (
+        distribution / 'per-project' / 'general' / 'skills' )
+    if not skills_dir.exists( ):
+        return ( items_attempted, items_written, tuple( exclude_entries ) )
+    skills_output = manager.calculate_directory_location( 'skills' )
+    for skill_file in skills_dir.glob( '*.md' ):
+        items_attempted += 1
+        item_name = skill_file.stem
+        dest_path = (
+            base_directory / skills_output / item_name / 'SKILL.md' )
+        if _operations.save_content(
+            skill_file.read_text( encoding = 'utf-8' ),
+            dest_path,
+            simulate,
+        ):
+            items_written += 1
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( project_root ) ) )
+    return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
 def _manage_project_auxiliaries(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    distribution: __.Path,
     target: __.Path,
-    tag_prefix: __.Absential[ str ],
+    distribution_entries: __.cabc.Sequence[ str ],
     simulate: bool
 ) -> None:
     ''' Manages auxiliary project files (instructions, symlinks, excludes). '''
-    instructions_populated, instructions_target = (
-        _populate_instructions_if_configured(
-            configuration, target, tag_prefix, simulate ) )
+    instruction_entries: tuple[ str, ... ] = ( )
+    if configuration.get( 'provide_instructions', False ):
+        instructions_target = configuration.get(
+            'instructions_target', '.auxiliary/instructions' )
+        instructions_attempted, instructions_written, instruction_entries = (
+            _copy_instructions_from_distribution(
+                distribution, target, instructions_target, simulate ) )
+        if instructions_written > 0:
+            _scribe.info(
+                f"Copied {instructions_written}/{instructions_attempted} "
+                "instruction files" )
     all_symlink_names: list[ str ] = list( _create_all_symlinks(
         configuration, target, 'per-project', simulate ) )
-    git_exclude_entries: list[ str ] = [ ]
-    if instructions_populated:
-        git_exclude_entries.append( instructions_target )
+    git_exclude_entries: list[ str ] = list( distribution_entries )
+    git_exclude_entries.extend( instruction_entries )
     git_exclude_entries.extend( all_symlink_names )
     if git_exclude_entries:
         entries_count = _operations.update_git_exclude(
@@ -277,8 +391,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
     ''' Generates project-scoped agent content from data sources.
 
         Populates agent commands, definitions, and static resources
-        from the specified data source. Copies static resources from
-        defaults/per-project/resources/ to the project configuration.
+        from the specified data source. Copies pre-rendered commands
+        and agents from distribution/, generates skills, and copies
+        static resources.
     '''
 
     source: SourceArgument = '.'
@@ -327,34 +442,32 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
-            location,
-            ( 'configurations', 'contents', 'templates' ) )
-        generator = _generator.ContentGenerator(
-            location = location,
-            configuration = filtered_configuration,
-            application_configuration = auxdata.configuration,
-            mode = 'per-project',
-        )
-        items_attempted, items_generated = _operations.populate_directory(
-            generator, self.target, self.simulate )
-        _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
-        resources_attempted, resources_copied = _copy_coder_resources(
-            location,
-            self.target,
-            filtered_configuration[ 'coders' ],
-            self.simulate )
-        if resources_copied > 0:
-            _scribe.info(
-                f"Copied resources for "
-                f"{resources_copied}/{resources_attempted} coders" )
+            location, ( 'per-project', ) )
+        items_attempted, items_copied, exclude_entries = (
+            _copy_distribution_items(
+                location,
+                filtered_configuration[ 'coders' ],
+                self.target,
+                configuration,
+                'per-project',
+                self.simulate ) )
+        if items_attempted > 0:
+            if self.simulate:
+                _scribe.info(
+                    f"Would copy {items_attempted} items" )
+            else:
+                _scribe.info(
+                    f"Copied {items_copied}/{items_attempted} items" )
         _manage_project_auxiliaries(
-            filtered_configuration, self.target, prefix, self.simulate )
+            filtered_configuration, location, self.target,
+            exclude_entries, self.simulate )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
-            items_generated = items_generated,
+            items_generated = (
+                items_attempted if self.simulate else items_copied ),
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
@@ -406,13 +519,11 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
             location,
-            ( 'configurations', 'contents', 'templates',
-              'user/configurations', 'user/executables' ) )
+            ( 'per-user', ) )
         content_attempted, content_generated = _populate_per_user_content(
             location,
             per_user_coders,
             configuration,
-            auxdata.configuration,
             self.simulate,
         )
         if content_attempted > 0:
@@ -421,7 +532,7 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         globals_attempted, globals_updated = _userdata.populate_globals(
             location,
             per_user_coders,
-            auxdata.configuration,
+            configuration,
             self.simulate,
         )
         _scribe.info(
@@ -460,3 +571,84 @@ class PopulateCommand( __.appcore_cli.Command ):
 
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
+
+
+class GenerateCommand( __.appcore_cli.Command ):
+    ''' Generates pre-rendered artifacts from components/ to distribution/.
+
+        Reads 3-tier pipeline source material from components/ and writes
+        rendered commands and agents to distribution/. Skills are direct
+        distribution artifacts and are not generated.
+
+        Use --check to validate that distribution/ is current without
+        writing files.
+    '''
+
+    source: __.typx.Annotated[
+        str,
+        __.tyro.conf.arg(
+            help = "Components source path (defaults to 'components')" ),
+    ] = 'components'
+    output: __.typx.Annotated[
+        __.Path,
+        __.tyro.conf.arg(
+            help = "Distribution output path" ),
+    ] = __.Path( 'distribution' )
+    check: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Check mode - fail if distribution is stale",
+            prefix_name = False ),
+    ] = False
+    simulate: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Dry run mode - show what would be generated",
+            prefix_name = False ),
+    ] = False
+
+    @_cmdbase.intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Generates distribution artifacts from components. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
+        _scribe.info(
+            f"Generating distribution from {self.source} to {self.output}" )
+        location = _cmdbase.retrieve_data_location( self.source )
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'configurations', 'contents', 'templates' ) )
+        configuration = _produce_default_configuration( location )
+        generator = _generator.ContentGenerator(
+            location = location,
+            configuration = configuration,
+            application_configuration = auxdata.configuration,
+            mode = 'per-project',
+        )
+        if self.check:
+            items_checked, diff_lines = (
+                _operations.check_distribution_staleness(
+                    generator, self.output ) )
+            if diff_lines:
+                _scribe.error(
+                    f"Distribution is stale ({items_checked} items checked):" )
+                for line in diff_lines:
+                    print( line )
+                raise SystemExit( 1 )
+            _scribe.info(
+                f"Distribution is current ({items_checked} items checked)" )
+            return
+        items_attempted, items_generated = (
+            _operations.generate_distribution(
+                generator, self.output, self.simulate ) )
+        _scribe.info(
+            f"Generated {items_generated}/{items_attempted} artifacts" )
+        result = _results.ContentGenerationResult(
+            source_location = location,
+            target_location = self.output,
+            coders = tuple( configuration.get( 'coders', ( ) ) ),
+            simulated = self.simulate,
+            items_generated = items_generated,
+        )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )

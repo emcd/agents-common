@@ -98,10 +98,10 @@ Consequences
 **Positive Consequences:**
 
 * **Faster Iteration Cycle**: Command changes don't require template commits, tags, or releases
-* **Repository Efficiency**: No generated artifacts committed, cleaner git history
+* **Repository Efficiency**: Pre-generated artifacts committed for review visibility
 * **Proven Base Distribution**: Settings templates use Copier's mature mechanisms
 * **True Tool Portability**: ``agentsmgr`` works with any data source, not repository-specific
-* **Minimal Commit Noise**: Generated content ignored via .gitignore in downstream projects
+* **Managed Downstream Entries**: Distribution artifacts managed via file-level `.git/info/exclude` entries
 * **Clean Separation**: Static base templates vs. dynamic generated content
 * **Multi-Tool Scaling**: Single data source generates configurations for multiple AI tools
 

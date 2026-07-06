@@ -22,9 +22,12 @@
 
     This module provides functions for orchestrating content generation,
     including directory population and file writing operations with
-    simulation support.
+    simulation support. Also provides generation from components/ to
+    distribution/ with staleness checking.
 '''
 
+
+import difflib as _difflib
 
 from . import __
 from . import exceptions as _exceptions
@@ -35,6 +38,7 @@ from . import renderers as _renderers
 _MANAGED_BLOCK_BEGIN = '# BEGIN: Managed by agentsmgr (emcd-agents)'
 _MANAGED_BLOCK_WARNING = '# Do not manually edit entries in this block.'
 _MANAGED_BLOCK_END = '# END: Managed by agentsmgr (emcd-agents)'
+_EXTENSION_PARTS_MINIMUM = 2
 
 
 def populate_directory(
@@ -114,18 +118,15 @@ def generate_coder_item_type(
     ''' Generates items of specific type for a coder.
 
         Generates all items (commands or agents) for specified coder by
-        iterating through configuration files. For skills, discovers
-        items from contents/skills/*.md since skills have no TOML
-        configuration. Pre-checks content availability and skips items
-        with missing content. Returns tuple of (items_attempted,
-        items_written).
+        iterating through configuration files. Skills are direct
+        distribution artifacts and are not generated from components.
+        Pre-checks content availability and skips items with missing
+        content. Returns tuple of (items_attempted, items_written).
     '''
     items_attempted = 0
     items_written = 0
     if generator.mode == 'nowhere':
         return ( items_attempted, items_written )
-    if item_type == 'skills':
-        return _generate_skills( generator, coder, target, simulate )
     configuration_directory = (
         generator.location / 'configurations' / item_type )
     if not configuration_directory.exists( ):
@@ -140,34 +141,6 @@ def generate_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, target )
-        if save_content( result.content, result.location, simulate ):
-            items_written += 1
-    return ( items_attempted, items_written )
-
-
-def _generate_skills(
-    generator: _generator.ContentGenerator,
-    coder: str,
-    target: __.Path,
-    simulate: bool,
-) -> tuple[ int, int ]:
-    ''' Generates skills for a coder from contents/skills/*.md.
-
-        Skills are portable across coders and have no TOML
-        configuration files. Discovery iterates markdown files in the
-        contents/skills directory. Returns tuple of (items_attempted,
-        items_written).
-    '''
-    items_attempted = 0
-    items_written = 0
-    skills_directory = generator.location / 'contents' / 'skills'
-    if not skills_directory.exists( ):
-        return ( items_attempted, items_written )
-    for skill_file in skills_directory.glob( '*.md' ):
-        item_name = skill_file.stem
-        items_attempted += 1
-        result = generator.render_single_item(
-            'skills', item_name, coder, target )
         if save_content( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
@@ -348,51 +321,192 @@ def _discover_common_git_directory( git_dir: __.Path ) -> __.Path:
     except ( OSError, IOError ): return git_dir
     return ( git_dir / common_path ).resolve( )
 
-def copy_coder_resources(
-    source_root: __.Path,
-    target_root: __.Path,
-    coders: __.cabc.Sequence[ str ],
-    simulate: bool = False
+
+def generate_distribution(
+    generator: _generator.ContentGenerator,
+    distribution: __.Path,
+    simulate: bool = False,
 ) -> tuple[ int, int ]:
-    ''' Copies static resources for specified coders.
+    ''' Generates pre-rendered artifacts from components/ to distribution/.
 
-        Iterates through coders and copies resources from
-        source_root/<coder> to target_root/<coder>.
-        Returns tuple of (coders_attempted, coders_processed).
+        Reads from the 3-tier pipeline source (configurations, templates,
+        per-coder contents) and writes rendered commands and agents to
+        distribution/. Skills are not generated; they are direct
+        distribution artifacts.
+
+        Returns tuple of (items_attempted, items_written).
     '''
-    attempted = 0
-    processed = 0
-    for coder in coders:
-        source = source_root / coder
-        target = target_root / coder
-        if not source.exists( ):
-            __.provide_scribe( __name__ ).debug(
-                f"No resources found for {coder} at {source}" )
+    items_attempted = 0
+    items_written = 0
+    for coder_name in generator.configuration[ 'coders' ]:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills':
+                continue  # Skills are direct distribution artifacts.
+            attempted, written = _generate_for_distribution(
+                generator, coder_name, item_type, distribution, simulate )
+            items_attempted += attempted
+            items_written += written
+    return ( items_attempted, items_written )
+
+
+def _generate_for_distribution(
+    generator: _generator.ContentGenerator,
+    coder: str,
+    item_type: str,
+    distribution: __.Path,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Generates items of a type for a coder into distribution/.
+
+        Reads configuration and content from components/, renders through
+        the 3-tier pipeline, and writes to
+        distribution/per-project/coders/<coder>/<item_type>/.
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_attempted, items_written )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        item_name = configuration_file.stem
+        if not _content_exists( generator, item_type, item_name, coder ):
+            __.provide_scribe( __name__ ).warning(
+                f"Skipping {item_type}/{item_name} for {coder}: "
+                "content not found" )
             continue
-        attempted += 1
-        if copy_resource_content( source, target, simulate ):
-            processed += 1
-    return ( attempted, processed )
+        items_attempted += 1
+        result = generator.render_single_item(
+            item_type, item_name, coder, distribution )
+        renderer = _renderers.RENDERERS[ coder ]
+        dirname = renderer.produce_output_structure( item_type )
+        output_path = (
+            distribution / 'per-project' / 'coders' / coder / dirname /
+            f"{item_name}.{_parse_output_extension( result.location )}" )
+        if save_content( result.content, output_path, simulate ):
+            items_written += 1
+    return ( items_attempted, items_written )
 
-def copy_resource_content(
-    source: __.Path, target: __.Path, simulate: bool
-) -> bool:
-    ''' Recursively copies directory contents.
 
-        Copies all files and subdirectories from source to target,
-        overwriting existing files. Handles directory creation.
+def _parse_output_extension( location: __.Path ) -> str:
+    ''' Extracts output extension from rendered location path.
+
+        Skips the last suffix (which is the item name suffix) and returns
+        the meaningful extension. For SKILL.md returns "md".
     '''
-    if simulate: return True
-    try:
-        target.mkdir( parents = True, exist_ok = True )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.CoderResourceCopyFailure(
-            source, target
-        ) from exception
-    try:
-        __.shutil.copytree( source, target, dirs_exist_ok = True )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.CoderResourceCopyFailure(
-            source, target
-        ) from exception
-    return True
+    name = location.name
+    if name == 'SKILL.md': return 'md'
+    parts = name.split( '.' )
+    if len( parts ) >= _EXTENSION_PARTS_MINIMUM: return parts[ -1 ]
+    return 'md'
+
+
+def check_distribution_staleness(
+    generator: _generator.ContentGenerator,
+    distribution: __.Path,
+) -> tuple[ int, list[ str ] ]:
+    ''' Checks for staleness between components/ and distribution/.
+
+        Regenerates from components/ and compares against existing
+        distribution/ files. Also detects orphaned artifacts that exist
+        in distribution/ but are no longer generated from components/.
+        Returns tuple of (items_checked, diff_lines).
+        Empty diff_lines means distribution is current.
+    '''
+    items_checked = 0
+    all_diffs: list[ str ] = [ ]
+    expected_paths: set[ __.Path ] = set( )
+    for coder_name in generator.configuration[ 'coders' ]:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills':
+                continue
+            checked, diffs, paths = _check_staleness_for_type(
+                generator, coder_name, item_type, distribution )
+            items_checked += checked
+            all_diffs.extend( diffs )
+            expected_paths.update( paths )
+    # Detect orphaned artifacts in generated directories
+    orphans = _detect_orphaned_artifacts(
+        distribution, generator.configuration[ 'coders' ], expected_paths )
+    all_diffs.extend( orphans )
+    return ( items_checked, all_diffs )
+
+
+def _check_staleness_for_type(
+    generator: _generator.ContentGenerator,
+    coder: str,
+    item_type: str,
+    distribution: __.Path,
+) -> tuple[ int, list[ str ], set[ __.Path ] ]:
+    ''' Checks staleness for items of a specific type.
+
+        Renders from components/ and compares against distribution/.
+        Returns tuple of (items_checked, diff_lines, expected_paths).
+    '''
+    items_checked = 0
+    diffs: list[ str ] = [ ]
+    expected_paths: set[ __.Path ] = set( )
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_checked, diffs, expected_paths )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        item_name = configuration_file.stem
+        if not _content_exists( generator, item_type, item_name, coder ):
+            continue
+        items_checked += 1
+        result = generator.render_single_item(
+            item_type, item_name, coder, distribution )
+        renderer = _renderers.RENDERERS[ coder ]
+        dirname = renderer.produce_output_structure( item_type )
+        output_path = (
+            distribution / 'per-project' / 'coders' / coder / dirname /
+            f"{item_name}.{_parse_output_extension( result.location )}" )
+        expected_paths.add( output_path )
+        if not output_path.exists( ):
+            diffs.append(
+                f"+ {item_type}/{item_name}: "
+                f"missing from distribution" )
+            continue
+        existing_content = output_path.read_text( encoding = 'utf-8' )
+        if result.content != existing_content:
+            diff_lines = list( _difflib.unified_diff(
+                existing_content.splitlines( ),
+                result.content.splitlines( ),
+                fromfile = f"distribution/{item_type}/{output_path.name}",
+                tofile = f"components/{item_type}/{item_name}",
+                lineterm = '' ) )
+            diffs.extend( diff_lines )
+    return ( items_checked, diffs, expected_paths )
+
+
+def _detect_orphaned_artifacts(
+    distribution: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    expected_paths: set[ __.Path ],
+) -> list[ str ]:
+    ''' Detects orphaned artifacts in distribution/.
+
+        Scans distribution/per-project/coders/<coder>/ for generated
+        item directories (commands, agents, command, agent) and reports
+        any files not in the expected_paths set.
+    '''
+    orphans: list[ str ] = [ ]
+    generated_dirs = ( 'commands', 'agents', 'command', 'agent' )
+    for coder in coders:
+        coder_dir = distribution / 'per-project' / 'coders' / coder
+        if not coder_dir.exists( ): continue
+        for dirname in generated_dirs:
+            item_dir = coder_dir / dirname
+            if not item_dir.exists( ): continue
+            orphans.extend(
+                f"- {coder}/{dirname}/{item_file.name}: orphaned artifact"
+                for item_file in item_dir.glob( '*.md' )
+                if item_file not in expected_paths
+            )
+    return orphans

@@ -52,7 +52,7 @@ Priority: Critical
 
 #### Scenario: OPSX skill distribution
 - **WHEN** OpenSpec 1.5 OPSX skills are distributed
-- **THEN** curated OPSX skill files are shipped as `agentsmgr` defaults under `defaults/contents/skills/`
+- **THEN** curated OPSX skill files are shipped under `distribution/per-project/general/skills/`
 - **AND** skills have `stores` guidance removed for template safety
 - **AND** skills are discoverable through the standard skills pipeline
 

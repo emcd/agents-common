@@ -44,22 +44,6 @@ class CoderAbsence( Omnierror, ValueError ):
         super( ).__init__( message )
 
 
-class CoderResourceAbsence( Omnierror, FileNotFoundError ):
-    ''' Coder resource absence. '''
-
-    def __init__( self, coder: str, path: __.Path ):
-        message = f"Resources for {coder} not found at {path}"
-        super( ).__init__( message )
-
-
-class CoderResourceCopyFailure( Omnierror, OSError ):
-    ''' Coder resource copy failure. '''
-
-    def __init__( self, source: __.Path, target: __.Path ):
-        message = f"Failed to copy resources from {source} to {target}"
-        super( ).__init__( message )
-
-
 class ConfigurationAbsence( Omnierror, FileNotFoundError ):
 
     def __init__(
