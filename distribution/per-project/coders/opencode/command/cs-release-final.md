@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Execute automated final release with QA monitoring and development cycle setup
 argument-hint: "major.minor"
 ---

@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Generate a new custom slash command with consistent structure and formatting
 ---
 

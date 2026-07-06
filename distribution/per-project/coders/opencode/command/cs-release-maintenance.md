@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Execute automated patch release with QA monitoring and master integration
 argument-hint: "major.minor"
 ---

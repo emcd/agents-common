@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Execute automated alpha checkpoint release with QA monitoring
 argument-hint: "[alpha]"
 ---

@@ -20,3 +20,6 @@ CoderResourceAbsence   # unused exception class - will be used for validation in
 # Source handlers register themselves via decorators (self-registration pattern)
 GitSourceHandler       # unused class - registers via @source_handler decorator
 LocalSourceHandler     # unused class - registers via @source_handler decorator
+
+# Instructions module - kept for future sync mechanism
+populate_instructions  # unused function - kept for future instruction sync mechanism

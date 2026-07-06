@@ -1,5 +1,5 @@
 ---
-{%- if context.allowed_tools is defined %}
+{%- if context.allowed_tools is defined and context.allowed_tools %}
 allowed-tools: {{ context.allowed_tools | join(', ') }}
 {%- endif %}
 description: {{ context.description }}

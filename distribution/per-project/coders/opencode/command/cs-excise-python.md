@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Analyze Vulture dead code findings and remediate through selective removal or vulturefood.py whitelisting
 ---
 

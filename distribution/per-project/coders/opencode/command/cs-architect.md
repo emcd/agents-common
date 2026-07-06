@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Architectural analysis, system design decisions, and ADR creation
 ---
 

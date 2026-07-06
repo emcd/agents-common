@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Validate custom slash command functionality with context and permissions
 ---
 

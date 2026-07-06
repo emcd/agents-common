@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Provide analytical responses and technical opinions without making code changes
 ---
 

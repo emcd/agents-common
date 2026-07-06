@@ -234,6 +234,104 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
         in exclude_content2 )
 
 
+def test_700_instructions_copied_from_distribution( tmp_path ):
+    ''' Instructions should be copied from distribution/, not fetched
+        from network. Verifies the expected corpus is present. '''
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    location = _distribution_location( )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    # Verify instruction files exist in distribution
+    instructions_dir = location / 'per-project' / 'general' / 'instructions'
+    assert instructions_dir.exists( )
+    instruction_files = list( instructions_dir.glob( '*.rst' ) )
+    # Verify specific expected files are present
+    expected_files = {
+        'practices.rst', 'practices-python.rst', 'style.rst',
+        'nomenclature.rst', 'tests.rst', 'validation.rst',
+    }
+    actual_names = { f.name for f in instruction_files }
+    for name in expected_files:
+        assert name in actual_names, f"Missing expected instruction: {name}"
+    # Copy instructions
+    attempted, written, entries = (
+        population_module._copy_instructions_from_distribution(
+            location, target, '.auxiliary/instructions', simulate = False ) )
+    assert attempted == len( instruction_files )
+    assert written == len( instruction_files )
+    # Verify files were copied to target
+    target_instructions = target / '.auxiliary' / 'instructions'
+    assert target_instructions.exists( )
+    for name in expected_files:
+        dest_file = target_instructions / name
+        assert dest_file.exists( ), f"Missing instruction: {name}"
+    # Verify exclude entries are file-level
+    for entry in entries:
+        assert entry.startswith( '.auxiliary/instructions/' ), (
+            f"Expected file-level entry, got: {entry}" )
+        assert not entry.endswith( '/' ), (
+            f"Entry should not be directory: {entry}" )
+
+
+def test_800_provide_instructions_false_disables_copy( tmp_path ):
+    ''' When provide_instructions is false, _manage_project_auxiliaries
+        should not copy instruction files or produce instruction exclude
+        entries. '''
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    location = _distribution_location( )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    # Create minimal git structure for _create_all_symlinks
+    ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
+    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+        'test', encoding = 'utf-8' )
+    configuration = {
+        'coders': [ 'claude' ],
+        'languages': [ 'python' ],
+        'provide_instructions': False,
+    }
+    population_module._manage_project_auxiliaries(
+        configuration, location, target, ( ), simulate = False )
+    # Verify no instruction files were copied
+    target_instructions = target / '.auxiliary' / 'instructions'
+    assert not target_instructions.exists( ) or \
+        len( list( target_instructions.glob( '*' ) ) ) == 0
+
+
+def test_900_instructions_sources_not_consulted( tmp_path ):
+    ''' Populate should use distribution/ for instructions, not
+        instructions_sources configuration. '''
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    location = _distribution_location( )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    # Create minimal git structure
+    ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
+    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+        'test', encoding = 'utf-8' )
+    # Provide instructions_sources config but populate should ignore it
+    configuration = {
+        'coders': [ 'claude' ],
+        'languages': [ 'python' ],
+        'provide_instructions': True,
+        'instructions_sources': [
+            { 'source': 'github:emcd/python-project-common@docs-1' }
+        ],
+    }
+    population_module._manage_project_auxiliaries(
+        configuration, location, target, ( ), simulate = False )
+    # Verify instructions were copied from distribution/ (local), not network
+    target_instructions = target / '.auxiliary' / 'instructions'
+    assert target_instructions.exists( )
+    copied_files = list( target_instructions.glob( '*.rst' ) )
+    assert len( copied_files ) > 0
+    # Verify the files match the distribution corpus
+    source_instructions = (
+        location / 'per-project' / 'general' / 'instructions' )
+    source_files = list( source_instructions.glob( '*.rst' ) )
+    assert len( copied_files ) == len( source_files )
+
+
 def _init_git_repo( path: Path ) -> bool:
     ''' Initializes a git repo for testing.
 

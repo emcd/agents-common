@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Update existing slash command with missing instructions or reinforced guidance
 ---
 

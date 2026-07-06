@@ -30,7 +30,6 @@ from . import cmdbase as _cmdbase
 from . import core as _core
 from . import exceptions as _exceptions
 from . import generator as _generator
-from . import instructions as _instructions
 from . import memorylinks as _memorylinks
 from . import operations as _operations
 from . import renderers as _renderers
@@ -141,36 +140,40 @@ def _create_all_symlinks(
     return tuple( all_symlink_names )
 
 
-def _populate_instructions_if_configured(
-    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+def _copy_instructions_from_distribution(
+    distribution: __.Path,
     target: __.Path,
-    tag_prefix: __.Absential[ str ],
+    instructions_target: str,
     simulate: bool,
-) -> tuple[ bool, str ]:
-    ''' Populates instructions if configured and returns status.
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies instruction files from distribution/ to target.
 
-        Returns tuple of (sources_present, instructions_target_path).
-        sources_present indicates whether instruction sources were
-        configured and processed.
+        Reads from distribution/per-project/general/instructions/ and
+        copies to the configured instructions target path.
+        Returns tuple of (files_attempted, files_written, exclude_entries).
     '''
-    if not configuration.get( 'provide_instructions', False ):
-        return ( False, '' )
-    instructions_sources = configuration.get( 'instructions_sources', [ ] )
-    instructions_target = configuration.get(
-        'instructions_target', '.auxiliary/instructions' )
-    if not instructions_sources:
-        return ( False, instructions_target )
-    instructions_attempted, instructions_updated = (
-        _instructions.populate_instructions(
-            instructions_sources,
-            target / instructions_target,
-            tag_prefix,
+    import contextlib as _contextlib
+    source_dir = distribution / 'per-project' / 'general' / 'instructions'
+    if not source_dir.exists( ):
+        return ( 0, 0, ( ) )
+    target_dir = target / instructions_target
+    files_attempted = 0
+    files_written = 0
+    exclude_entries: list[ str ] = [ ]
+    for source_file in source_dir.glob( '*' ):
+        if not source_file.is_file( ): continue
+        files_attempted += 1
+        dest_path = target_dir / source_file.name
+        if _operations.save_content(
+            source_file.read_text( encoding = 'utf-8' ),
+            dest_path,
             simulate,
-        ) )
-    _scribe.info(
-        f"Updated {instructions_updated}/{instructions_attempted} "
-        "instruction files" )
-    return ( True, instructions_target )
+        ):
+            files_written += 1
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( target ) ) )
+    return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
 def _populate_per_user_content(
@@ -354,20 +357,27 @@ def _copy_skills(
 
 def _manage_project_auxiliaries(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    distribution: __.Path,
     target: __.Path,
-    tag_prefix: __.Absential[ str ],
     distribution_entries: __.cabc.Sequence[ str ],
     simulate: bool
 ) -> None:
     ''' Manages auxiliary project files (instructions, symlinks, excludes). '''
-    instructions_populated, instructions_target = (
-        _populate_instructions_if_configured(
-            configuration, target, tag_prefix, simulate ) )
+    instruction_entries: tuple[ str, ... ] = ( )
+    if configuration.get( 'provide_instructions', False ):
+        instructions_target = configuration.get(
+            'instructions_target', '.auxiliary/instructions' )
+        instructions_attempted, instructions_written, instruction_entries = (
+            _copy_instructions_from_distribution(
+                distribution, target, instructions_target, simulate ) )
+        if instructions_written > 0:
+            _scribe.info(
+                f"Copied {instructions_written}/{instructions_attempted} "
+                "instruction files" )
     all_symlink_names: list[ str ] = list( _create_all_symlinks(
         configuration, target, 'per-project', simulate ) )
     git_exclude_entries: list[ str ] = list( distribution_entries )
-    if instructions_populated:
-        git_exclude_entries.append( instructions_target )
+    git_exclude_entries.extend( instruction_entries )
     git_exclude_entries.extend( all_symlink_names )
     if git_exclude_entries:
         entries_count = _operations.update_git_exclude(
@@ -449,7 +459,7 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
                 _scribe.info(
                     f"Copied {items_copied}/{items_attempted} items" )
         _manage_project_auxiliaries(
-            filtered_configuration, self.target, prefix,
+            filtered_configuration, location, self.target,
             exclude_entries, self.simulate )
         result = _results.ContentGenerationResult(
             source_location = location,

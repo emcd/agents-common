@@ -90,5 +90,3 @@ def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
         tmp_path /
         '.auxiliary/configuration/coders/opencode/skills/cs-review-todos/SKILL.md'
     )
-
-

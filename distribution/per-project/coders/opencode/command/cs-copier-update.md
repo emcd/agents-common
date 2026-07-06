@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Synchronize project with Copier template updates, intelligently resolving merge conflicts
 ---
 

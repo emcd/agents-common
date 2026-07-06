@@ -1,5 +1,4 @@
 ---
-allowed-tools: 
 description: Create Towncrier news fragments for user-facing changes since last release cleanup
 ---
 
