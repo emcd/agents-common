@@ -36,6 +36,36 @@ Source material for generating command/agent artifacts lives in `components/`, s
 
 Structure mirrors the current 3-tier pipeline (configurations, templates, contents) but only for generated content types (commands, agents). Skills and instructions are distributed directly from `distribution/`.
 
+### Decision: Distribution directory structure
+
+The `distribution/` tree mirrors the downstream target layout:
+
+```
+distribution/
+├── per-project/
+│   ├── general/
+│   │   ├── instructions/    # Synced instruction artifacts
+│   │   └── skills/          # Portable skills (opsx-*, etc.)
+│   └── coders/
+│       ├── claude/           # Claude-specific artifacts
+│       │   ├── commands/
+│       │   └── agents/
+│       ├── codex/            # Codex-specific artifacts
+│       └── opencode/         # OpenCode-specific artifacts
+└── per-user/
+    ├── general/              # User-level executables
+    └── coders/
+        ├── claude/           # Per-user Claude config
+        ├── codex/            # Per-user Codex config
+        └── opencode/         # Per-user OpenCode config
+```
+
+This structure enables:
+- Skills and instructions shared across coders in `per-project/general/`
+- Coder-specific commands/agents in `per-project/coders/<coder>/`
+- Per-user configuration in `per-user/coders/<coder>/`
+- Per-user executables in `per-user/general/`
+
 ### Decision: Skills distributed directly, not generated
 
 Skills are coder-agnostic and require no transformation. They live directly in `distribution/per-project/general/skills/` as both source and output. This is a conscious tradeoff: skills are the one category where source == output.

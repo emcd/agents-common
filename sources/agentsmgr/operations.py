@@ -128,8 +128,6 @@ def generate_coder_item_type(
     items_written = 0
     if generator.mode == 'nowhere':
         return ( items_attempted, items_written )
-    if item_type == 'skills':
-        return _generate_skills( generator, coder, target, simulate )
     configuration_directory = (
         generator.location / 'configurations' / item_type )
     if not configuration_directory.exists( ):
@@ -144,34 +142,6 @@ def generate_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, target )
-        if save_content( result.content, result.location, simulate ):
-            items_written += 1
-    return ( items_attempted, items_written )
-
-
-def _generate_skills(
-    generator: _generator.ContentGenerator,
-    coder: str,
-    target: __.Path,
-    simulate: bool,
-) -> tuple[ int, int ]:
-    ''' Generates skills for a coder from contents/skills/*.md.
-
-        Skills are portable across coders and have no TOML
-        configuration files. Discovery iterates markdown files in the
-        contents/skills directory. Returns tuple of (items_attempted,
-        items_written).
-    '''
-    items_attempted = 0
-    items_written = 0
-    skills_directory = generator.location / 'contents' / 'skills'
-    if not skills_directory.exists( ):
-        return ( items_attempted, items_written )
-    for skill_file in skills_directory.glob( '*.md' ):
-        item_name = skill_file.stem
-        items_attempted += 1
-        result = generator.render_single_item(
-            'skills', item_name, coder, target )
         if save_content( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
@@ -438,10 +408,11 @@ def _generate_for_distribution(
     distribution: __.Path,
     simulate: bool,
 ) -> tuple[ int, int ]:
-    ''' Generates items of a type for distribution/.
+    ''' Generates items of a type for a coder into distribution/.
 
         Reads configuration and content from components/, renders through
-        the 3-tier pipeline, and writes to distribution/<item_type>/.
+        the 3-tier pipeline, and writes to
+        distribution/per-project/coders/<coder>/<item_type>/.
         Returns tuple of (items_attempted, items_written).
     '''
     items_attempted = 0
@@ -461,7 +432,7 @@ def _generate_for_distribution(
         result = generator.render_single_item(
             item_type, item_name, coder, distribution )
         output_path = (
-            distribution / item_type /
+            distribution / 'per-project' / 'coders' / coder / item_type /
             f"{item_name}.{_parse_output_extension( result.location )}" )
         if save_content( result.content, output_path, simulate ):
             items_written += 1
@@ -531,7 +502,7 @@ def _check_staleness_for_type(
         result = generator.render_single_item(
             item_type, item_name, coder, distribution )
         output_path = (
-            distribution / item_type /
+            distribution / 'per-project' / 'coders' / coder / item_type /
             f"{item_name}.{_parse_output_extension( result.location )}" )
         if not output_path.exists( ):
             diffs.append(

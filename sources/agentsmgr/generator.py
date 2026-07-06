@@ -248,13 +248,14 @@ class ContentGenerator( __.immut.DataclassObject ):
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
     def _retrieve_skill_content( self, item_name: str ) -> str:
-        ''' Retrieves skill content directly from contents/skills/.
+        ''' Retrieves skill content directly from
+            distribution/per-project/general/skills/.
 
             Skills are portable across coders, so no coder-specific
             lookup or fallback logic is needed.
         '''
         path = (
-            self.location / "contents" / "skills" /
+            self.location / "per-project" / "general" / "skills" /
             f"{item_name}.md" )
         if path.exists( ):
             return path.read_text( encoding = 'utf-8' )

@@ -183,29 +183,14 @@ def _populate_per_user_content(
     application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool,
 ) -> tuple[ int, int ]:
-    ''' Populates commands and agents for per-user coders.
+    ''' Populates commands, agents, and skills for per-user coders.
 
-        Generates content to each coder's per-user directory using
-        renderer's resolve_base_directory() with per-user mode.
-        Returns tuple of (items_attempted, items_generated).
+        Copies distribution items to each coder's per-user directory.
+        Returns tuple of (items_attempted, items_written).
     '''
-    items_attempted = 0
-    items_generated = 0
-    for coder_name, renderer in _resolver.resolve_coders( coders ):
-        coder_configuration = { 'coders': [ coder_name ] }
-        generator = _generator.ContentGenerator(
-            location = location,
-            configuration = coder_configuration,
-            application_configuration = application_configuration,
-            mode = 'per-user',
-        )
-        target = renderer.resolve_base_directory(
-            'per-user', __.Path.cwd( ), configuration, dict( __.os.environ ) )
-        attempted, generated = _operations.populate_directory(
-            generator, target, simulate )
-        items_attempted += attempted
-        items_generated += generated
-    return ( items_attempted, items_generated )
+    return _copy_distribution_items(
+        location, coders, application_configuration,
+        'per-user', simulate )
 
 
 def _create_coder_directory_symlinks(
@@ -256,18 +241,126 @@ def _copy_coder_resources(
 ) -> tuple[ int, int ]:
     ''' Copies static resources for coders.
 
-        Copies resources from defaults/per-project/resources/<coder>
+        Copies resources from distribution/per-project/coders/<coder>
         to target directory. Returns tuple of (coders_attempted,
         coders_processed).
     '''
-    resources_source = location / 'per-project' / 'resources'
+    resources_source = location / 'per-project' / 'coders'
     if not resources_source.exists( ):
         _scribe.debug(
-            f"No per-project resources found at {resources_source}" )
+            f"No per-project coders found at {resources_source}" )
         return ( 0, 0 )
     coders_target = target / '.auxiliary' / 'configuration' / 'coders'
     return _operations.copy_coder_resources(
         resources_source, coders_target, coders, simulate )
+
+
+def _copy_distribution_items(
+    distribution: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    mode: _renderers.ExplicitTargetMode,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Copies distribution items to downstream target paths.
+
+        Iterates coders and copies from
+        distribution/per-project/coders/<coder>/ to the target
+        location. For skills, copies from
+        distribution/per-project/general/skills/.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    for coder_name, manager in _resolver.resolve_coders(
+        coders, mode = mode
+    ):
+        base_directory = manager.resolve_base_directory(
+            mode = mode,
+            target = __.Path.cwd( ),
+            configuration = application_configuration,
+            environment = __.os.environ,
+        )
+        coder_source = (
+            distribution / mode / 'coders' / coder_name )
+        for item_type in manager.item_types_available:
+            if item_type == 'skills':
+                attempted, written = _copy_skills(
+                    distribution, base_directory, manager, simulate )
+            else:
+                attempted, written = _copy_rendered_items(
+                    coder_source, item_type, base_directory, manager,
+                    simulate )
+            items_attempted += attempted
+            items_written += written
+    return ( items_attempted, items_written )
+
+
+def _copy_rendered_items(
+    coder_source: __.Path,
+    item_type: str,
+    base_directory: __.Path,
+    manager: _renderers.RendererBase,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Copies pre-rendered items from distribution/<coder>/ to target paths.
+
+        Iterates items in distribution/<coder>/<item_type>/ and copies
+        each to the target output structure. Returns tuple of (attempted,
+        written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    source_dir = coder_source / item_type
+    if not source_dir.exists( ):
+        return ( items_attempted, items_written )
+    for source_file in source_dir.iterdir( ):
+        if not source_file.is_file( ): continue
+        items_attempted += 1
+        dirname = manager.produce_output_structure( item_type )
+        dest_path = base_directory / dirname / source_file.name
+        if _operations.save_content(
+            source_file.read_text( encoding = 'utf-8' ),
+            dest_path,
+            simulate,
+        ):
+            items_written += 1
+    return ( items_attempted, items_written )
+
+
+def _copy_skills(
+    distribution: __.Path,
+    base_directory: __.Path,
+    manager: _renderers.RendererBase,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Copies skill files directly from distribution/ to target paths.
+
+        Skills are static artifacts that require no rendering.
+        Copies from distribution/per-project/general/skills/<name>.md to
+        <base>/skills/<name>/SKILL.md. Returns tuple of (attempted,
+        written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    skills_dir = (
+        distribution / 'per-project' / 'general' / 'skills' )
+    if not skills_dir.exists( ):
+        return ( items_attempted, items_written )
+    skills_output = manager.calculate_directory_location( 'skills' )
+    for skill_file in skills_dir.glob( '*.md' ):
+        items_attempted += 1
+        item_name = skill_file.stem
+        dest_path = (
+            base_directory / skills_output / item_name / 'SKILL.md' )
+        if _operations.save_content(
+            skill_file.read_text( encoding = 'utf-8' ),
+            dest_path,
+            simulate,
+        ):
+            items_written += 1
+    return ( items_attempted, items_written )
 
 
 def _manage_project_auxiliaries(
@@ -298,8 +391,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
     ''' Generates project-scoped agent content from data sources.
 
         Populates agent commands, definitions, and static resources
-        from the specified data source. Copies static resources from
-        defaults/per-project/resources/ to the project configuration.
+        from the specified data source. Copies pre-rendered commands
+        and agents from distribution/, generates skills, and copies
+        static resources.
     '''
 
     source: SourceArgument = '.'
@@ -348,17 +442,16 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
+            location, ( 'contents', ) )
+        items_attempted, items_copied = _copy_distribution_items(
             location,
-            ( 'configurations', 'contents', 'templates' ) )
-        generator = _generator.ContentGenerator(
-            location = location,
-            configuration = filtered_configuration,
-            application_configuration = auxdata.configuration,
-            mode = 'per-project',
-        )
-        items_attempted, items_generated = _operations.populate_directory(
-            generator, self.target, self.simulate )
-        _scribe.info( f"Generated {items_generated}/{items_attempted} items" )
+            filtered_configuration[ 'coders' ],
+            auxdata.configuration,
+            'per-project',
+            self.simulate )
+        if items_copied > 0:
+            _scribe.info(
+                f"Copied {items_copied}/{items_attempted} items" )
         resources_attempted, resources_copied = _copy_coder_resources(
             location,
             self.target,
@@ -375,7 +468,7 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
-            items_generated = items_generated,
+            items_generated = items_copied,
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
@@ -427,8 +520,7 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
             location,
-            ( 'configurations', 'contents', 'templates',
-              'user/configurations', 'user/executables' ) )
+            ( 'per-user', ) )
         content_attempted, content_generated = _populate_per_user_content(
             location,
             per_user_coders,
