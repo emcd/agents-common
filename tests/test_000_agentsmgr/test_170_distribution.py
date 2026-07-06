@@ -84,11 +84,27 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
     ''' Static resource subpaths should be preserved during copy.
         e.g., prompt/nemotron-3-build.md should not lose prompt/ prefix. '''
-    # Verify the source has the correct structure
+    population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    configuration = {
+        'coders': [ 'opencode' ],
+        'languages': [ 'python' ],
+    }
+    attempted, written = population_module._copy_distribution_items(
+        location,
+        [ 'opencode' ],
+        target,
+        configuration,
+        'per-project',
+        simulate = False,
+    )
+    assert attempted > 0
+    assert written > 0
     prompt_resource = (
-        location / 'per-project' / 'coders' / 'opencode' / 'prompt'
-        / 'nemotron-3-build.md' )
+        target / '.auxiliary' / 'configuration' / 'coders' / 'opencode'
+        / 'prompt' / 'nemotron-3-build.md' )
     assert prompt_resource.exists( ), (
         f"Expected prompt resource at {prompt_resource}" )
 
@@ -117,7 +133,7 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
         generator, tmp_path )
     assert items_checked == 42
     assert diffs == [ ]
-    # Remove one artifact to simulate staleness
+    # Remove one artifact to simulate staleness (missing)
     stale_file = (
         tmp_path / 'per-project' / 'coders' / 'claude' / 'commands'
         / 'cs-architect.md' )
@@ -126,8 +142,15 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
     assert items_checked == 42
-    assert len( diffs ) > 0
     assert any( 'missing' in d for d in diffs )
+    # Add an orphaned artifact to detect extra files
+    orphan_dir = (
+        tmp_path / 'per-project' / 'coders' / 'claude' / 'commands' )
+    orphan_dir.mkdir( parents = True, exist_ok = True )
+    ( orphan_dir / 'zz-orphan.md' ).write_text( 'orphan' )
+    items_checked, diffs = operations_module.check_distribution_staleness(
+        generator, tmp_path )
+    assert any( 'orphaned' in d for d in diffs )
 
 
 def test_500_populate_uses_explicit_target( tmp_path ):

@@ -177,7 +177,6 @@ def _populate_per_user_content(
     location: __.Path,
     coders: __.cabc.Sequence[ str ],
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
-    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool,
 ) -> tuple[ int, int ]:
     ''' Populates commands, agents, and skills for per-user coders.
@@ -425,8 +424,12 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             'per-project',
             self.simulate )
         if items_attempted > 0:
-            _scribe.info(
-                f"Copied {items_copied}/{items_attempted} items" )
+            if self.simulate:
+                _scribe.info(
+                    f"Would copy {items_attempted} items" )
+            else:
+                _scribe.info(
+                    f"Copied {items_copied}/{items_attempted} items" )
         _manage_project_auxiliaries(
             filtered_configuration, self.target, prefix, self.simulate )
         result = _results.ContentGenerationResult(
@@ -492,7 +495,6 @@ class PopulateUserCommand( __.appcore_cli.Command ):
             location,
             per_user_coders,
             configuration,
-            auxdata.configuration,
             self.simulate,
         )
         if content_attempted > 0:
@@ -501,7 +503,7 @@ class PopulateUserCommand( __.appcore_cli.Command ):
         globals_attempted, globals_updated = _userdata.populate_globals(
             location,
             per_user_coders,
-            auxdata.configuration,
+            configuration,
             self.simulate,
         )
         _scribe.info(
