@@ -184,9 +184,10 @@ def _populate_per_user_content(
         Copies distribution items to each coder's per-user directory.
         Returns tuple of (items_attempted, items_written).
     '''
-    return _copy_distribution_items(
+    attempted, written, _ = _copy_distribution_items(
         location, coders, __.Path.cwd( ), configuration,
         'per-user', simulate )
+    return ( attempted, written )
 
 
 def _create_coder_directory_symlinks(
@@ -236,7 +237,7 @@ def _copy_distribution_items(  # noqa: PLR0913
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     mode: _renderers.ExplicitTargetMode,
     simulate: bool,
-) -> tuple[ int, int ]:
+) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Copies distribution items to downstream target paths.
 
         For each coder, copies the entire
@@ -247,10 +248,11 @@ def _copy_distribution_items(  # noqa: PLR0913
         The distribution tree mirrors downstream layout, so this is
         a single copy operation per coder.
 
-        Returns tuple of (items_attempted, items_written).
+        Returns tuple of (items_attempted, items_written, exclude_entries).
     '''
     items_attempted = 0
     items_written = 0
+    exclude_entries: list[ str ] = [ ]
     for coder_name, manager in _resolver.resolve_coders(
         coders, mode = mode
     ):
@@ -263,31 +265,36 @@ def _copy_distribution_items(  # noqa: PLR0913
         coder_source = distribution / mode / 'coders' / coder_name
         # Copy entire coder tree (commands, agents, resources).
         if coder_source.exists( ):
-            attempted, written = _copy_tree(
-                coder_source, base_directory, simulate )
+            attempted, written, entries = _copy_tree(
+                coder_source, base_directory, target, simulate )
             items_attempted += attempted
             items_written += written
+            exclude_entries.extend( entries )
         # Copy skills from general directory.
         if mode == 'per-project':
-            attempted, written = _copy_skills(
-                distribution, base_directory, manager, simulate )
+            attempted, written, entries = _copy_skills(
+                distribution, base_directory, manager, target, simulate )
             items_attempted += attempted
             items_written += written
-    return ( items_attempted, items_written )
+            exclude_entries.extend( entries )
+    return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
 def _copy_tree(
     source: __.Path,
     target: __.Path,
+    project_root: __.Path,
     simulate: bool,
-) -> tuple[ int, int ]:
+) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Copies directory tree from source to target.
 
         Recursively copies all files and subdirectories.
-        Returns tuple of (files_attempted, files_written).
+        Returns tuple of (files_attempted, files_written, exclude_entries).
     '''
+    import contextlib as _contextlib
     files_attempted = 0
     files_written = 0
+    exclude_entries: list[ str ] = [ ]
     for source_file in source.rglob( '*' ):
         if not source_file.is_file( ): continue
         files_attempted += 1
@@ -299,28 +306,34 @@ def _copy_tree(
             simulate,
         ):
             files_written += 1
-    return ( files_attempted, files_written )
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( project_root ) ) )
+    return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
 def _copy_skills(
     distribution: __.Path,
     base_directory: __.Path,
     manager: _renderers.RendererBase,
+    project_root: __.Path,
     simulate: bool,
-) -> tuple[ int, int ]:
+) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Copies skill files directly from distribution/ to target paths.
 
         Skills are static artifacts that require no rendering.
         Copies from distribution/per-project/general/skills/<name>.md to
         <base>/skills/<name>/SKILL.md. Returns tuple of (attempted,
-        written).
+        written, exclude_entries).
     '''
+    import contextlib as _contextlib
     items_attempted = 0
     items_written = 0
+    exclude_entries: list[ str ] = [ ]
     skills_dir = (
         distribution / 'per-project' / 'general' / 'skills' )
     if not skills_dir.exists( ):
-        return ( items_attempted, items_written )
+        return ( items_attempted, items_written, tuple( exclude_entries ) )
     skills_output = manager.calculate_directory_location( 'skills' )
     for skill_file in skills_dir.glob( '*.md' ):
         items_attempted += 1
@@ -333,13 +346,17 @@ def _copy_skills(
             simulate,
         ):
             items_written += 1
-    return ( items_attempted, items_written )
+        with _contextlib.suppress( ValueError ):
+            exclude_entries.append(
+                str( dest_path.relative_to( project_root ) ) )
+    return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
 def _manage_project_auxiliaries(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     target: __.Path,
     tag_prefix: __.Absential[ str ],
+    distribution_entries: __.cabc.Sequence[ str ],
     simulate: bool
 ) -> None:
     ''' Manages auxiliary project files (instructions, symlinks, excludes). '''
@@ -348,7 +365,7 @@ def _manage_project_auxiliaries(
             configuration, target, tag_prefix, simulate ) )
     all_symlink_names: list[ str ] = list( _create_all_symlinks(
         configuration, target, 'per-project', simulate ) )
-    git_exclude_entries: list[ str ] = [ ]
+    git_exclude_entries: list[ str ] = list( distribution_entries )
     if instructions_populated:
         git_exclude_entries.append( instructions_target )
     git_exclude_entries.extend( all_symlink_names )
@@ -416,13 +433,14 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
             location, ( 'per-project', ) )
-        items_attempted, items_copied = _copy_distribution_items(
-            location,
-            filtered_configuration[ 'coders' ],
-            self.target,
-            configuration,
-            'per-project',
-            self.simulate )
+        items_attempted, items_copied, exclude_entries = (
+            _copy_distribution_items(
+                location,
+                filtered_configuration[ 'coders' ],
+                self.target,
+                configuration,
+                'per-project',
+                self.simulate ) )
         if items_attempted > 0:
             if self.simulate:
                 _scribe.info(
@@ -431,7 +449,8 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
                 _scribe.info(
                     f"Copied {items_copied}/{items_attempted} items" )
         _manage_project_auxiliaries(
-            filtered_configuration, self.target, prefix, self.simulate )
+            filtered_configuration, self.target, prefix,
+            exclude_entries, self.simulate )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = self.target,

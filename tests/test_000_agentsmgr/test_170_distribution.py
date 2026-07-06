@@ -92,7 +92,7 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
         'coders': [ 'opencode' ],
         'languages': [ 'python' ],
     }
-    attempted, written = population_module._copy_distribution_items(
+    attempted, written, _ = population_module._copy_distribution_items(
         location,
         [ 'opencode' ],
         target,
@@ -163,14 +163,15 @@ def test_500_populate_uses_explicit_target( tmp_path ):
         'coders': [ 'claude' ],
         'languages': [ 'python' ],
     }
-    attempted, written = population_module._copy_distribution_items(
-        location,
-        [ 'claude' ],
-        target,
-        configuration,
-        'per-project',
-        simulate = False,
-    )
+    attempted, written, exclude_entries = (
+        population_module._copy_distribution_items(
+            location,
+            [ 'claude' ],
+            target,
+            configuration,
+            'per-project',
+            simulate = False,
+        ) )
     assert attempted > 0
     assert written > 0
     # Verify items were copied to target, not cwd
@@ -179,3 +180,13 @@ def test_500_populate_uses_explicit_target( tmp_path ):
         / 'commands' )
     assert claude_commands.exists( ), (
         f"Expected commands at {claude_commands}" )
+    # Verify exclude entries are file-level paths relative to project root
+    assert len( exclude_entries ) > 0
+    for entry in exclude_entries:
+        assert not entry.startswith( '/' ), (
+            f"Exclude entry should be relative: {entry}" )
+        assert (
+            'commands/' in entry
+            or 'agents/' in entry
+            or 'skills/' in entry
+        ), f"Exclude entry should reference distributed file: {entry}"
