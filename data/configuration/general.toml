@@ -18,7 +18,7 @@ opencode = 'claude'
 
 [sources]
 # Default source when not specified via CLI or environment
-default = 'github://emcd/agents-common/tree/main/defaults'
+default = 'github://emcd/agents-common/tree/main/distribution'
 
 # Examples for alternative default sources:
 #default = 'file:///path/to/custom/agents'

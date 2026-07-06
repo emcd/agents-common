@@ -47,16 +47,13 @@ def _produce_default_configuration(
 ) -> __.cabc.Mapping[ str, __.typx.Any ]:
     ''' Produces default configuration for generate command.
 
-        Scans components/configurations/ to discover all coders and
-        produces a configuration suitable for the ContentGenerator.
+        Uses all known coders from the renderer registry so that
+        fallback content is generated for all coders, not just those
+        with direct component content.
     '''
-    coders: set[ str ] = set( )
-    for item_type in ( 'commands', 'agents' ):
-        contents_dir = location / 'contents' / item_type
-        if contents_dir.exists( ):
-            for coder_dir in contents_dir.iterdir( ):
-                if coder_dir.is_dir( ): coders.add( coder_dir.name )
-    return { 'coders': sorted( coders ), 'languages': [ 'python' ] }
+    from . import renderers as _renderers
+    coders = sorted( _renderers.RENDERERS.keys( ) )
+    return { 'coders': coders, 'languages': [ 'python' ] }
 
 
 SourceArgument: __.typx.TypeAlias = __.typx.Annotated[
@@ -189,7 +186,7 @@ def _populate_per_user_content(
         Returns tuple of (items_attempted, items_written).
     '''
     return _copy_distribution_items(
-        location, coders, application_configuration,
+        location, coders, __.Path.cwd( ), configuration,
         'per-user', simulate )
 
 
@@ -233,41 +230,23 @@ def _create_coder_directory_symlinks(
     return ( attempted, created, tuple( symlink_names ) )
 
 
-def _copy_coder_resources(
-    location: __.Path,
-    target: __.Path,
-    coders: __.cabc.Sequence[ str ],
-    simulate: bool
-) -> tuple[ int, int ]:
-    ''' Copies static resources for coders.
-
-        Copies resources from distribution/per-project/coders/<coder>
-        to target directory. Returns tuple of (coders_attempted,
-        coders_processed).
-    '''
-    resources_source = location / 'per-project' / 'coders'
-    if not resources_source.exists( ):
-        _scribe.debug(
-            f"No per-project coders found at {resources_source}" )
-        return ( 0, 0 )
-    coders_target = target / '.auxiliary' / 'configuration' / 'coders'
-    return _operations.copy_coder_resources(
-        resources_source, coders_target, coders, simulate )
-
-
-def _copy_distribution_items(
+def _copy_distribution_items(  # noqa: PLR0913
     distribution: __.Path,
     coders: __.cabc.Sequence[ str ],
-    application_configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    target: __.Path,
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
     mode: _renderers.ExplicitTargetMode,
     simulate: bool,
 ) -> tuple[ int, int ]:
     ''' Copies distribution items to downstream target paths.
 
-        Iterates coders and copies from
-        distribution/per-project/coders/<coder>/ to the target
-        location. For skills, copies from
+        For each coder, copies the entire
+        distribution/<mode>/coders/<coder>/ tree to the target.
+        Skills are copied separately from
         distribution/per-project/general/skills/.
+
+        The distribution tree mirrors downstream layout, so this is
+        a single copy operation per coder.
 
         Returns tuple of (items_attempted, items_written).
     '''
@@ -278,55 +257,50 @@ def _copy_distribution_items(
     ):
         base_directory = manager.resolve_base_directory(
             mode = mode,
-            target = __.Path.cwd( ),
-            configuration = application_configuration,
+            target = target,
+            configuration = configuration,
             environment = __.os.environ,
         )
-        coder_source = (
-            distribution / mode / 'coders' / coder_name )
-        for item_type in manager.item_types_available:
-            if item_type == 'skills':
-                attempted, written = _copy_skills(
-                    distribution, base_directory, manager, simulate )
-            else:
-                attempted, written = _copy_rendered_items(
-                    coder_source, item_type, base_directory, manager,
-                    simulate )
+        coder_source = distribution / mode / 'coders' / coder_name
+        # Copy entire coder tree (commands, agents, resources).
+        if coder_source.exists( ):
+            attempted, written = _copy_tree(
+                coder_source, base_directory, simulate )
+            items_attempted += attempted
+            items_written += written
+        # Copy skills from general directory.
+        if mode == 'per-project':
+            attempted, written = _copy_skills(
+                distribution, base_directory, manager, simulate )
             items_attempted += attempted
             items_written += written
     return ( items_attempted, items_written )
 
 
-def _copy_rendered_items(
-    coder_source: __.Path,
-    item_type: str,
-    base_directory: __.Path,
-    manager: _renderers.RendererBase,
+def _copy_tree(
+    source: __.Path,
+    target: __.Path,
     simulate: bool,
 ) -> tuple[ int, int ]:
-    ''' Copies pre-rendered items from distribution/<coder>/ to target paths.
+    ''' Copies directory tree from source to target.
 
-        Iterates items in distribution/<coder>/<item_type>/ and copies
-        each to the target output structure. Returns tuple of (attempted,
-        written).
+        Recursively copies all files and subdirectories.
+        Returns tuple of (files_attempted, files_written).
     '''
-    items_attempted = 0
-    items_written = 0
-    source_dir = coder_source / item_type
-    if not source_dir.exists( ):
-        return ( items_attempted, items_written )
-    for source_file in source_dir.iterdir( ):
+    files_attempted = 0
+    files_written = 0
+    for source_file in source.rglob( '*' ):
         if not source_file.is_file( ): continue
-        items_attempted += 1
-        dirname = manager.produce_output_structure( item_type )
-        dest_path = base_directory / dirname / source_file.name
+        files_attempted += 1
+        relative = source_file.relative_to( source )
+        dest_path = target / relative
         if _operations.save_content(
             source_file.read_text( encoding = 'utf-8' ),
             dest_path,
             simulate,
         ):
-            items_written += 1
-    return ( items_attempted, items_written )
+            files_written += 1
+    return ( files_attempted, files_written )
 
 
 def _copy_skills(
@@ -442,25 +416,17 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
         prefix = __.absent if self.tag_prefix is None else self.tag_prefix
         location = _cmdbase.retrieve_data_location( self.source, prefix )
         _cmdbase.validate_data_source_structure(
-            location, ( 'contents', ) )
+            location, ( 'per-project', ) )
         items_attempted, items_copied = _copy_distribution_items(
             location,
             filtered_configuration[ 'coders' ],
-            auxdata.configuration,
+            self.target,
+            configuration,
             'per-project',
             self.simulate )
-        if items_copied > 0:
+        if items_attempted > 0:
             _scribe.info(
                 f"Copied {items_copied}/{items_attempted} items" )
-        resources_attempted, resources_copied = _copy_coder_resources(
-            location,
-            self.target,
-            filtered_configuration[ 'coders' ],
-            self.simulate )
-        if resources_copied > 0:
-            _scribe.info(
-                f"Copied resources for "
-                f"{resources_copied}/{resources_attempted} coders" )
         _manage_project_auxiliaries(
             filtered_configuration, self.target, prefix, self.simulate )
         result = _results.ContentGenerationResult(

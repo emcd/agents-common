@@ -322,55 +322,6 @@ def _discover_common_git_directory( git_dir: __.Path ) -> __.Path:
     except ( OSError, IOError ): return git_dir
     return ( git_dir / common_path ).resolve( )
 
-def copy_coder_resources(
-    source_root: __.Path,
-    target_root: __.Path,
-    coders: __.cabc.Sequence[ str ],
-    simulate: bool = False
-) -> tuple[ int, int ]:
-    ''' Copies static resources for specified coders.
-
-        Iterates through coders and copies resources from
-        source_root/<coder> to target_root/<coder>.
-        Returns tuple of (coders_attempted, coders_processed).
-    '''
-    attempted = 0
-    processed = 0
-    for coder in coders:
-        source = source_root / coder
-        target = target_root / coder
-        if not source.exists( ):
-            __.provide_scribe( __name__ ).debug(
-                f"No resources found for {coder} at {source}" )
-            continue
-        attempted += 1
-        if copy_resource_content( source, target, simulate ):
-            processed += 1
-    return ( attempted, processed )
-
-def copy_resource_content(
-    source: __.Path, target: __.Path, simulate: bool
-) -> bool:
-    ''' Recursively copies directory contents.
-
-        Copies all files and subdirectories from source to target,
-        overwriting existing files. Handles directory creation.
-    '''
-    if simulate: return True
-    try:
-        target.mkdir( parents = True, exist_ok = True )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.CoderResourceCopyFailure(
-            source, target
-        ) from exception
-    try:
-        __.shutil.copytree( source, target, dirs_exist_ok = True )
-    except ( OSError, IOError ) as exception:
-        raise _exceptions.CoderResourceCopyFailure(
-            source, target
-        ) from exception
-    return True
-
 
 def generate_distribution(
     generator: _generator.ContentGenerator,
@@ -431,8 +382,10 @@ def _generate_for_distribution(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, distribution )
+        renderer = _renderers.RENDERERS[ coder ]
+        dirname = renderer.produce_output_structure( item_type )
         output_path = (
-            distribution / 'per-project' / 'coders' / coder / item_type /
+            distribution / 'per-project' / 'coders' / coder / dirname /
             f"{item_name}.{_parse_output_extension( result.location )}" )
         if save_content( result.content, output_path, simulate ):
             items_written += 1
@@ -501,8 +454,10 @@ def _check_staleness_for_type(
         items_checked += 1
         result = generator.render_single_item(
             item_type, item_name, coder, distribution )
+        renderer = _renderers.RENDERERS[ coder ]
+        dirname = renderer.produce_output_structure( item_type )
         output_path = (
-            distribution / 'per-project' / 'coders' / coder / item_type /
+            distribution / 'per-project' / 'coders' / coder / dirname /
             f"{item_name}.{_parse_output_extension( result.location )}" )
         if not output_path.exists( ):
             diffs.append(
