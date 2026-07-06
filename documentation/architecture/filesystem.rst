@@ -183,13 +183,13 @@ The primary content of this repository is organized under two directories:
         ├── coders/                    # Coder-specific base templates
         │   ├── claude/
         │   │   ├── settings.json.jinja   # Claude base settings template
-        │   │   ├── .gitignore            # Ignore generated content
+        │   │   ├── .gitignore            # Base template hygiene
         │   │   ├── scripts/              # Hook executables
         │   │   │   ├── pre-bash-python-check
         │   │   │   ├── post-edit-linter
         │   │   │   └── pre-bash-git-commit-check
-        │   │   ├── commands/.gitignore   # Generated commands ignored
-        │   │   └── agents/.gitignore     # Generated agents ignored
+        │   │   ├── commands/.gitignore   # Base template hygiene
+        │   │   └── agents/.gitignore     # Base template hygiene
         │   └── opencode/
         │       ├── settings.jsonc.jinja  # Opencode base settings template
         │       ├── .gitignore

@@ -27,7 +27,7 @@ projects.
 Where skills live
 -------------------------------------------------------------------------------
 
-`agentsmgr populate project ./defaults` writes skills under the project’s
+`agentsmgr populate project ./distribution` writes skills under the project's
 configuration directories:
 
 .. code-block:: text
@@ -45,10 +45,10 @@ so tools discover skills in their expected locations:
 
 Notes:
 
-* Tools use filesystem discovery; we do not require a separate “skills registry”
+* Tools use filesystem discovery; we do not require a separate "skills registry"
   file.
-* Generated directories (`agents/`, `commands/`, `skills/`) are ignored by
-  consolidated coder-root `.gitignore` files, so they remain untracked.
+* Generated directories and files are managed by individual entries in
+  `.git/info/exclude` during populate, not by blanket `.gitignore` patterns.
 
 Skill contents and portability
 -------------------------------------------------------------------------------

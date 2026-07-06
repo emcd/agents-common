@@ -118,11 +118,10 @@ def generate_coder_item_type(
     ''' Generates items of specific type for a coder.
 
         Generates all items (commands or agents) for specified coder by
-        iterating through configuration files. For skills, discovers
-        items from contents/skills/*.md since skills have no TOML
-        configuration. Pre-checks content availability and skips items
-        with missing content. Returns tuple of (items_attempted,
-        items_written).
+        iterating through configuration files. Skills are direct
+        distribution artifacts and are not generated from components.
+        Pre-checks content availability and skips items with missing
+        content. Returns tuple of (items_attempted, items_written).
     '''
     items_attempted = 0
     items_written = 0

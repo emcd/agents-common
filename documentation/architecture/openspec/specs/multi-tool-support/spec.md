@@ -28,9 +28,9 @@ The system SHALL distribute OPSX workflow skills as portable agentsmgr defaults 
 - **AND** skills are discovered from `distribution/per-project/general/skills/opsx-*.md`
 
 #### Scenario: Skill portability
-- **WHEN** OPSX skills are generated for a coder
+- **WHEN** OPSX skills are distributed
 - **THEN** the skill body is tool-agnostic
-- **AND** coder-specific frontmatter is applied by the renderer
+- **AND** skills are direct distribution artifacts (not generated from components)
 - **AND** skills reference `openspec` CLI for dynamic instruction assembly
 
 #### Scenario: Skill sanitization
