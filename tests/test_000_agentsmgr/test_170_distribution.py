@@ -153,6 +153,124 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     assert any( 'orphaned' in d for d in diffs )
 
 
+def test_600_git_exclude_file_level_entries( tmp_path ):
+    ''' Integration test for .git/info/exclude contents.
+
+        Verifies that populate writes file-level exclude entries
+        (not directory-level) and reconciles stale entries when
+        distribution files are removed.
+    '''
+    import shutil
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    operations_module = __.cache_import_module( 'agentsmgr.operations' )
+    # Use a temp copy of distribution to avoid mutating tracked files
+    source_location = _distribution_location( )
+    location = tmp_path / 'distribution'
+    shutil.copytree( str( source_location ), str( location ) )
+    # Create a temp git repo as the target
+    target = tmp_path / 'project'
+    target.mkdir( )
+    has_git = _init_git_repo( target )
+    if not has_git:
+        import pytest
+        pytest.skip( "git not available in test environment" )
+    exclude_file = target / '.git' / 'info' / 'exclude'
+    configuration = {
+        'coders': [ 'claude', 'opencode' ],
+        'languages': [ 'python' ],
+    }
+    # First populate
+    _, _, exclude_entries = (
+        population_module._copy_distribution_items(
+            location,
+            [ 'claude', 'opencode' ],
+            target,
+            configuration,
+            'per-project',
+            simulate = False,
+        ) )
+    operations_module.update_git_exclude(
+        target, exclude_entries, simulate = False )
+    # Read exclude file
+    exclude_content = exclude_file.read_text( encoding = 'utf-8' )
+    # Verify file-level entries exist (not directory-level)
+    assert (
+        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        in exclude_content )
+    assert (
+        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        in exclude_content )
+    # Verify no directory-level entries for generated artifacts
+    assert (
+        '/.auxiliary/configuration/coders/claude/commands\n'
+        not in exclude_content )
+    assert (
+        '/.auxiliary/configuration/coders/claude/agents\n'
+        not in exclude_content )
+    # Simulate removal: re-copy with one file missing
+    stale_file = (
+        location / 'per-project' / 'coders' / 'claude' / 'commands'
+        / 'cs-architect.md' )
+    stale_file.unlink( )
+    _, _, exclude_entries2 = (
+        population_module._copy_distribution_items(
+            location,
+            [ 'claude', 'opencode' ],
+            target,
+            configuration,
+            'per-project',
+            simulate = False,
+        ) )
+    operations_module.update_git_exclude(
+        target, exclude_entries2, simulate = False )
+    exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
+    # Stale entry should be removed
+    assert (
+        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        not in exclude_content2 )
+    # Other entries should remain
+    assert (
+        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        in exclude_content2 )
+
+
+def _init_git_repo( path: Path ) -> bool:
+    ''' Initializes a git repo for testing.
+
+        Attempts real git init first, falls back to creating minimal
+        directory structure if git is not available.
+        Returns True if a real git repo was created, False otherwise.
+    '''
+    import shutil as _shutil
+    import subprocess as _sp
+    git = _shutil.which( 'git' )
+    if git:
+        result = _sp.run(  # noqa: S603
+            [ git, 'init' ], cwd = str( path ),
+            capture_output = True, check = False )
+        if result.returncode == 0:
+            _sp.run(  # noqa: S603
+                [ git, 'config', 'user.email', 'test@test.com' ],
+                cwd = str( path ), capture_output = True, check = True )
+            _sp.run(  # noqa: S603
+                [ git, 'config', 'user.name', 'Test' ],
+                cwd = str( path ), capture_output = True, check = True )
+            # Verify git created the exclude file
+            if ( path / '.git' / 'info' / 'exclude' ).exists( ):
+                return True
+    # Fallback: create minimal git structure for dulwich
+    git_dir = path / '.git'
+    info_dir = git_dir / 'info'
+    info_dir.mkdir( parents = True, exist_ok = True )
+    ( info_dir / 'exclude' ).write_text( '', encoding = 'utf-8' )
+    ( git_dir / 'HEAD' ).write_text(
+        'ref: refs/heads/main\n', encoding = 'utf-8' )
+    ( git_dir / 'config' ).write_text(
+        '[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n',
+        encoding = 'utf-8' )
+    return False
+
+
 def test_500_populate_uses_explicit_target( tmp_path ):
     ''' populate should use the explicit target, not Path.cwd(). '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
