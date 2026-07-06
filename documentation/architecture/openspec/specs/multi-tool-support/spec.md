@@ -25,7 +25,7 @@ The system SHALL distribute OPSX workflow skills as portable agentsmgr defaults 
 - **WHEN** OPSX skills are distributed through agentsmgr
 - **THEN** skills cover the complete OPSX workflow (`propose`, `apply`, `archive`, `explore`, `sync`)
 - **AND** skills use the `opsx-*` naming convention
-- **AND** skills are discovered from `defaults/contents/skills/opsx-*.md`
+- **AND** skills are discovered from `distribution/per-project/general/skills/opsx-*.md`
 
 #### Scenario: Skill portability
 - **WHEN** OPSX skills are generated for a coder
@@ -40,6 +40,6 @@ The system SHALL distribute OPSX workflow skills as portable agentsmgr defaults 
 
 #### Scenario: Old command removal
 - **WHEN** OPSX skills replace old OpenSpec commands
-- **THEN** old `openspec-*` commands are deleted from `defaults/per-project/resources/`
+- **THEN** old `openspec-*` commands are deleted from `components/configurations/commands/`
 - **AND** skills provide the same workflow through the portable distribution channel
 

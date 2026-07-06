@@ -65,20 +65,26 @@ Template-Based Content Generation System
 
 The system implements a template-of-templates architecture for dynamic content generation:
 
-**Source Data Structure** (``defaults/configurations/``):
+**Source Data Structure** (``components/configurations/``):
 - TOML files contain tool-agnostic metadata following project standards
 - 25+ slash commands with comprehensive metadata definitions
 - Agent definitions with tool-specific rendering configuration
 
-**Content Bodies** (``defaults/contents/``):
+**Content Bodies** (``components/contents/``):
 - Coder-specific content without frontmatter for maximum reusability
 - Currently Claude-focused with extensive command library
 - Extensible structure for additional AI coding assistants
 
-**Generic Templates** (``defaults/templates/``):
+**Generic Templates** (``components/templates/``):
 - Jinja2 templates combine metadata + content for each tool format
 - Variable normalization: hyphen→underscore for template access
 - Support for markdown and TOML output formats
+
+**Distribution Artifacts** (``distribution/``):
+- Pre-generated commands and agents per coder
+- Portable skills (opsx-*, cs-review-todos)
+- Synced instruction artifacts (.rst files)
+- Per-user configuration and executables
 
 **Additional Configuration** (``data/``):
 - General configuration defaults and system-wide settings
@@ -107,10 +113,10 @@ The system uses a hybrid approach combining Copier templates and dynamic generat
 - Hook scripts for pre/post tool use validation
 
 **Dynamic Content Generation**:
-- ``agentsmgr populate --source=agents-common@agents-N`` generates tool-specific content
-- Content generated directly in downstream projects from git source
+- ``agentsmgr generate`` produces distribution artifacts from components/
+- ``agentsmgr populate`` copies distribution artifacts to downstream projects
 - Configuration detection from Copier answers or defaults
-- Generated content ignored via .gitignore (not committed)
+- Distribution artifacts committed for review visibility
 
 **Plugin-Based Source Resolution**:
 - Git source handler supports full ``source@ref#subdir`` syntax
@@ -127,7 +133,8 @@ Hybrid Distribution Flow Architecture
 The system implements a dual-channel distribution model:
 
 1. **Source Data Repository** (agents-common):
-   - Maintains structured data sources in ``defaults/`` directory
+   - Maintains source material in ``components/`` directory
+   - Maintains distribution artifacts in ``distribution/`` directory
    - Provides minimal Copier template for base configuration
    - Tags releases for atomic data source distribution
 

@@ -193,9 +193,9 @@ To add support for a new AI tool:
 
 2. **Import the new module** in `renderers/__init__.py` to trigger registration
 
-3. **Add content directory** `defaults/contents/{coder}/` with coder-specific content bodies
+3. **Add content directory** `components/contents/{coder}/` with coder-specific content bodies
 
-4. **Add or reuse templates** in `defaults/templates/{flavor}/` as appropriate
+4. **Add or reuse templates** in `components/templates/{flavor}/` as appropriate
 
 5. **Configure fallback** (optional) in application configuration if compatible with existing coder formats
 
