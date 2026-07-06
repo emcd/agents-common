@@ -18,7 +18,11 @@
 #============================================================================#
 
 
-''' Command for populating agent content from data sources. '''
+''' Command for populating agent content from data sources.
+
+    Also provides the generate command for maintainer-facing generation
+    from components/ to distribution/.
+'''
 
 
 from . import __
@@ -36,6 +40,23 @@ from . import userdata as _userdata
 
 
 _scribe = __.provide_scribe( __name__ )
+
+
+def _produce_default_configuration(
+    location: __.Path,
+) -> __.cabc.Mapping[ str, __.typx.Any ]:
+    ''' Produces default configuration for generate command.
+
+        Scans components/configurations/ to discover all coders and
+        produces a configuration suitable for the ContentGenerator.
+    '''
+    coders: set[ str ] = set( )
+    for item_type in ( 'commands', 'agents' ):
+        contents_dir = location / 'contents' / item_type
+        if contents_dir.exists( ):
+            for coder_dir in contents_dir.iterdir( ):
+                if coder_dir.is_dir( ): coders.add( coder_dir.name )
+    return { 'coders': sorted( coders ), 'languages': [ 'python' ] }
 
 
 SourceArgument: __.typx.TypeAlias = __.typx.Annotated[
@@ -460,3 +481,84 @@ class PopulateCommand( __.appcore_cli.Command ):
 
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )
+
+
+class GenerateCommand( __.appcore_cli.Command ):
+    ''' Generates pre-rendered artifacts from components/ to distribution/.
+
+        Reads 3-tier pipeline source material from components/ and writes
+        rendered commands and agents to distribution/. Skills are direct
+        distribution artifacts and are not generated.
+
+        Use --check to validate that distribution/ is current without
+        writing files.
+    '''
+
+    source: __.typx.Annotated[
+        str,
+        __.tyro.conf.arg(
+            help = "Components source path (defaults to 'components')" ),
+    ] = 'components'
+    output: __.typx.Annotated[
+        __.Path,
+        __.tyro.conf.arg(
+            help = "Distribution output path" ),
+    ] = __.Path( 'distribution' )
+    check: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Check mode - fail if distribution is stale",
+            prefix_name = False ),
+    ] = False
+    simulate: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Dry run mode - show what would be generated",
+            prefix_name = False ),
+    ] = False
+
+    @_cmdbase.intercept_errors( )
+    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        ''' Generates distribution artifacts from components. '''
+        if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
+            raise _exceptions.ContextInvalidity
+        _scribe.info(
+            f"Generating distribution from {self.source} to {self.output}" )
+        location = _cmdbase.retrieve_data_location( self.source )
+        _cmdbase.validate_data_source_structure(
+            location,
+            ( 'configurations', 'contents', 'templates' ) )
+        configuration = _produce_default_configuration( location )
+        generator = _generator.ContentGenerator(
+            location = location,
+            configuration = configuration,
+            application_configuration = auxdata.configuration,
+            mode = 'per-project',
+        )
+        if self.check:
+            items_checked, diff_lines = (
+                _operations.check_distribution_staleness(
+                    generator, self.output ) )
+            if diff_lines:
+                _scribe.error(
+                    f"Distribution is stale ({items_checked} items checked):" )
+                for line in diff_lines:
+                    print( line )
+                raise SystemExit( 1 )
+            _scribe.info(
+                f"Distribution is current ({items_checked} items checked)" )
+            return
+        items_attempted, items_generated = (
+            _operations.generate_distribution(
+                generator, self.output, self.simulate ) )
+        _scribe.info(
+            f"Generated {items_generated}/{items_attempted} artifacts" )
+        result = _results.ContentGenerationResult(
+            source_location = location,
+            target_location = self.output,
+            coders = tuple( configuration.get( 'coders', ( ) ) ),
+            simulated = self.simulate,
+            items_generated = items_generated,
+        )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )

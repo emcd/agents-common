@@ -22,9 +22,12 @@
 
     This module provides functions for orchestrating content generation,
     including directory population and file writing operations with
-    simulation support.
+    simulation support. Also provides generation from components/ to
+    distribution/ with staleness checking.
 '''
 
+
+import difflib as _difflib
 
 from . import __
 from . import exceptions as _exceptions
@@ -35,6 +38,7 @@ from . import renderers as _renderers
 _MANAGED_BLOCK_BEGIN = '# BEGIN: Managed by agentsmgr (emcd-agents)'
 _MANAGED_BLOCK_WARNING = '# Do not manually edit entries in this block.'
 _MANAGED_BLOCK_END = '# END: Managed by agentsmgr (emcd-agents)'
+_EXTENSION_PARTS_MINIMUM = 2
 
 
 def populate_directory(
@@ -396,3 +400,151 @@ def copy_resource_content(
             source, target
         ) from exception
     return True
+
+
+def generate_distribution(
+    generator: _generator.ContentGenerator,
+    distribution: __.Path,
+    simulate: bool = False,
+) -> tuple[ int, int ]:
+    ''' Generates pre-rendered artifacts from components/ to distribution/.
+
+        Reads from the 3-tier pipeline source (configurations, templates,
+        per-coder contents) and writes rendered commands and agents to
+        distribution/. Skills are not generated; they are direct
+        distribution artifacts.
+
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    for coder_name in generator.configuration[ 'coders' ]:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills':
+                continue  # Skills are direct distribution artifacts.
+            attempted, written = _generate_for_distribution(
+                generator, coder_name, item_type, distribution, simulate )
+            items_attempted += attempted
+            items_written += written
+    return ( items_attempted, items_written )
+
+
+def _generate_for_distribution(
+    generator: _generator.ContentGenerator,
+    coder: str,
+    item_type: str,
+    distribution: __.Path,
+    simulate: bool,
+) -> tuple[ int, int ]:
+    ''' Generates items of a type for distribution/.
+
+        Reads configuration and content from components/, renders through
+        the 3-tier pipeline, and writes to distribution/<item_type>/.
+        Returns tuple of (items_attempted, items_written).
+    '''
+    items_attempted = 0
+    items_written = 0
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_attempted, items_written )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        item_name = configuration_file.stem
+        if not _content_exists( generator, item_type, item_name, coder ):
+            __.provide_scribe( __name__ ).warning(
+                f"Skipping {item_type}/{item_name} for {coder}: "
+                "content not found" )
+            continue
+        items_attempted += 1
+        result = generator.render_single_item(
+            item_type, item_name, coder, distribution )
+        output_path = (
+            distribution / item_type /
+            f"{item_name}.{_parse_output_extension( result.location )}" )
+        if save_content( result.content, output_path, simulate ):
+            items_written += 1
+    return ( items_attempted, items_written )
+
+
+def _parse_output_extension( location: __.Path ) -> str:
+    ''' Extracts output extension from rendered location path.
+
+        Skips the last suffix (which is the item name suffix) and returns
+        the meaningful extension. For SKILL.md returns "md".
+    '''
+    name = location.name
+    if name == 'SKILL.md': return 'md'
+    parts = name.split( '.' )
+    if len( parts ) >= _EXTENSION_PARTS_MINIMUM: return parts[ -1 ]
+    return 'md'
+
+
+def check_distribution_staleness(
+    generator: _generator.ContentGenerator,
+    distribution: __.Path,
+) -> tuple[ int, list[ str ] ]:
+    ''' Checks for staleness between components/ and distribution/.
+
+        Regenerates from components/ and compares against existing
+        distribution/ files. Returns tuple of (items_checked, diff_lines).
+        Empty diff_lines means distribution is current.
+    '''
+    items_checked = 0
+    all_diffs: list[ str ] = [ ]
+    for coder_name in generator.configuration[ 'coders' ]:
+        try: renderer = _renderers.RENDERERS[ coder_name ]
+        except KeyError: continue
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills':
+                continue
+            checked, diffs = _check_staleness_for_type(
+                generator, coder_name, item_type, distribution )
+            items_checked += checked
+            all_diffs.extend( diffs )
+    return ( items_checked, all_diffs )
+
+
+def _check_staleness_for_type(
+    generator: _generator.ContentGenerator,
+    coder: str,
+    item_type: str,
+    distribution: __.Path,
+) -> tuple[ int, list[ str ] ]:
+    ''' Checks staleness for items of a specific type.
+
+        Renders from components/ and compares against distribution/.
+        Returns tuple of (items_checked, diff_lines).
+    '''
+    items_checked = 0
+    diffs: list[ str ] = [ ]
+    configuration_directory = (
+        generator.location / 'configurations' / item_type )
+    if not configuration_directory.exists( ):
+        return ( items_checked, diffs )
+    for configuration_file in configuration_directory.glob( '*.toml' ):
+        item_name = configuration_file.stem
+        if not _content_exists( generator, item_type, item_name, coder ):
+            continue
+        items_checked += 1
+        result = generator.render_single_item(
+            item_type, item_name, coder, distribution )
+        output_path = (
+            distribution / item_type /
+            f"{item_name}.{_parse_output_extension( result.location )}" )
+        if not output_path.exists( ):
+            diffs.append(
+                f"+ {item_type}/{item_name}: "
+                f"missing from distribution" )
+            continue
+        existing_content = output_path.read_text( encoding = 'utf-8' )
+        if result.content != existing_content:
+            diff_lines = list( _difflib.unified_diff(
+                existing_content.splitlines( ),
+                result.content.splitlines( ),
+                fromfile = f"distribution/{item_type}/{output_path.name}",
+                tofile = f"components/{item_type}/{item_name}",
+                lineterm = '' ) )
+            diffs.extend( diff_lines )
+    return ( items_checked, diffs )
