@@ -28,7 +28,7 @@ from . import __
 
 def _defaults_location( ) -> Path:
     project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'defaults'
+    return project_root / 'distribution'
 
 
 def test_100_skills_copy_to_skill_md_under_skill_directory( tmp_path ):
