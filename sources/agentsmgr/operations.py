@@ -412,21 +412,29 @@ def check_distribution_staleness(
     ''' Checks for staleness between components/ and distribution/.
 
         Regenerates from components/ and compares against existing
-        distribution/ files. Returns tuple of (items_checked, diff_lines).
+        distribution/ files. Also detects orphaned artifacts that exist
+        in distribution/ but are no longer generated from components/.
+        Returns tuple of (items_checked, diff_lines).
         Empty diff_lines means distribution is current.
     '''
     items_checked = 0
     all_diffs: list[ str ] = [ ]
+    expected_paths: set[ __.Path ] = set( )
     for coder_name in generator.configuration[ 'coders' ]:
         try: renderer = _renderers.RENDERERS[ coder_name ]
         except KeyError: continue
         for item_type in renderer.item_types_available:
             if item_type == 'skills':
                 continue
-            checked, diffs = _check_staleness_for_type(
+            checked, diffs, paths = _check_staleness_for_type(
                 generator, coder_name, item_type, distribution )
             items_checked += checked
             all_diffs.extend( diffs )
+            expected_paths.update( paths )
+    # Detect orphaned artifacts in generated directories
+    orphans = _detect_orphaned_artifacts(
+        distribution, generator.configuration[ 'coders' ], expected_paths )
+    all_diffs.extend( orphans )
     return ( items_checked, all_diffs )
 
 
@@ -435,18 +443,19 @@ def _check_staleness_for_type(
     coder: str,
     item_type: str,
     distribution: __.Path,
-) -> tuple[ int, list[ str ] ]:
+) -> tuple[ int, list[ str ], set[ __.Path ] ]:
     ''' Checks staleness for items of a specific type.
 
         Renders from components/ and compares against distribution/.
-        Returns tuple of (items_checked, diff_lines).
+        Returns tuple of (items_checked, diff_lines, expected_paths).
     '''
     items_checked = 0
     diffs: list[ str ] = [ ]
+    expected_paths: set[ __.Path ] = set( )
     configuration_directory = (
         generator.location / 'configurations' / item_type )
     if not configuration_directory.exists( ):
-        return ( items_checked, diffs )
+        return ( items_checked, diffs, expected_paths )
     for configuration_file in configuration_directory.glob( '*.toml' ):
         item_name = configuration_file.stem
         if not _content_exists( generator, item_type, item_name, coder ):
@@ -459,6 +468,7 @@ def _check_staleness_for_type(
         output_path = (
             distribution / 'per-project' / 'coders' / coder / dirname /
             f"{item_name}.{_parse_output_extension( result.location )}" )
+        expected_paths.add( output_path )
         if not output_path.exists( ):
             diffs.append(
                 f"+ {item_type}/{item_name}: "
@@ -473,4 +483,31 @@ def _check_staleness_for_type(
                 tofile = f"components/{item_type}/{item_name}",
                 lineterm = '' ) )
             diffs.extend( diff_lines )
-    return ( items_checked, diffs )
+    return ( items_checked, diffs, expected_paths )
+
+
+def _detect_orphaned_artifacts(
+    distribution: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    expected_paths: set[ __.Path ],
+) -> list[ str ]:
+    ''' Detects orphaned artifacts in distribution/.
+
+        Scans distribution/per-project/coders/<coder>/ for generated
+        item directories (commands, agents, command, agent) and reports
+        any files not in the expected_paths set.
+    '''
+    orphans: list[ str ] = [ ]
+    generated_dirs = ( 'commands', 'agents', 'command', 'agent' )
+    for coder in coders:
+        coder_dir = distribution / 'per-project' / 'coders' / coder
+        if not coder_dir.exists( ): continue
+        for dirname in generated_dirs:
+            item_dir = coder_dir / dirname
+            if not item_dir.exists( ): continue
+            orphans.extend(
+                f"- {coder}/{dirname}/{item_file.name}: orphaned artifact"
+                for item_file in item_dir.glob( '*.md' )
+                if item_file not in expected_paths
+            )
+    return orphans

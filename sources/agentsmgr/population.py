@@ -434,7 +434,8 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
             target_location = self.target,
             coders = tuple( configuration[ 'coders' ] ),
             simulated = self.simulate,
-            items_generated = items_copied,
+            items_generated = (
+                items_attempted if self.simulate else items_copied ),
         )
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
