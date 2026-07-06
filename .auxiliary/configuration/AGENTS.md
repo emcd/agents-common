@@ -151,6 +151,8 @@ Author-provided review concerns are supplemental context, not a limit on review 
 
 # Project Notes
 
+- Self-dogfooding procedure for template/default changes: `procedures/1`.
+
 <!-- This section accumulates project-specific knowledge, constraints, and deviations.
      For structured items, use `nb`.
 
