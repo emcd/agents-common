@@ -10,15 +10,15 @@ Accepted
 Context
 ===============================================================================
 
-AI agent settings files (like Claude Code's ``settings.json``) contain both
-static configuration and dynamic hook configurations that reference script paths.
-This creates a coordination problem between distributed configurations and actual
-script locations across different deployment environments.
+AI agent settings files (like Claude Code's ``settings.json``) contain
+project-specific configuration and resource paths. This creates a coordination
+problem between distributed configurations and actual generated resource
+locations across different deployment environments.
 
 Key challenges include:
 
-* Hook configurations must reference script paths that exist in target environments
-* Settings files are inherently project-specific (file paths, project-specific hooks)
+* Configuration must reference resource paths that exist in target environments
+* Settings files are inherently project-specific (file paths, project-specific settings)
 * Base settings need to be consistent while allowing project customization
 * Must avoid duplicating Copier's templating functionality
 * Need to maintain compatibility with existing AI tool expectations
@@ -47,8 +47,9 @@ The approach includes:
 
 **Data-Driven Source Structure**:
 
-- ``data/`` directory contains structured sources (TOML command definitions,
-  agent configurations, hook scripts, tool-specific Jinja2 templates)
+- ``components/`` directory contains structured sources (TOML command
+  definitions, agent configurations, content bodies, tool-specific Jinja2
+  templates)
 - ``agentsmgr populate`` generates content directly in downstream projects
 - Single source of truth maintained in structured, tool-agnostic format
 
@@ -61,7 +62,8 @@ The approach includes:
 
 **Dynamic Content Generation**:
 
-- ``agentsmgr populate --source=agents-common@tag`` generates commands, agents, scripts
+- ``agentsmgr populate --source=agents-common@tag`` copies commands, agents,
+  skills, instructions, and static resources
 - Content generated directly in downstream projects, not committed to version control
 - Tool-specific formats handled at generation time from common data sources
 - Configuration detected from Copier answers files or defaults

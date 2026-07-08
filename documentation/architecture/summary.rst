@@ -38,7 +38,7 @@ The system addresses critical problems in AI agent configuration management:
 * **Configuration Drift**: Provides single source of truth preventing 
   inconsistency between template and production configurations  
 * **Distribution Coordination**: Solves path coordination problems between 
-  distributed configurations and hook scripts
+  distributed configurations and generated agent resources
 * **Multi-Tool Scaling**: Supports extensible architecture for multiple AI 
   development environments
 
@@ -141,7 +141,7 @@ The system implements a dual-channel distribution model:
 2. **Base Template Distribution** (Copier):
    - ``template/`` provides base settings templates and directory structure
    - Standard Copier multi-template workflow integration
-   - Handles MCP server configurations and hook script distribution
+   - Handles MCP server configurations and base coder settings
 
 3. **Dynamic Content Generation** (agentsmgr):
    - Fetches tagged data sources from git repositories
@@ -295,7 +295,7 @@ Reliability and Consistency
 
 * **Atomic Distribution**: Tag-based releases provide consistent configuration deployment
 * **Version Rollback**: Previous configurations accessible through tag references
-* **Path Coordination**: Template system ensures hook scripts resolve correctly
+* **Path Coordination**: Template system ensures generated agent resources resolve correctly
 
 Maintainability and Evolution  
 -------------------------------------------------------------------------------

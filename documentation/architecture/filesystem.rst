@@ -184,10 +184,6 @@ The primary content of this repository is organized under two directories:
         │   ├── claude/
         │   │   ├── settings.json.jinja   # Claude base settings template
         │   │   ├── .gitignore            # Base template hygiene
-        │   │   ├── scripts/              # Hook executables
-        │   │   │   ├── pre-bash-python-check
-        │   │   │   ├── post-edit-linter
-        │   │   │   └── pre-bash-git-commit-check
         │   │   ├── commands/.gitignore   # Base template hygiene
         │   │   └── agents/.gitignore     # Base template hygiene
         │   └── opencode/
