@@ -251,6 +251,24 @@ def test_500_source_resolver_accepts_windows_absolute_paths( ):
     assert location.as_posix( ).endswith( 'C:/Users/example/distribution' )
 
 
+def test_550_output_rendering_adapts_to_stream_encoding( ):
+    ''' CLI output should use ASCII fallbacks for non-UTF streams. '''
+    import io
+    core_module = __.cache_import_module( 'agentsmgr.core' )
+    cp1252_stream = io.TextIOWrapper(
+        io.BytesIO( ), encoding = 'cp1252', newline = '' )
+    utf8_stream = io.TextIOWrapper(
+        io.BytesIO( ), encoding = 'utf-8', newline = '' )
+    lines = ( '🚀 Populating content.', '✅ Complete.' )
+    ascii_lines = core_module._adapt_output_lines_for_stream(
+        lines, cp1252_stream )
+    unicode_lines = core_module._adapt_output_lines_for_stream(
+        lines, utf8_stream )
+    assert ascii_lines == ( '>> Populating content.', '[OK] Complete.' )
+    assert unicode_lines == lines
+    '\n'.join( ascii_lines ).encode( 'ascii' )
+
+
 def test_600_git_exclude_file_level_entries( tmp_path ):
     ''' Integration test for .git/info/exclude contents.
 
