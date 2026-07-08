@@ -194,11 +194,7 @@ def update_git_exclude(
         raise _exceptions.FileOperationFailure(
             exclude_file, "read git exclude file" ) from exception
     normalized_entries = sorted( {
-        (
-            "/{0}".format( entry.strip( ) )
-            if entry.strip( ) and not entry.strip( ).startswith( '/' )
-            else entry.strip( )
-        )
+        _normalize_git_exclude_entry( entry )
         for entry in entries if entry.strip( )
     } )
     if not normalized_entries:
@@ -211,6 +207,14 @@ def update_git_exclude(
         raise _exceptions.FileOperationFailure(
             exclude_file, "update git exclude file" ) from exception
     return len( normalized_entries )
+
+
+def _normalize_git_exclude_entry( entry: str ) -> str:
+    ''' Normalizes a managed git exclude entry. '''
+    normalized = entry.strip( ).replace( '\\', '/' )
+    if not normalized.startswith( '/' ):
+        normalized = f"/{normalized}"
+    return normalized
 
 
 def _update_managed_block(

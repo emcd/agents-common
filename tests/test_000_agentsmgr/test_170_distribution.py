@@ -353,6 +353,30 @@ def test_650_git_exclude_ignores_ambient_git_dir( tmp_path, monkeypatch ):
     assert '/.codex' in target_exclude.read_text( encoding = 'utf-8' )
 
 
+def test_660_git_exclude_normalizes_windows_entries( tmp_path ):
+    ''' Git exclude entries should use slash-separated path syntax. '''
+    operations_module = __.cache_import_module( 'agentsmgr.operations' )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    if not _init_git_repo( target ):
+        import pytest
+        pytest.skip( "git not available in test environment" )
+    exclude_file = target / '.git' / 'info' / 'exclude'
+    operations_module.update_git_exclude(
+        target,
+        (
+            r'.auxiliary\configuration\coders\claude\commands\cs.md',
+            r'\.opencode\commands\cs.md',
+        ),
+        simulate = False,
+    )
+    exclude_content = exclude_file.read_text( encoding = 'utf-8' )
+    assert '/.auxiliary/configuration/coders/claude/commands/cs.md' in (
+        exclude_content )
+    assert '/.opencode/commands/cs.md' in exclude_content
+    assert '\\' not in exclude_content
+
+
 def test_700_instructions_copied_from_distribution( tmp_path ):
     ''' Instructions should be copied from distribution/, not fetched
         from network. Verifies the expected corpus is present. '''
