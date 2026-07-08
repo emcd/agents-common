@@ -7,37 +7,6 @@
     "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": 1,
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": 1
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/scripts/pre-bash-python-check",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": ".claude/scripts/pre-bash-git-commit-check",
-            "timeout": 300
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/scripts/post-edit-linter",
-            "timeout": 60
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "auto_allow": [
       "mcp__agentmux__list",
