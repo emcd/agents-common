@@ -23,6 +23,38 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a12 (2026-07-07)
+=============================
+
+Enhancements
+------------
+
+- Changed generated Opencode command and agent resource directories to use the
+  standard plural ``commands/`` and ``agents/`` names, while continuing to detect
+  legacy singular distribution artifacts as stale output.
+- Restructured the managed agent distribution model around committed
+  ``distribution/`` artifacts generated from maintainer-owned ``components/``
+  sources, with ``agentsmgr generate --check`` verification and
+  ``agentsmgr populate`` consuming only the distribution tree.
+
+
+Removals
+--------
+
+- Removed default Claude Code hook scripts and Opencode quality-assurance plugins
+  from the Copier template so generated projects rely on tool-native diagnostics
+  where available, agent guidance, and normal validation commands instead of
+  blocking edit or shell-command integrations.
+
+
+Repairs
+-------
+
+- Fixed ``agentsmgr`` source resolution for Windows absolute local paths, so
+  drive-letter paths such as ``C:\\...`` are treated as filesystem paths rather
+  than unsupported URL schemes.
+
+
 agentsmgr 1.0a11 (2026-06-11)
 =============================
 

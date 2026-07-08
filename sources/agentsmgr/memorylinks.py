@@ -28,6 +28,7 @@
 
 from . import __
 from . import exceptions as _exceptions
+from . import resolver as _resolver
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -89,7 +90,6 @@ def create_memory_symlink(
 def create_memory_symlinks_for_coders(
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
-    renderers: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool = False,
 ) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Creates memory symlinks for all configured coders.
@@ -108,10 +108,7 @@ def create_memory_symlinks_for_coders(
     attempted = 0
     created = 0
     symlink_names: list[ str ] = [ ]
-    for coder_name in coders:
-        try: renderer = renderers[ coder_name ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder_name ) from exception
+    for coder_name, renderer in _resolver.resolve_coders( coders ):
         link_path = target / renderer.memory_filename
         attempted += 1
         was_created, symlink_name = create_memory_symlink(

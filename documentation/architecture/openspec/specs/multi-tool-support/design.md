@@ -193,9 +193,9 @@ To add support for a new AI tool:
 
 2. **Import the new module** in `renderers/__init__.py` to trigger registration
 
-3. **Add content directory** `defaults/contents/{coder}/` with coder-specific content bodies
+3. **Add content directory** `components/contents/{coder}/` with coder-specific content bodies
 
-4. **Add or reuse templates** in `defaults/templates/{flavor}/` as appropriate
+4. **Add or reuse templates** in `components/templates/{flavor}/` as appropriate
 
 5. **Configure fallback** (optional) in application configuration if compatible with existing coder formats
 
@@ -203,7 +203,7 @@ To add support for a new AI tool:
 
 ### Coder-Specific Directory Naming
 
-Some coders use non-standard directory names (e.g., OpenCode uses singular forms like `agent/` instead of `agents/`). Override `calculate_directory_location` to provide a mapping from generic item types to coder-specific directory names.
+All coders use standard plural directory names (`commands/`, `agents/`). The `calculate_directory_location` method in the base class returns the item type as-is. Coders may override this method if they need non-standard directory names.
 
 ### Environment-Specific Configuration
 

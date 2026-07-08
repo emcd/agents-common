@@ -1,0 +1,14 @@
+---
+{%- if context.allowed_tools is defined and context.allowed_tools %}
+allowed-tools: {{ context.allowed_tools | join(', ') }}
+{%- endif %}
+description: {{ context.description }}
+{%- if coder.model is defined %}
+model: {{ coder.model }}
+{%- endif %}
+{%- if context.argument_hint is defined %}
+argument-hint: "{{ context.argument_hint }}"
+{%- endif %}
+---
+
+{{ content }}

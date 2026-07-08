@@ -38,6 +38,10 @@ class Application( __.appcore_cli.Application ):
             __.tyro.conf.subcommand( 'detect', prefix_name = False ),
         ],
         __.typx.Annotated[
+            _population.GenerateCommand,
+            __.tyro.conf.subcommand( 'generate', prefix_name = False ),
+        ],
+        __.typx.Annotated[
             _population.PopulateCommand,
             __.tyro.conf.subcommand( 'populate', prefix_name = False ),
         ],

@@ -36,14 +36,8 @@ from . import renderers as _renderers
 
 
 CoderFallbackMap: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
-PluralMappings: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
 
 _TEMPLATE_PARTS_MINIMUM = 3
-
-_PLURAL_TO_SINGULAR_MAP: PluralMappings = __.immut.Dictionary( {
-    'commands': 'command',
-    'agents': 'agent',
-} )
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -153,9 +147,17 @@ class ContentGenerator( __.immut.DataclassObject ):
             Combines TOML metadata, content body, and template to produce
             final coder-specific file. Returns RenderedItem with content
             and location.
+
+            For skills, bypasses the 3-tier pipeline and copies content
+            directly since skills are portable across coders.
         '''
         renderer = self._resolve_renderer( coder )
         actual_mode = self._resolve_actual_mode( renderer, coder )
+        if item_type == 'skills':
+            body = self._retrieve_skill_content( item_name )
+            location = self._produce_skill_location(
+                renderer, actual_mode, target, item_name )
+            return RenderedItem( content = body, location = location )
         body = self._retrieve_content_with_fallback(
             item_type, item_name, coder )
         metadata = self._load_item_metadata( item_type, item_name, coder )
@@ -209,14 +211,6 @@ class ContentGenerator( __.immut.DataclassObject ):
             This method is public to allow operations module to pre-check
             content availability without loading files.
         '''
-        if item_type == 'skills':
-            primary_path = (
-                self.location / "contents" / item_type / coder /
-                f"{item_name}.md" )
-            fallback_path = (
-                self.location / "contents" / item_type / 'common' /
-                f"{item_name}.md" )
-            return ( primary_path, fallback_path )
         primary_path = (
             self.location / "contents" / item_type / coder /
             f"{item_name}.md" )
@@ -242,12 +236,45 @@ class ContentGenerator( __.immut.DataclassObject ):
         if primary_path.exists( ):
             return primary_path.read_text( encoding = 'utf-8' )
         if fallback_path and fallback_path.exists( ):
-            if item_type == 'skills':
-                return fallback_path.read_text( encoding = 'utf-8' )
             fallback_coder = self._retrieve_fallback_mappings( ).get( coder )
             _scribe.debug( f"Using {fallback_coder} content for {coder}" )
             return fallback_path.read_text( encoding = 'utf-8' )
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
+
+    def _retrieve_skill_content( self, item_name: str ) -> str:
+        ''' Retrieves skill content directly from
+            distribution/per-project/general/skills/.
+
+            Skills are portable across coders, so no coder-specific
+            lookup or fallback logic is needed.
+        '''
+        path = (
+            self.location / "per-project" / "general" / "skills" /
+            f"{item_name}.md" )
+        if path.exists( ):
+            return path.read_text( encoding = 'utf-8' )
+        raise _exceptions.ContentAbsence( 'skills', item_name, 'common' )
+
+    def _produce_skill_location(
+        self,
+        renderer: _renderers.RendererBase,
+        actual_mode: _renderers.ExplicitTargetMode,
+        target: __.Path,
+        item_name: str,
+    ) -> __.Path:
+        ''' Produces output location for a skill.
+
+            Skills always use the pattern:
+            <base>/skills/<item_name>/SKILL.md
+        '''
+        base_directory = renderer.resolve_base_directory(
+            mode = actual_mode,
+            target = target,
+            configuration = self.application_configuration,
+            environment = __.os.environ,
+        )
+        dirname = renderer.calculate_directory_location( 'skills' )
+        return base_directory / dirname / item_name / "SKILL.md"
 
     def _parse_template_extension( self, template_name: str ) -> str:
         ''' Extracts output extension from template filename.
@@ -315,13 +342,6 @@ class ContentGenerator( __.immut.DataclassObject ):
         try: renderer = _renderers.RENDERERS[ coder ]
         except KeyError as exception:
             raise _exceptions.CoderAbsence( coder ) from exception
-        if item_type == 'skills':
-            candidate = f"{item_type}/common.md.jinja"
-            available = self._survey_available_templates( item_type, coder )
-            if candidate in available: return candidate
-            raise _exceptions.TemplateError.for_missing_template(
-                coder, item_type
-            )
         flavor = renderer.get_template_flavor( item_type )
         available = self._survey_available_templates( item_type, coder )
         # Template paths always use plural item_type (commands, agents)

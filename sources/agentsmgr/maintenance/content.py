@@ -59,7 +59,7 @@ class ValidateCommand( __.appcore_cli.Command ):
         _scribe.debug( f"Created temporary directory: {temporary_directory}" )
         try:
             configuration = self._produce_test_configuration( auxdata )
-            location = __.cmdbase.retrieve_data_location( "defaults" )
+            location = __.cmdbase.retrieve_data_location( "components" )
             generator = __.generator.ContentGenerator(
                 location = location, configuration = configuration )
             items_attempted, items_generated = (

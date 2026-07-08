@@ -45,8 +45,13 @@ Priority: Critical
 - **THEN** generic templates handle format differences
 - **AND** transformations applied at generation time
 
-#### Scenario: Hook script distribution
-- **WHEN** hook scripts are distributed
+#### Scenario: Base settings distribution
+- **WHEN** coder base settings are distributed
 - **THEN** distributed via minimal Copier template
-- **AND** not dynamically generated
+- **AND** blocking hook or plugin integrations are not enabled by default
 
+#### Scenario: OPSX skill distribution
+- **WHEN** OpenSpec 1.5 OPSX skills are distributed
+- **THEN** curated OPSX skill files are shipped under `distribution/per-project/general/skills/`
+- **AND** skills have `stores` guidance removed for template safety
+- **AND** skills are discoverable through the standard skills pipeline

@@ -46,17 +46,15 @@
     },
     "build": {
       "mode": "primary",
-      // "model": "zai-coding-plan/glm-4.7"
-      // "model": "deepseek/deepseek-chat"
-      // "model": "minimax-coding-plan/MiniMax-M2.7"
-      "model": "openai/gpt-5.5"
+      // "model": "openai/gpt-5.5"
+      // "model": "xiaomi-token-plan-sgp/mimo-v2.5-pro"
+      "model": "minimax-coding-plan/MiniMax-M3"
     },
     "plan": {
       "mode": "primary",
-      // "model": "zai-coding-plan/glm-4.7"
-      // "model": "deepseek/deepseek-chat"
-      // "model": "minimax-coding-plan/MiniMax-M2.7"
-      "model": "openai/gpt-5.5"
+      // "model": "openai/gpt-5.5"
+      // "model": "xiaomi-token-plan-sgp/mimo-v2.5-pro"
+      "model": "minimax-coding-plan/MiniMax-M3"
     }
   },
 
@@ -130,6 +128,7 @@
       "git ls-files *": "allow",
       "git ls-tree *": "allow",
       "git merge-base *": "allow",
+      "git range-diff *": "allow",
       "git rebase *": "allow",
       "git restore *": "allow",
       "git rev-list *": "allow",
@@ -144,6 +143,7 @@
       "head *": "allow",
       "ls *": "allow",
       "mkdir *": "allow",
+      "npm run *": "allow",
       "openspec *": "allow",
       "ps *": "allow",
       "pwd *": "allow",

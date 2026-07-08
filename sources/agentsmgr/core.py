@@ -54,6 +54,42 @@ class Globals( __.appcore.state.Globals ):
     display: DisplayOptions = __.dcls.field( default_factory = DisplayOptions )
 
 
+_ASCII_SYMBOL_REPLACEMENTS = __.immut.Dictionary( {
+    '✅': '[OK]',
+    '❌': '[ERROR]',
+    '⚠️': '[WARN]',
+    '⚠': '[WARN]',
+    '🔍': '[INFO]',
+    '🚀': '>>',
+    '📁': '[FILES]',
+    '🗑️': '[CLEANUP]',
+    '🗑': '[CLEANUP]',
+} )
+
+
+def _adapt_output_lines_for_stream(
+    lines: tuple[ str, ... ],
+    stream: __.typx.Any,
+) -> tuple[ str, ... ]:
+    ''' Adapts rendered output to stream encoding capabilities. '''
+    if _stream_supports_unicode( stream ): return lines
+    return tuple( _render_ascii_line( line ) for line in lines )
+
+
+def _render_ascii_line( line: str ) -> str:
+    ''' Renders one output line as 7-bit ASCII. '''
+    for symbol, replacement in _ASCII_SYMBOL_REPLACEMENTS.items( ):
+        line = line.replace( symbol, replacement )
+    return line.encode( 'ascii', errors = 'ignore' ).decode( 'ascii' )
+
+
+def _stream_supports_unicode( stream: __.typx.Any ) -> bool:
+    ''' Returns true when stream encoding advertises UTF support. '''
+    encoding = getattr( stream, 'encoding', None )
+    if not encoding: return True
+    return 'utf' in encoding.lower( ).replace( '-', '' ).replace( '_', '' )
+
+
 async def render_and_print_result(
     result: Renderable,
     display: DisplayOptions,
@@ -64,12 +100,15 @@ async def render_and_print_result(
     match display.presentation:
         case Presentations.Markdown:
             lines = result.render_as_markdown( )
-            if display.determine_colorization( stream ):
+            supports_unicode = _stream_supports_unicode( stream )
+            if supports_unicode and display.determine_colorization( stream ):
                 from rich.console import Console
                 from rich.markdown import Markdown
                 console = Console( file = stream, force_terminal = True )
                 markdown_obj = Markdown( '\n'.join( lines ) )
                 console.print( markdown_obj )
             else:
+                if not supports_unicode:
+                    lines = _adapt_output_lines_for_stream( lines, stream )
                 output = '\n'.join( lines )
                 print( output, file = stream )

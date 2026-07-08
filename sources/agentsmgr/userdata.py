@@ -32,7 +32,7 @@ import toml as _toml
 
 from . import __
 from . import exceptions as _exceptions
-from . import renderers as _renderers
+from . import resolver as _resolver
 
 
 _scribe = __.provide_scribe( __name__ )
@@ -53,25 +53,22 @@ def populate_globals(
 ) -> tuple[ int, int ]:
     ''' Populates per-user global files for configured coders.
 
-        Surveys defaults/user/configurations directory for coder-specific
+        Surveys distribution/per-user/coders directory for coder-specific
         files and populates them to per-user locations. Handles two types
         of files: direct copy for non-settings files and merge for settings
         files (preserving user values).
 
         Returns tuple of (files_attempted, files_updated) counts.
     '''
-    globals_directory = data_location / 'user' / 'configurations'
+    globals_directory = data_location / 'per-user' / 'coders'
     if not globals_directory.exists( ):
         return ( 0, 0 )
     files_attempted = 0
     files_updated = 0
-    for coder in coders:
+    for coder, renderer in _resolver.resolve_coders( coders ):
         coder_globals = globals_directory / coder
         if not coder_globals.exists( ):
             continue
-        try: renderer = _renderers.RENDERERS[ coder ]
-        except KeyError as exception:
-            raise _exceptions.CoderAbsence( coder ) from exception
         per_user_directory = renderer.resolve_base_directory(
             mode = 'per-user',
             target = __.Path.cwd( ),
@@ -287,7 +284,7 @@ def populate_user_wrappers(
         making them executable. Returns tuple of (files_attempted,
         files_installed) counts.
     '''
-    wrappers_dir = data_location / 'user' / 'executables'
+    wrappers_dir = data_location / 'per-user' / 'general'
     user_bin = __.Path.home( ) / '.local' / 'bin'
     if not wrappers_dir.exists( ):
         return ( 0, 0 )
