@@ -56,6 +56,17 @@ class AbstractSourceHandler( __.immut.Protocol, __.typx.Protocol ):
 _SCHEME_HANDLERS: __.accret.Dictionary[ str, AbstractSourceHandler ] = (
     __.accret.Dictionary( ) )
 
+_WINDOWS_ABSOLUTE_PATH_MINIMUM_LENGTH = 3
+
+
+def _is_windows_absolute_path( source_spec: str ) -> bool:
+    ''' Returns true if source specification is a Windows absolute path. '''
+    return (
+        _WINDOWS_ABSOLUTE_PATH_MINIMUM_LENGTH <= len( source_spec )
+        and source_spec[ 1 ] == ':'
+        and source_spec[ 2 ] in ( '/', '\\' )
+        and source_spec[ 0 ].isalpha( ) )
+
 
 def register_source_handler(
     handler: __.typx.Annotated[
@@ -113,6 +124,8 @@ def resolve_source_location(
             return _SCHEME_HANDLERS[ 'git@' ].resolve(
                 source_spec, tag_prefix )
         raise __.DataSourceNoSupport( source_spec )
+    if _is_windows_absolute_path( source_spec ):
+        return _SCHEME_HANDLERS[ '' ].resolve( source_spec, tag_prefix )
     parsed = __.urlparse.urlparse( source_spec )
     if parsed.scheme in _SCHEME_HANDLERS:
         return _SCHEME_HANDLERS[ parsed.scheme ].resolve(

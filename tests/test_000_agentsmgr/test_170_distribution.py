@@ -242,6 +242,15 @@ def test_410_generate_check_detects_stale_singular_artifacts( tmp_path ):
     assert any( 'agent/' in d for d in stale_diffs )
 
 
+def test_500_source_resolver_accepts_windows_absolute_paths( ):
+    ''' Windows drive-letter paths should resolve as local paths,
+        not schemes. '''
+    sources_module = __.cache_import_module( 'agentsmgr.sources' )
+    location = sources_module.resolve_source_location(
+        'C:/Users/example/distribution' )
+    assert str( location ).endswith( 'C:/Users/example/distribution' )
+
+
 def test_600_git_exclude_file_level_entries( tmp_path ):
     ''' Integration test for .git/info/exclude contents.
 
