@@ -248,7 +248,7 @@ def test_500_source_resolver_accepts_windows_absolute_paths( ):
     sources_module = __.cache_import_module( 'agentsmgr.sources' )
     location = sources_module.resolve_source_location(
         'C:/Users/example/distribution' )
-    assert str( location ).endswith( 'C:/Users/example/distribution' )
+    assert location.as_posix( ).endswith( 'C:/Users/example/distribution' )
 
 
 def test_600_git_exclude_file_level_entries( tmp_path ):
