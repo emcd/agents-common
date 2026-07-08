@@ -83,6 +83,11 @@ def _filter_coders_by_mode(
     )
 
 
+def _format_exclude_path( path: __.Path ) -> str:
+    ''' Formats a project-relative path for git exclude syntax. '''
+    return path.as_posix( )
+
+
 def _create_all_symlinks(
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     target: __.Path,
@@ -172,7 +177,7 @@ def _copy_instructions_from_distribution(
             files_written += 1
         with _contextlib.suppress( ValueError ):
             exclude_entries.append(
-                str( dest_path.relative_to( target ) ) )
+                _format_exclude_path( dest_path.relative_to( target ) ) )
     return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
@@ -311,7 +316,8 @@ def _copy_tree(
             files_written += 1
         with _contextlib.suppress( ValueError ):
             exclude_entries.append(
-                str( dest_path.relative_to( project_root ) ) )
+                _format_exclude_path(
+                    dest_path.relative_to( project_root ) ) )
     return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
@@ -351,7 +357,8 @@ def _copy_skills(
             items_written += 1
         with _contextlib.suppress( ValueError ):
             exclude_entries.append(
-                str( dest_path.relative_to( project_root ) ) )
+                _format_exclude_path(
+                    dest_path.relative_to( project_root ) ) )
     return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
