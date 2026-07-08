@@ -126,7 +126,7 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
     assert attempted == 42
     assert written == 42
     opencode_commands = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'command' )
+        tmp_path / 'per-project' / 'coders' / 'opencode' / 'commands' )
     assert opencode_commands.exists( )
     # OpenCode uses fallback to Claude content
     assert len( list( opencode_commands.glob( '*.md' ) ) ) == 19
@@ -202,6 +202,44 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
     assert any( 'orphaned' in d for d in diffs )
+
+
+def test_410_generate_check_detects_stale_singular_artifacts( tmp_path ):
+    ''' generate --check should detect stale legacy singular directory
+        artifacts (command/, agent/) as orphaned after plural cutover. '''
+    operations_module = __.cache_import_module( 'agentsmgr.operations' )
+    generator_module = __.cache_import_module( 'agentsmgr.generator' )
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    configuration = population_module._produce_default_configuration(
+        _components_location( ) )
+    application_configuration = {
+        'content': { 'fallbacks': { 'opencode': 'claude' } },
+    }
+    generator = generator_module.ContentGenerator(
+        location = _components_location( ),
+        configuration = configuration,
+        application_configuration = application_configuration,
+        mode = 'per-project',
+    )
+    # Generate to populate the distribution with plural dirs
+    operations_module.generate_distribution(
+        generator, tmp_path, simulate = False )
+    # Create stale legacy singular directories with artifacts
+    legacy_command_dir = (
+        tmp_path / 'per-project' / 'coders' / 'opencode' / 'command' )
+    legacy_command_dir.mkdir( parents = True, exist_ok = True )
+    ( legacy_command_dir / 'stale-command.md' ).write_text( 'stale' )
+    legacy_agent_dir = (
+        tmp_path / 'per-project' / 'coders' / 'opencode' / 'agent' )
+    legacy_agent_dir.mkdir( parents = True, exist_ok = True )
+    ( legacy_agent_dir / 'stale-agent.md' ).write_text( 'stale' )
+    items_checked, diffs = operations_module.check_distribution_staleness(
+        generator, tmp_path )
+    assert items_checked == 42
+    stale_diffs = [ d for d in diffs if 'stale legacy' in d ]
+    assert len( stale_diffs ) == 2
+    assert any( 'command/' in d for d in stale_diffs )
+    assert any( 'agent/' in d for d in stale_diffs )
 
 
 def test_600_git_exclude_file_level_entries( tmp_path ):
