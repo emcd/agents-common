@@ -164,8 +164,8 @@ The primary content of this repository is organized under two directories:
     │       │   └── agents/            # Pre-generated agents (2 files)
     │       ├── codex/                 # Codex-specific artifacts
     │       └── opencode/              # OpenCode-specific artifacts
-    │           ├── command/           # Pre-generated commands (singular)
-    │           ├── agent/             # Pre-generated agents (singular)
+    │           ├── commands/          # Pre-generated commands
+    │           ├── agents/            # Pre-generated agents
     │           └── prompt/            # Static prompt resources
     └── per-user/
         ├── general/                   # User-level executables
@@ -188,9 +188,7 @@ The primary content of this repository is organized under two directories:
         │   │   └── agents/.gitignore     # Base template hygiene
         │   └── opencode/
         │       ├── settings.jsonc.jinja  # Opencode base settings template
-        │       ├── .gitignore
-        │       ├── command/.gitignore   # Singular directory name
-        │       └── agent/.gitignore     # Singular directory name
+        │       └── .gitignore
         ├── mcp-servers.json.jinja        # Base MCP configuration
         └── {{ _copier_conf.answers_file }}.jinja  # Copier answers template
 

@@ -203,7 +203,7 @@ To add support for a new AI tool:
 
 ### Coder-Specific Directory Naming
 
-Some coders use non-standard directory names (e.g., OpenCode uses singular forms like `agent/` instead of `agents/`). Override `calculate_directory_location` to provide a mapping from generic item types to coder-specific directory names.
+All coders use standard plural directory names (`commands/`, `agents/`). The `calculate_directory_location` method in the base class returns the item type as-is. Coders may override this method if they need non-standard directory names.
 
 ### Environment-Specific Configuration
 

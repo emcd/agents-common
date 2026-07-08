@@ -36,14 +36,8 @@ from . import renderers as _renderers
 
 
 CoderFallbackMap: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
-PluralMappings: __.typx.TypeAlias = __.immut.Dictionary[ str, str ]
 
 _TEMPLATE_PARTS_MINIMUM = 3
-
-_PLURAL_TO_SINGULAR_MAP: PluralMappings = __.immut.Dictionary( {
-    'commands': 'command',
-    'agents': 'agent',
-} )
 
 
 _scribe = __.provide_scribe( __name__ )
