@@ -98,19 +98,16 @@ After pushing, you MUST ensure you monitor the correct QA workflow run:
 4. **Ensure fresh run**: Only monitor a workflow run that was created AFTER your push timestamp
 5. **If no new run appears**: Wait additional time and check again - do NOT assume an old completed run is your workflow
 
-Once you've identified the correct QA run ID:
+Once you have identified the correct QA run ID:
 ```bash
-gh run watch <correct-qa-run-id> --interval 30 --compact
+gh run watch <correct-qa-run-id> --compact --interval 30 --exit-status >/dev/null 2>&1
 ```
 
-Do not proceed until workflow completes:
-- Monitor QA workflow with `gh run watch` using the correct run ID
-- Use a timeout of 420000 milliseconds (7 minutes) when executing the monitoring command in a shell
-- If the command times out or is automatically backgrounded:
-  * Wait 60-90 seconds before checking status to avoid excessive token consumption
-  * Periodically poll the backgrounded task or rerun `gh run watch` until completion
-- Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
-- Stop if any jobs fail - consult user before proceeding
+If the command times out, re-run it. On nonzero exit, fetch failed logs:
+```bash
+gh run view <correct-qa-run-id> --log-failed
+```
+Consult the user before proceeding if the workflow failed.
 
 ### 4. Alpha Release Deployment
 **Verify QA passed before proceeding to alpha tag:**
@@ -128,19 +125,16 @@ After pushing the tag, you MUST ensure you monitor the correct release workflow 
 4. **Ensure fresh run**: Only monitor a workflow run that was created AFTER your tag push timestamp
 5. **If no new run appears**: Wait additional time and check again - do NOT assume an old completed run is your workflow
 
-Once you've identified the correct release run ID:
+Once you have identified the correct release run ID:
 ```bash
-gh run watch <correct-release-run-id> --interval 30 --compact
+gh run watch <correct-release-run-id> --compact --interval 30 --exit-status >/dev/null 2>&1
 ```
 
-Do not proceed until workflow completes:
-- Monitor release workflow with `gh run watch` using the correct run ID
-- Use a timeout of 900000 milliseconds (15 minutes) when executing the monitoring command in a shell
-- If the command times out or is automatically backgrounded:
-  * Wait 60-90 seconds before checking status to avoid excessive token consumption
-  * Periodically poll the backgrounded task or rerun `gh run watch` until completion
-- Only proceed to next step after seeing "✓ [workflow-name] completed with 'success'"
-- Stop if any jobs fail - consult user before proceeding
+If the command times out, re-run it. On nonzero exit, fetch failed logs:
+```bash
+gh run view <correct-release-run-id> --log-failed
+```
+Consult the user before proceeding if the workflow failed.
 
 ### 5. Post-Release Cleanup
 Clean up Towncrier fragments:
