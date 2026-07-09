@@ -490,32 +490,24 @@ def _detect_orphaned_artifacts(
 ) -> list[ str ]:
     ''' Detects orphaned artifacts in distribution/.
 
-        Scans distribution/per-project/coders/<coder>/ for generated
-        item directories (commands, agents) and reports any files not
-        in the expected_paths set. Also scans legacy singular directory
-        names (command, agent) to detect stale artifacts from before the
-        plural cutover.
+        For each coder, asks its renderer which item directory names
+        it owns (via calculate_directory_location). Reports any files
+        in those directories that are not in expected_paths.
     '''
     orphans: list[ str ] = [ ]
-    generated_dirs = ( 'commands', 'agents' )
-    legacy_dirs = ( 'command', 'agent' )
     for coder in coders:
+        try: renderer = _renderers.RENDERERS[ coder ]
+        except KeyError: continue
         coder_dir = distribution / 'per-project' / 'coders' / coder
         if not coder_dir.exists( ): continue
-        for dirname in generated_dirs:
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills': continue
+            dirname = renderer.calculate_directory_location( item_type )
             item_dir = coder_dir / dirname
             if not item_dir.exists( ): continue
             orphans.extend(
                 f"- {coder}/{dirname}/{item_file.name}: orphaned artifact"
                 for item_file in item_dir.glob( '*.md' )
                 if item_file not in expected_paths
-            )
-        for dirname in legacy_dirs:
-            item_dir = coder_dir / dirname
-            if not item_dir.exists( ): continue
-            orphans.extend(
-                f"- {coder}/{dirname}/{item_file.name}: "
-                f"stale legacy artifact (use plural '{dirname}s/' instead)"
-                for item_file in item_dir.glob( '*.md' )
             )
     return orphans

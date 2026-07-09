@@ -204,42 +204,51 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     assert any( 'orphaned' in d for d in diffs )
 
 
-def test_410_generate_check_detects_stale_singular_artifacts( tmp_path ):
-    ''' generate --check should detect stale legacy singular directory
-        artifacts (command/, agent/) as orphaned after plural cutover. '''
+def test_420_orphan_detection_respects_custom_directory_name( tmp_path ):
+    ''' When a renderer overrides calculate_directory_location, orphan
+        detection should use the override, not the hardcoded default.
+
+        Registers a temporary renderer whose 'commands' directory is
+        named 'custom-cmd-dir' and verifies that orphan detection
+        scans only that custom directory, not the default 'commands'.
+    '''
+    import uuid as _uuid
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
-    generator_module = __.cache_import_module( 'agentsmgr.generator' )
-    population_module = __.cache_import_module( 'agentsmgr.population' )
-    configuration = population_module._produce_default_configuration(
-        _components_location( ) )
-    application_configuration = {
-        'content': { 'fallbacks': { 'opencode': 'claude' } },
-    }
-    generator = generator_module.ContentGenerator(
-        location = _components_location( ),
-        configuration = configuration,
-        application_configuration = application_configuration,
-        mode = 'per-project',
-    )
-    # Generate to populate the distribution with plural dirs
-    operations_module.generate_distribution(
-        generator, tmp_path, simulate = False )
-    # Create stale legacy singular directories with artifacts
-    legacy_command_dir = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'command' )
-    legacy_command_dir.mkdir( parents = True, exist_ok = True )
-    ( legacy_command_dir / 'stale-command.md' ).write_text( 'stale' )
-    legacy_agent_dir = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'agent' )
-    legacy_agent_dir.mkdir( parents = True, exist_ok = True )
-    ( legacy_agent_dir / 'stale-agent.md' ).write_text( 'stale' )
-    items_checked, diffs = operations_module.check_distribution_staleness(
-        generator, tmp_path )
-    assert items_checked == 42
-    stale_diffs = [ d for d in diffs if 'stale legacy' in d ]
-    assert len( stale_diffs ) == 2
-    assert any( 'command/' in d for d in stale_diffs )
-    assert any( 'agent/' in d for d in stale_diffs )
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+
+    class _CustomCommandsRenderer( renderers_module.RendererBase ):
+        name = f'__test_custom_{_uuid.uuid4( ).hex}__'
+        modes_available = frozenset( ( 'per-project', ) )
+        mode_default = 'per-project'
+        memory_filename = 'AGENTS.md'
+        item_types_available = frozenset( ( 'commands', 'agents' ) )
+
+        def calculate_directory_location( self, item_type: str ) -> str:
+            if item_type == 'commands':
+                return 'custom-cmd-dir'
+            return item_type
+
+    custom_renderer = _CustomCommandsRenderer( )
+    renderers_module.RENDERERS[ custom_renderer.name ] = custom_renderer
+
+    coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
+    # File in the renderer's overridden directory: must be detected.
+    custom_dir = coder_dir / 'custom-cmd-dir'
+    custom_dir.mkdir( parents = True )
+    ( custom_dir / 'zz-orphan.md' ).write_text( 'orphan', encoding = 'utf-8' )
+    # File in the default directory the renderer does NOT use: must be
+    # ignored.
+    default_dir = coder_dir / 'commands'
+    default_dir.mkdir( parents = True, exist_ok = True )
+    ( default_dir / 'should-be-ignored.md' ).write_text(
+        'orphan', encoding = 'utf-8' )
+
+    orphans = operations_module._detect_orphaned_artifacts(
+        tmp_path, ( custom_renderer.name, ), set( ) )
+    assert len( orphans ) == 1
+    assert 'orphaned artifact' in orphans[ 0 ]
+    assert 'custom-cmd-dir/zz-orphan.md' in orphans[ 0 ]
+    assert 'should-be-ignored' not in ' '.join( orphans )
 
 
 def test_500_source_resolver_accepts_windows_absolute_paths( ):
