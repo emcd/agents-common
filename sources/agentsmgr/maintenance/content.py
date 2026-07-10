@@ -11,14 +11,23 @@
 #                                                                            #
 #  Unless required by applicable law or agreed to in writing, software       #
 #  distributed under the License is distributed on an "AS IS" BASIS,         #
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  #
-#  See the License for the specific language governing permissions and       #
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+#  See the License for the specific language governing permissions and      #
 #  limitations under the License.                                            #
 #                                                                            #
 #============================================================================#
 
 
-''' Commands for validating generated content in temporary directories. '''
+''' Command for validating distribution content against variant answers.
+
+    Renders the distribution tree from ``components/`` using a variant
+    answers file from ``tests/data/profiles/`` into an isolated temp
+    directory. This validates that arbitrary variant configurations
+    (e.g., ``maximum`` with rust support) can be rendered without
+    errors, which is unique coverage not provided by
+    ``agentsmgr generate --check`` (which tests only the project's
+    own committed configuration).
+'''
 
 
 import yaml as _yaml
@@ -104,38 +113,3 @@ class ValidateCommand( __.appcore_cli.Command ):
         if not isinstance( configuration, __.cabc.Mapping ):
             raise __.ConfigurationInvalidity( )
         return __.immut.Dictionary( configuration )
-
-
-class SurveyCommand( __.appcore_cli.Command ):
-    ''' Surveys available configuration variants for content validation. '''
-
-    @__.cmdbase.intercept_errors( )
-    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        if not isinstance( auxdata, __.Globals ):  # pragma: no cover
-            raise __.ContextInvalidity
-        stream = await auxdata.display.provide_stream( auxdata.exits )
-        for variant in survey_variants( auxdata ):
-            print( variant, file = stream )
-
-
-class CommandDispatcher( __.appcore_cli.Command ):
-    ''' Dispatches maintainer commands for generated content validation. '''
-
-    command: __.typx.Union[
-        __.typx.Annotated[
-            SurveyCommand,
-            __.tyro.conf.subcommand( 'survey', prefix_name = False ),
-        ],
-        __.typx.Annotated[
-            ValidateCommand,
-            __.tyro.conf.subcommand( 'validate', prefix_name = False ),
-        ],
-    ] = __.dcls.field( default_factory = ValidateCommand )
-
-    async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        await self.command( auxdata )
-
-
-def survey_variants( auxdata: __.Globals ) -> tuple[ str, ... ]:
-    ''' Surveys available configuration variants. '''
-    return __.cmdbase.survey_variant_names( auxdata )

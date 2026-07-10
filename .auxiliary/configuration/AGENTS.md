@@ -36,6 +36,7 @@ consistency across multiple projects and users.
     - `sphinx` (Documentation)
     - `towncrier` (Changelog management)
     - `copier` (Project templating)
+    - `copiertv` (Template rendering validation)
     - `pyinstaller` (Standalone executable builds)
 
 # Development Standards

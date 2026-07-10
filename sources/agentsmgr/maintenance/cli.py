@@ -11,19 +11,25 @@
 #                                                                            #
 #  Unless required by applicable law or agreed to in writing, software       #
 #  distributed under the License is distributed on an "AS IS" BASIS,         #
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  #
-#  See the License for the specific language governing permissions and       #
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+#  See the License for the specific language governing permissions and      #
 #  limitations under the License.                                            #
 #                                                                            #
 #============================================================================#
 
 
-''' Maintainer-facing command-line interface. '''
+''' Maintainer-facing command-line interface.
+
+    After the copiertv migration, the only remaining maintainer command
+    is ``validate``, which renders the distribution tree from
+    ``components/`` using a variant answers file from
+    ``tests/data/profiles/`` into an isolated temp directory. Copier
+    template rendering validation is now provided by copiertv.
+'''
 
 
 from . import __
 from . import content as _content
-from . import template as _template
 
 
 class MaintainerApplication( __.appcore_cli.Application ):
@@ -31,16 +37,8 @@ class MaintainerApplication( __.appcore_cli.Application ):
 
     display: __.core.DisplayOptions = __.dcls.field(
         default_factory = __.core.DisplayOptions )
-    command: __.typx.Union[
-        __.typx.Annotated[
-            _content.CommandDispatcher,
-            __.tyro.conf.subcommand( 'content', prefix_name = False ),
-        ],
-        __.typx.Annotated[
-            _template.CommandDispatcher,
-            __.tyro.conf.subcommand( 'template', prefix_name = False ),
-        ],
-    ] = __.dcls.field( default_factory = _content.CommandDispatcher )
+    command: _content.ValidateCommand = __.dcls.field(
+        default_factory = _content.ValidateCommand )
 
     async def execute( self, auxdata: __.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )

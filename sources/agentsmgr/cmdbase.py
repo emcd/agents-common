@@ -185,16 +185,6 @@ def provide_variant_profiles_directory( auxdata: _core.Globals ) -> __.Path:
     raise _exceptions.ConfigurationAbsence( )
 
 
-def survey_variant_names( auxdata: _core.Globals ) -> tuple[ str, ... ]:
-    ''' Surveys variant names from available answers files. '''
-    profiles_directory = provide_variant_profiles_directory( auxdata )
-    return tuple(
-        sorted(
-            fsent.stem.lstrip( 'answers-' )
-            for fsent in profiles_directory.glob( 'answers-*.yaml' )
-            if fsent.is_file( ) ) )
-
-
 def _produce_variant_profiles_candidates(
     auxdata: _core.Globals,
 ) -> tuple[ __.Path, ... ]:
