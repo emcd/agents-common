@@ -281,9 +281,8 @@ The ``agentsmgr`` package provides comprehensive CLI tooling with pluggable arch
 **Core Commands:**
 
 * ``agentsmgr detect``: Configuration detection and analysis
-* ``agentsmgr generate``: Generate distribution artifacts from components/
+* ``agentsmgr generate``: Generate distribution artifacts from components/ (default mode); ``agentsmgr generate --variant NAME`` for variant answers rendering; ``agentsmgr generate --check`` for staleness validation
 * ``agentsmgr populate``: Copy distribution artifacts to downstream targets
-* ``agentsmgr-maintain <variant>``: Distribution rendering validation against a variant answers file (renders into an isolated temp directory)
 * ``copiertv validate <variant>``: Copier template rendering validation (configured via ``.auxiliary/configuration/copiertv/general.toml``)
 
 **Architecture Patterns:**

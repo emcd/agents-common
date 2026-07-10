@@ -10,7 +10,6 @@ on:
       - 'template/**'
       - 'tests/data/profiles/**'
       - 'sources/agentsmgr/cmdbase.py'
-      - 'sources/agentsmgr/maintenance/**'
       - 'sources/agentsmgr/population.py'
   push:
     branches: [ 'master' ]
@@ -21,7 +20,6 @@ on:
       - 'template/**'
       - 'tests/data/profiles/**'
       - 'sources/agentsmgr/cmdbase.py'
-      - 'sources/agentsmgr/maintenance/**'
       - 'sources/agentsmgr/population.py'
   workflow_dispatch: {}
 
@@ -51,8 +49,8 @@ jobs:
       - name: Validate Content Variant
         run: |
           hatch --env develop run \
-            agentsmgr-maintain \
-            ${{ matrix.variant }}
+            agentsmgr generate \
+            --variant ${{ matrix.variant }}
 
       - name: Validate Template Variant
         run: copiertv validate ${{ matrix.variant }}
