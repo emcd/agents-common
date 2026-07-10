@@ -491,8 +491,10 @@ def _detect_orphaned_artifacts(
     ''' Detects orphaned artifacts in distribution/.
 
         For each coder, asks its renderer which item directory names
-        it owns (via calculate_directory_location). Reports any files
-        in those directories that are not in expected_paths.
+        it owns (via ``calculate_directory_location``) and which file
+        glob pattern the renderer uses for artifacts of that type (via
+        ``calculate_artifact_pattern``). Reports any files matching the
+        pattern that are not in expected_paths.
     '''
     orphans: list[ str ] = [ ]
     for coder in coders:
@@ -505,9 +507,10 @@ def _detect_orphaned_artifacts(
             dirname = renderer.calculate_directory_location( item_type )
             item_dir = coder_dir / dirname
             if not item_dir.exists( ): continue
+            pattern = renderer.calculate_artifact_pattern( item_type )
             orphans.extend(
                 f"- {coder}/{dirname}/{item_file.name}: orphaned artifact"
-                for item_file in item_dir.glob( '*.md' )
+                for item_file in item_dir.glob( pattern )
                 if item_file not in expected_paths
             )
     return orphans
