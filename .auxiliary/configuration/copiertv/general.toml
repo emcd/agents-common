@@ -9,9 +9,9 @@
 # are consumed by:
 #   * copiertv, via the ``[answers] directory`` key below (for template
 #     rendering validation)
-#   * ``agentsmgr-maintain <variant>``, which renders the distribution tree
-#     from ``components/`` using the variant answers into an isolated temp
-#     directory for variant-specific distribution validation.
+#   * ``agentsmgr generate --variant NAME``, which renders the distribution
+#     tree from ``components/`` using the variant answers into an isolated
+#     temp directory for variant-specific distribution validation.
 
 [answers]
 directory = "tests/data/profiles"
