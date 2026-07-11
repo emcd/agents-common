@@ -586,38 +586,23 @@ class PopulateCommand( __.appcore_cli.Command ):
 class GenerateCommand( __.appcore_cli.Command ):
     ''' Generates pre-rendered artifacts from components/.
 
-        Three modes are supported, determined by which of
-        ``--variant`` / ``--answers-file`` is set:
+        Two invocation shapes:
 
-        **Default mode** (neither flag): reads 3-tier pipeline source
-        from ``components/`` and writes rendered commands and agents
-        to ``distribution/`` (or to ``--output PATH`` if given). Skills
-        are direct distribution artifacts and are not generated.
+        **Default**: ``agentsmgr generate`` reads 3-tier pipeline
+        source from ``components/`` and writes rendered commands and
+        agents to ``distribution/`` (or to ``--output PATH`` if given).
+        Skills are direct distribution artifacts and are not generated.
         ``--check`` validates distribution/ is current without writing
         files. ``--simulate`` shows what would be written.
 
-        **Variant mode** (``--variant NAME``): resolves
-        ``tests/data/profiles/answers-NAME.yaml`` as the configuration
-        and renders into an isolated temp directory. This validates
-        that arbitrary variant configurations (e.g., ``maximum`` with
-        rust support) can be rendered without errors, which is unique
-        coverage not provided by ``--check`` (which tests only the
-        project's own committed configuration). ``--preserve`` keeps
-        the temp directory around for inspection.
+        **Answers-file**: ``agentsmgr generate --answers-file PATH
+        --output PATH`` uses the given Copier answers file as the
+        configuration and renders into the explicit ``--output``
+        target. The caller owns output allocation and cleanup;
+        production CLI does not manage temporary directories.
 
-        **Answers-file mode** (``--answers-file PATH``): uses the
-        given Copier answers file as the configuration source. By
-        default renders into an isolated temp directory (safe — will
-        not pollute the committed distribution tree). ``--output PATH``
-        overrides the temp default and writes to the given path
-        (caller's responsibility). ``--preserve`` keeps the output
-        directory (temp or explicit).
-
-        ``--variant`` and ``--answers-file`` are mutually exclusive.
-        ``--check`` and ``--simulate`` are only valid in default mode.
-        ``--preserve`` is only valid in variant and answers-file
-        modes. ``--output`` is only valid in default and answers-file
-        modes.
+        ``--check`` and ``--simulate`` are only valid in default
+        mode. ``--answers-file`` requires ``--output``.
     '''
 
     source: __.typx.Annotated[
@@ -631,8 +616,7 @@ class GenerateCommand( __.appcore_cli.Command ):
         __.tyro.conf.arg(
             help = (
                 "Distribution output path. Default mode: defaults to "
-                "'distribution/'. Answers-file mode: defaults to an "
-                "isolated temp directory. Not valid in variant mode." ),
+                "'distribution/'. Required when --answers-file is used." ),
             prefix_name = False ),
     ] = None
     check: __.typx.Annotated[
@@ -647,76 +631,33 @@ class GenerateCommand( __.appcore_cli.Command ):
             help = "Dry run mode - show what would be generated",
             prefix_name = False ),
     ] = False
-    variant: __.typx.Annotated[
-        __.typx.Optional[ str ],
-        __.tyro.conf.arg(
-            help = (
-                "Variant mode: render against "
-                "tests/data/profiles/answers-<variant>.yaml into an "
-                "isolated temp directory. Mutually exclusive with "
-                "--answers-file. --output is not valid in this mode." ),
-            prefix_name = False ),
-    ] = None
     answers_file: __.typx.Annotated[
         __.typx.Optional[ __.Path ],
         __.tyro.conf.arg(
             help = (
                 "Answers-file mode: path to a Copier answers file to "
-                "use as the configuration source. Mutually exclusive "
-                "with --variant." ),
+                "use as the configuration source. Requires --output." ),
             prefix_name = False ),
     ] = None
-    preserve: __.typx.Annotated[
-        bool,
-        __.tyro.conf.arg(
-            help = (
-                "Keep the target directory for inspection. Only valid "
-                "in variant and answers-file modes." ),
-            prefix_name = False ),
-    ] = False
 
     @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates distribution artifacts from components. '''
         if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
             raise _exceptions.ContextInvalidity
-        if self.variant is not None and self.answers_file is not None:
+        if self.answers_file is not None and self.check:
             raise _exceptions.ConfigurationInvalidity(
-                reason = (
-                    '--variant and --answers-file are '
-                    'mutually exclusive' ) )
-        if ( self.variant is not None or self.answers_file is not None
-             ) and self.check:
+                reason = '--check is not valid with --answers-file' )
+        if self.answers_file is not None and self.simulate:
             raise _exceptions.ConfigurationInvalidity(
-                reason = (
-                    '--check is only valid in default mode '
-                    '(without --variant or --answers-file)' ) )
-        if ( self.variant is not None or self.answers_file is not None
-             ) and self.simulate:
+                reason = '--simulate is not valid with --answers-file' )
+        if self.answers_file is not None and self.output is None:
             raise _exceptions.ConfigurationInvalidity(
-                reason = (
-                    '--simulate is only valid in default mode '
-                    '(without --variant or --answers-file)' ) )
-        if self.preserve and (
-            self.variant is None and self.answers_file is None
-        ):
-            raise _exceptions.ConfigurationInvalidity(
-                reason = (
-                    '--preserve is only valid with --variant or '
-                    '--answers-file' ) )
-        if ( self.variant is not None ) and self.output is not None:
-            raise _exceptions.ConfigurationInvalidity(
-                reason = (
-                    '--output is not valid in variant mode '
-                    '(variant mode always renders to a temp directory)' ) )
+                reason = '--answers-file requires --output' )
         location = _cmdbase.retrieve_data_location( self.source )
         _cmdbase.validate_data_source_structure(
             location,
             ( 'configurations', 'contents', 'templates' ) )
-        if self.variant is not None:
-            await self._execute_variant_mode(
-                auxdata, location )
-            return
         if self.answers_file is not None:
             await self._execute_answers_file_mode(
                 auxdata, location )
@@ -769,99 +710,29 @@ class GenerateCommand( __.appcore_cli.Command ):
         await _core.render_and_print_result(
             result, auxdata.display, auxdata.exits )
 
-    async def _execute_variant_mode(
-        self,
-        auxdata: _core.Globals,
-        location: __.Path,
-    ) -> None:
-        ''' Variant mode: renders against a variant answers file. '''
-        variant = __.typx.cast( str, self.variant )
-        _scribe.info(
-            f"Validating distribution against variant {variant!r}" )
-        answers_file = _cmdbase.retrieve_variant_answers_file(
-            auxdata, variant )
-        configuration = await _cmdbase.retrieve_configuration(
-            target = __.Path.cwd( ), profile = answers_file )
-        try: temporary_directory = __.Path( __.tempfile.mkdtemp(
-            prefix = f"agents-validate-{variant}-" ) )
-        except ( OSError, IOError ) as exception:
-            raise _exceptions.FileOperationFailure(
-                __.Path( __.tempfile.gettempdir( ) ),
-                "create directory" ) from exception
-        _scribe.debug(
-            f"Created temporary directory: {temporary_directory}" )
-        try:
-            generator = _generator.ContentGenerator(
-                location = location, configuration = configuration )
-            items_attempted, items_generated = (
-                _operations.populate_directory(
-                    generator, temporary_directory, simulate = False ) )
-            _scribe.info(
-                f"Generated {items_generated}/{items_attempted} items" )
-        finally:
-            if not self.preserve:
-                _scribe.debug(
-                    f"Cleaning up temporary directory: "
-                    f"{temporary_directory}" )
-                with __.ctxl.suppress( OSError, IOError ):
-                    __.shutil.rmtree( temporary_directory )
-        result = _results.ValidationResult(
-            variant = variant,
-            temporary_directory = temporary_directory,
-            items_attempted = items_attempted,
-            items_generated = items_generated,
-            preserved = self.preserve,
-        )
-        await _core.render_and_print_result(
-            result, auxdata.display, auxdata.exits )
-
     async def _execute_answers_file_mode(
         self,
         auxdata: _core.Globals,
         location: __.Path,
     ) -> None:
-        ''' Answers-file mode: renders against an explicit answers file.
-
-            Default target is an isolated temp directory. ``--output
-            PATH`` overrides this and writes to the given path; the
-            caller is responsible for ensuring the path does not pollute
-            the committed distribution tree.
+        ''' Answers-file mode: renders against an explicit answers file
+            into the explicit --output target. Caller owns the target
+            directory and its cleanup.
         '''
         answers_file = __.typx.cast( __.Path, self.answers_file )
+        target = __.typx.cast( __.Path, self.output )
         _scribe.info(
             f"Generating distribution from {self.source} against "
-            f"{answers_file}" )
-        # Load and validate the answers file before allocating a temp
-        # target. A missing or malformed answers file raises here
-        # without leaving any state on disk to clean up.
+            f"{answers_file} to {target}" )
         configuration = await _cmdbase.retrieve_configuration(
             target = __.Path.cwd( ), profile = answers_file )
-        if self.output is not None:
-            target = self.output
-            explicit_output = True
-        else:
-            try: target = __.Path( __.tempfile.mkdtemp(
-                prefix = 'agents-answers-' ) )
-            except ( OSError, IOError ) as exception:
-                raise _exceptions.FileOperationFailure(
-                    __.Path( __.tempfile.gettempdir( ) ),
-                    "create directory" ) from exception
-            explicit_output = False
-        _scribe.info( f"Rendering to {target}" )
-        try:
-            generator = _generator.ContentGenerator(
-                location = location, configuration = configuration )
-            items_attempted, items_generated = (
-                _operations.populate_directory(
-                    generator, target, simulate = False ) )
-            _scribe.info(
-                f"Generated {items_generated}/{items_attempted} artifacts" )
-        finally:
-            if not explicit_output and not self.preserve:
-                _scribe.debug(
-                    f"Cleaning up temporary directory: {target}" )
-                with __.ctxl.suppress( OSError, IOError ):
-                    __.shutil.rmtree( target )
+        generator = _generator.ContentGenerator(
+            location = location, configuration = configuration )
+        items_attempted, items_generated = (
+            _operations.populate_directory(
+                generator, target, simulate = False ) )
+        _scribe.info(
+            f"Generated {items_generated}/{items_attempted} artifacts" )
         result = _results.ContentGenerationResult(
             source_location = location,
             target_location = target,
