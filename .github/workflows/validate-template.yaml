@@ -34,7 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [ 'default', 'maximum' ]
+        include:
+          - variant: default
+            answers_file: tests/data/profiles/answers-default.yaml
+          - variant: maximum
+            answers_file: tests/data/profiles/answers-maximum.yaml
 
     steps:
 
@@ -48,9 +52,12 @@ jobs:
 
       - name: Validate Content Variant
         run: |
+          output=$(mktemp -d)
+          trap 'rm -rf "$output"' EXIT
           hatch --env develop run \
             agentsmgr generate \
-            --variant ${{ matrix.variant }}
+            --answers-file "${{ matrix.answers_file }}" \
+            --output "$output"
 
       - name: Validate Template Variant
         run: copiertv validate ${{ matrix.variant }}

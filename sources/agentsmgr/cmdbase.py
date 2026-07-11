@@ -161,37 +161,3 @@ def validate_data_source_structure(
         if not ( location / directory ).is_dir( ) )
     if missing:
         raise _exceptions.DataSourceInvalidity( location, missing )
-
-
-def retrieve_variant_answers_file(
-    auxdata: _core.Globals, variant: str
-) -> __.Path:
-    ''' Retrieves path to variant answers file in test data directory.
-
-        Validates file existence and raises ConfigurationAbsence if not
-        found.
-    '''
-    profiles_directory = provide_variant_profiles_directory( auxdata )
-    answers_file = profiles_directory / f"answers-{variant}.yaml"
-    if not answers_file.exists( ):
-        raise _exceptions.ConfigurationAbsence( )
-    return answers_file
-
-
-def provide_variant_profiles_directory( auxdata: _core.Globals ) -> __.Path:
-    ''' Provides directory containing variant answers files. '''
-    for directory in _produce_variant_profiles_candidates( auxdata ):
-        if directory.is_dir( ): return directory
-    raise _exceptions.ConfigurationAbsence( )
-
-
-def _produce_variant_profiles_candidates(
-    auxdata: _core.Globals,
-) -> tuple[ __.Path, ... ]:
-    ''' Produces candidate locations for variant answers files. '''
-    data_directory = auxdata.provide_data_location( )
-    project_root = data_directory.parent
-    return tuple( dict.fromkeys( (
-        __.Path.cwd( ) / 'tests' / 'data' / 'profiles',
-        project_root / 'tests' / 'data' / 'profiles',
-    ) ) )
