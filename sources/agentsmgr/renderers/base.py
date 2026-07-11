@@ -95,6 +95,20 @@ class RendererBase( __.immut.Object ):
         ''' Returns directory name for item type. Override in subclasses. '''
         return item_type
 
+    def calculate_artifact_pattern( self, item_type: str ) -> str:
+        ''' Returns file glob pattern for artifacts of this item type.
+
+            Mirrors the per-renderer ownership of artifact shape that
+            ``calculate_directory_location`` provides for directory names:
+            the renderer is the authoritative source for both the
+            location and the file pattern of the artifacts in that
+            location. Default is Markdown (``*.md``); subclasses may
+            override for coders whose artifacts use a different file
+            extension. The contract returns a single glob expression
+            suitable for one ``Path.glob`` call.
+        '''
+        return '*.md'
+
     def get_template_flavor( self, item_type: str ) -> str:
         ''' Determines template flavor (pioneering coder name) for item type.
 

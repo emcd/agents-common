@@ -332,8 +332,11 @@ def _copy_skills(
 
         Skills are static artifacts that require no rendering.
         Copies from distribution/per-project/general/skills/<name>.md to
-        <base>/skills/<name>/SKILL.md. Returns tuple of (attempted,
-        written, exclude_entries).
+        <base>/skills/<name>/SKILL.md. The source ``*.md`` globs and
+        destination ``SKILL.md`` filename are coupled under the Skills
+        protocol contract, so this loop intentionally does not delegate
+        to ``manager.calculate_artifact_pattern`` like other scanning
+        sites do. Returns tuple of (attempted, written, exclude_entries).
     '''
     import contextlib as _contextlib
     items_attempted = 0

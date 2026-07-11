@@ -188,7 +188,7 @@ To add support for a new AI tool:
 1. **Create renderer module** `sources/agentsmgr/renderers/{coder}.py` implementing the `RendererBase` interface with:
    - Class attributes: `name`, `modes_available`, `mode_default`, `memory_filename`
    - Required method: `resolve_base_directory`
-   - Optional overrides: `get_template_flavor`, `calculate_directory_location`, `provide_project_symlinks`
+   - Optional overrides: `get_template_flavor`, `calculate_directory_location`, `calculate_artifact_pattern`, `provide_project_symlinks`
    - Self-registration in the `RENDERERS` dictionary
 
 2. **Import the new module** in `renderers/__init__.py` to trigger registration
@@ -204,6 +204,12 @@ To add support for a new AI tool:
 ### Coder-Specific Directory Naming
 
 All coders use standard plural directory names (`commands/`, `agents/`). The `calculate_directory_location` method in the base class returns the item type as-is. Coders may override this method if they need non-standard directory names.
+
+### Coder-Specific Artifact File Pattern
+
+All coders currently distribute Markdown artifacts (`*.md`). The `calculate_artifact_pattern` method in the base class returns `*.md` for any item type. Coders may override this method if their artifacts use a different file extension. Generic operations code (`_detect_orphaned_artifacts`) delegates to this method instead of hardcoding `*.md`, so a renderer with non-Markdown artifacts is covered for orphan detection without further changes to shared scanning logic.
+
+`_copy_skills` is intentionally not updated to delegate: skill files conform to the Skills protocol contract (source `*.md` rendered to destination `SKILL.md`), which couples the glob pattern and the destination filename. Future `agentsmgr/11` skill-directory support may replace this flat-file scan with a skill-package abstraction.
 
 ### Environment-Specific Configuration
 
