@@ -117,7 +117,7 @@ def test_400_answers_file_mode_with_explicit_output( tmp_path ):
     assert any( target.rglob( '*.md' ) )
 
 
-def test_410_answers_file_mode_rejects_simulate( tmp_path, capsys ):
+def test_410_answers_file_mode_rejects_simulate( tmp_path ):
     ''' --simulate is not valid with --answers-file. '''
     with pytest.raises( SystemExit ) as info:
         _run_application( [
@@ -129,7 +129,7 @@ def test_410_answers_file_mode_rejects_simulate( tmp_path, capsys ):
         info.value.__context__, _exceptions.ConfigurationInvalidity )
 
 
-def test_420_answers_file_mode_rejects_check( tmp_path, capsys ):
+def test_420_answers_file_mode_rejects_check( tmp_path ):
     ''' --check is not valid with --answers-file. '''
     with pytest.raises( SystemExit ) as info:
         _run_application( [
