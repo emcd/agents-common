@@ -124,13 +124,13 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
     )
     attempted, written = operations_module.generate_distribution(
         generator, tmp_path, simulate = False )
-    assert attempted == 42
-    assert written == 42
+    assert attempted == 40
+    assert written == 40
     opencode_commands = (
         tmp_path / 'per-project' / 'coders' / 'opencode' / 'commands' )
     assert opencode_commands.exists( )
     # OpenCode uses fallback to Claude content
-    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 19
+    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 18
 
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
@@ -201,7 +201,7 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     # Check should pass when distribution is current
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 42
+    assert items_checked == 40
     assert diffs == [ ]
     # Remove one artifact to simulate staleness (missing)
     stale_file = (
@@ -211,7 +211,7 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
         stale_file.unlink( )
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 42
+    assert items_checked == 40
     assert any( 'missing' in d for d in diffs )
     # Add an orphaned artifact to detect extra files
     orphan_dir = (

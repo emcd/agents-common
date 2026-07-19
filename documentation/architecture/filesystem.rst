@@ -123,7 +123,7 @@ The primary content of this repository is organized under two directories:
 
     components/                        # Source material (3-tier pipeline)
     ├── configurations/                # Tool-agnostic TOML configurations
-    │   ├── commands/                  # Command metadata (25+ slash commands)
+    │   ├── commands/                  # Command metadata (18 slash commands)
     │   │   ├── cs-conform-python.toml     # Python code conformance
     │   │   ├── cs-release-final.toml      # Final release management
     │   │   ├── cs-architect.toml          # Architecture documentation
@@ -132,17 +132,16 @@ The primary content of this repository is organized under two directories:
     │   │   ├── cs-plan-pytests.toml       # Test planning
     │   │   ├── cs-develop-pytests.toml    # Test implementation
     │   │   ├── cs-copier-update.toml      # Template updates
-    │   │   ├── validate-custom-slash.toml # Slash command validation
-    │   │   └── [20+ additional commands]
+    │   │   └── [10 additional commands]
     │   └── agents/                    # Agent metadata
     │       └── python-conformer.toml      # Python code review agent
     ├── contents/                      # Coder-specific content bodies
     │   ├── commands/
-    │   │   └── claude/                # Claude-specific content (25+ files)
+    │   │   └── claude/                # Claude-specific content (18 files)
     │   │       ├── cs-conform-python.md
     │   │       ├── cs-release-final.md
     │   │       ├── cs-architect.md
-    │   │       └── [22+ additional command contents]
+    │   │       └── [15 additional command contents]
     │   └── agents/
     │       └── claude/
     │           └── python-conformer.md
