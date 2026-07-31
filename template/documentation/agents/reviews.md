@@ -49,15 +49,32 @@ After reviewer approval and before merge, coordinate with the integrator before 
 
 Fold the stack with `--autosquash`, which requires `-i` explicitly — `--autosquash` alone is a silent no-op. Use `<local-integration-base>` as the rebase base.
 
-Preview the fold before applying:
+### Inspect before applying
+
+`git log <local-integration-base>..HEAD` shows current commit order, not the autosquash-reordered todo. To print the prepared plan without applying it, point `GIT_SEQUENCE_EDITOR` at a small unique script file that prints the todo file contents to stderr and exits non-zero:
 
 ```sh
-GIT_SEQUENCE_EDITOR="sh -c 'cat \"$1\" >&2; exit 1' --" git rebase -i --autosquash <local-integration-base>
+show_todo=$(mktemp)
+printf '%s\n' 'cat "$1" >&2' 'rm -f "$0"' 'exit 1' > "$show_todo"
+GIT_SEQUENCE_EDITOR="sh $show_todo" \
+  git rebase -i --autosquash <local-integration-base>
 ```
 
-This prints the rebase plan to stderr and aborts cleanly (no rebase state left behind). Read the plan before running for real.
+This aborts before rewriting history and leaves no rebase state. Prefer a script file over nested-quote one-liners in `GIT_SEQUENCE_EDITOR`; agent harnesses often break the latter.
 
-To apply the fold: `git rebase -i --autosquash <local-integration-base>`. If the result is wrong, recover with `git reset --hard ORIG_HEAD` — git sets `ORIG_HEAD` to the exact pre-rebase position regardless of how far back `<local-integration-base>` was.
+### Apply the fold
+
+In agent environments, apply the prepared plan non-interactively:
+
+```sh
+GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash <local-integration-base>
+```
+
+`GIT_SEQUENCE_EDITOR=true` accepts the autosquash-prepared todo unchanged and continues. It rewrites the branch; it is not a preview.
+
+In an interactive human terminal you may instead run `git rebase -i --autosquash <local-integration-base>` and edit the plan in your editor.
+
+If the result is wrong, recover with `git reset --hard ORIG_HEAD` — git sets `ORIG_HEAD` to the exact pre-rebase position regardless of how far back `<local-integration-base>` was.
 
 For example, run `git rebase master` from the worktree branch when the coordinator says to rebase onto local `master`. Do not write `git rebase /path/to/repo/master`; that is a filesystem path, not a Git ref.
 
