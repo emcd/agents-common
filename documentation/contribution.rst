@@ -49,24 +49,21 @@ Development
 Architecture
 -------------------------------------------------------------------------------
 
-* The :doc:`capability specifications <specifications/index>` provide a good
-  starting point to understand the requirements and motivations for the project.
-  These should be reviewed and updated through the Openspec workflow when making
-  changes that affect product functionality or user experience.
+* Review accepted capability requirements in ``openspec/specs/`` (symlinked
+  from ``documentation/architecture/openspec/``). Manage new capabilities,
+  breaking or cross-cutting changes, architectural shifts, and substantial
+  performance or security work through OpenSpec changes in
+  ``openspec/changes/``. Follow the project's OpenSpec workflow instructions
+  and keep accepted specifications synchronized when changes are completed.
+  Nbspec-managed documents under ``documentation/specifications/`` (for
+  example clone topology) remain part of the Sphinx documentation set.
 
-* The :doc:`system architecture overview <architecture/summary>` should be
-  reviewed to understand the structure and operational patterns of the project.
-  Major changes to the architecture should be reflected in this document.
-
-* Document significant architectural decisions using Architectural Decision
-  Records (ADRs) in the ``architecture/decisions/`` directory. See the
-  `architecture documentation guide
-  <https://emcd.github.io/python-project-common/stable/sphinx-html/common/architecture.html>`_
-  for ADR format and best practices.
-
-* Document technical design specifications for Python interfaces, module
-  organization, and implementation patterns in :doc:`design documents
-  <architecture/designs/index>` to guide implementation efforts.
+* Document stable subsystem architecture, design rationale, and local
+  constraints in the nearest source-near README, normally
+  ``sources/**/README.md`` (for this package, ``sources/agentsmgr/README.md``).
+  Update the affected README when implementation structure or operational
+  patterns change rather than recreating centralized architecture or
+  specification mirrors under ``documentation/``.
 
 Guidance and Standards
 -------------------------------------------------------------------------------
@@ -129,5 +126,4 @@ Resources
    :maxdepth: 2
 
    specifications/index
-   architecture/index
    devapi
