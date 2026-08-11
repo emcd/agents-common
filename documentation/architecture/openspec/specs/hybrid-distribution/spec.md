@@ -23,7 +23,7 @@ Priority: High
 - **WHEN** tool-specific content is needed
 - **THEN** agentsmgr generate produces distribution artifacts from components/
 - **AND** agentsmgr populate copies distribution artifacts to downstream targets
-- **AND** supports detect, generate, populate, and validate commands
+- **AND** supports detect, generate, and populate commands
 
 #### Scenario: Generated content management
 - **WHEN** content is generated
