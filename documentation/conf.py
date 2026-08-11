@@ -57,10 +57,9 @@ extensions = [
 templates_path = [ '_templates' ]
 
 exclude_patterns = [
-    # Openspec workflow/meta files (not documentation)
-    'architecture/openspec/AGENTS.md',
-    'architecture/openspec/project.md',
-    'architecture/openspec/changes/**',
+    # OpenSpec workflow/meta (still buried under architecture/openspec until
+    # the deferred home move). Not part of the Sphinx doc set.
+    'architecture/openspec/**',
 ]
 
 rst_prolog = f'''

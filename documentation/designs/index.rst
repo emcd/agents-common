@@ -17,13 +17,11 @@
    +--------------------------------------------------------------------------+
 
 *******************************************************************************
-Specifications
+Designs
 *******************************************************************************
 
-Nbspec-managed specification documents **for this repository only**. They are
-not part of the Copier template or agentsmgr distribution. OpenSpec capability
-requirements for agentsmgr remain under ``openspec/specs/`` (symlinked from
-``documentation/architecture/openspec/``).
+Nbspec-managed design documents **for this repository only**. Not shipped via
+template or distribution.
 
 .. toctree::
    :maxdepth: 2

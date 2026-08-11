@@ -49,21 +49,26 @@ Development
 Architecture
 -------------------------------------------------------------------------------
 
-* Review accepted capability requirements in ``openspec/specs/`` (symlinked
-  from ``documentation/architecture/openspec/``). Manage new capabilities,
+* **This repository** still uses OpenSpec/OPSX for agentsmgr capability
+  contracts under ``openspec/specs/`` (symlinked from
+  ``documentation/architecture/openspec/``). Manage new capabilities,
   breaking or cross-cutting changes, architectural shifts, and substantial
   performance or security work through OpenSpec changes in
   ``openspec/changes/``. Follow the project's OpenSpec workflow instructions
   and keep accepted specifications synchronized when changes are completed.
-  Nbspec-managed documents under ``documentation/specifications/`` (for
-  example clone topology) remain part of the Sphinx documentation set.
+
+* **This repository** also publishes a small Nbspec-managed set under
+  ``documentation/specifications/``, ``documentation/designs/``, and
+  ``documentation/decisions/`` (for example clone topology). That is
+  project-local Sphinx content. It is not shipped via Copier ``template/`` or
+  ``distribution/`` and must not be treated as the fleet-wide cutover path
+  until Nbspec is adopted downstream.
 
 * Document stable subsystem architecture, design rationale, and local
   constraints in the nearest source-near README, normally
   ``sources/**/README.md`` (for this package, ``sources/agentsmgr/README.md``).
   Update the affected README when implementation structure or operational
-  patterns change rather than recreating centralized architecture or
-  specification mirrors under ``documentation/``.
+  patterns change rather than recreating centralized architecture trees.
 
 Guidance and Standards
 -------------------------------------------------------------------------------
@@ -125,5 +130,4 @@ Resources
 .. toctree::
    :maxdepth: 2
 
-   specifications/index
    devapi
