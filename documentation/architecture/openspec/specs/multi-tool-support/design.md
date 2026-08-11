@@ -8,7 +8,7 @@ This design implements extensible content generation for multiple AI development
 
 ### Component Organization
 
-See `documentation/architecture/filesystem.rst` for the complete filesystem layout. Key modules for multi-tool support:
+See `sources/agentsmgr/README.md` for package layout. Key modules for multi-tool support:
 
 - `sources/agentsmgr/renderers/base.py`: RendererBase abstract class, type definitions
 - `sources/agentsmgr/renderers/{claude,codex,opencode}.py`: Coder-specific renderer implementations
