@@ -8,7 +8,7 @@ Topic: $ARGUMENTS
 
 ## Context
 
-- Project structure: @documentation/architecture/filesystem.rst
+- Package layout: nearest subsystem README under the project source layout
 - Existing examples: !`ls -la documentation/examples/ 2>/dev/null || echo "No examples directory"`
 - Code coverage data: !`hatch --env develop run testers 2>/dev/null || echo "No coverage data available"`
 

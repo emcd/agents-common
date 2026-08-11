@@ -12,9 +12,8 @@ Request from user: $ARGUMENTS
 
 ## Context
 
-- Architecture overview: @documentation/architecture/summary.rst
-- Filesystem patterns: @documentation/architecture/filesystem.rst
-- Design documents: @documentation/architecture/designs/
+- Package layout and rationale: nearest subsystem README under the project source layout
+- Capability specs and designs: @documentation/architecture/openspec/specs/
 
 ## Prerequisites
 
