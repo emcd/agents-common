@@ -28,4 +28,6 @@ See `documentation/architecture/filesystem.rst` for module layout, import patter
 - May conflict with `openspec update` (though it shouldn't if outside managed blocks)
 - Requires maintenance as template evolves
 
-**Decision:** Deferred - using prompts/openspec-init.md approach first to document the manual process. May automate later if the pattern proves valuable.
+**Decision:** Deferred. Manual migration uses `prompts/migrate-to-openspec.md`.
+May automate later if the pattern proves valuable.
+
