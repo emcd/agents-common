@@ -15,8 +15,7 @@ Implement tests according to the provided test plan only.
 - Current git status: !`git status --porcelain`
 - Current branch: !`git branch --show-current`
 - Existing test structure: !`find tests -name "*.py" | head -20`
-- Test organization: @documentation/architecture/testplans/summary.rst
-- Test plans index: @documentation/architecture/testplans/index.rst
+- Test-writing guidelines: @.auxiliary/instructions/tests.rst
 
 ## Prerequisites
 

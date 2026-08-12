@@ -8,8 +8,7 @@ Request from user: $ARGUMENTS
 
 ## Context
 
-- Architecture overview: @documentation/architecture/summary.rst
-- Filesystem patterns: @documentation/architecture/filesystem.rst
+- Package layout and rationale: nearest subsystem README under the project source layout
 - Existing design docs: @documentation/architecture/openspec/specs/
 
 ## Prerequisites
@@ -99,13 +98,13 @@ Examine Python structure and patterns:
 ### 3. Filesystem and Module Organization Design
 
 **Apply Python-specific organizational patterns and filesystem structure**:
-- Consult `documentation/architecture/filesystem.rst` for established patterns.
+- Consult nearest subsystem README for established package layout patterns.
 - Design module structure following standard organization order.
 - Plan centralized import integration for organized dependencies.
 - Specify exception hierarchies and their organization.
 - Design interface patterns for different component types.
 - Plan type alias organization and dependency management.
-- Update `documentation/architecture/filesystem.rst` if new patterns are established.
+- Update the nearest subsystem README if new package-local patterns are established.
 - Consult comprehensive guides for detailed organizational patterns.
 
 ### 4. Class and Function Design
@@ -142,7 +141,7 @@ Examine Python structure and patterns:
 
 **Ensure design quality and consistency**:
 - Verify alignment with practices, style, and nomenclature guidelines.
-- Check consistency with filesystem organization patterns in `filesystem.rst`.
+- Check consistency with package layout patterns in nearest subsystem READMEs.
 - Validate that wide parameter/narrow return patterns are followed.
 - Ensure proper separation between public and private interfaces.
 - Confirm that design supports expected usage patterns and extensibility.
@@ -153,4 +152,4 @@ Examine Python structure and patterns:
 Provide concise summary of updates to the user, including:
 - Capability name and location.
 - Key design decisions.
-- Any updates to `filesystem.rst` or other architectural documentation.
+- Any updates to subsystem READMEs or other architectural documentation.

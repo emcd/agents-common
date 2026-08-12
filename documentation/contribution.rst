@@ -49,24 +49,26 @@ Development
 Architecture
 -------------------------------------------------------------------------------
 
-* The :doc:`capability specifications <specifications/index>` provide a good
-  starting point to understand the requirements and motivations for the project.
-  These should be reviewed and updated through the Openspec workflow when making
-  changes that affect product functionality or user experience.
+* **This repository** still uses OpenSpec/OPSX for agentsmgr capability
+  contracts under ``openspec/specs/`` (symlinked from
+  ``documentation/architecture/openspec/``). Manage new capabilities,
+  breaking or cross-cutting changes, architectural shifts, and substantial
+  performance or security work through OpenSpec changes in
+  ``openspec/changes/``. Follow the project's OpenSpec workflow instructions
+  and keep accepted specifications synchronized when changes are completed.
 
-* The :doc:`system architecture overview <architecture/summary>` should be
-  reviewed to understand the structure and operational patterns of the project.
-  Major changes to the architecture should be reflected in this document.
+* **This repository** also publishes a small Nbspec-managed set under
+  ``documentation/specifications/``, ``documentation/designs/``, and
+  ``documentation/decisions/`` (for example clone topology). That is
+  project-local Sphinx content. It is not shipped via Copier ``template/`` or
+  ``distribution/`` and must not be treated as the fleet-wide cutover path
+  until Nbspec is adopted downstream.
 
-* Document significant architectural decisions using Architectural Decision
-  Records (ADRs) in the ``architecture/decisions/`` directory. See the
-  `architecture documentation guide
-  <https://emcd.github.io/python-project-common/stable/sphinx-html/common/architecture.html>`_
-  for ADR format and best practices.
-
-* Document technical design specifications for Python interfaces, module
-  organization, and implementation patterns in :doc:`design documents
-  <architecture/designs/index>` to guide implementation efforts.
+* Document stable subsystem architecture, design rationale, and local
+  constraints in the nearest source-near README, normally
+  ``sources/**/README.md`` (for this package, ``sources/agentsmgr/README.md``).
+  Update the affected README when implementation structure or operational
+  patterns change rather than recreating centralized architecture trees.
 
 Guidance and Standards
 -------------------------------------------------------------------------------
@@ -128,6 +130,4 @@ Resources
 .. toctree::
    :maxdepth: 2
 
-   specifications/index
-   architecture/index
    devapi

@@ -16,8 +16,8 @@ User input: $ARGUMENTS
 - Project structure: !`ls -la`
 - Current README: @README.rst
 - Project metadata: @pyproject.toml
-- Product specifications: @documentation/specifications
-- Architecture overview: @documentation/architecture/filesystem.rst
+- Capability specs and designs: @documentation/architecture/openspec/specs/
+- Package layout: nearest subsystem README under the project source layout
 
 ## Prerequisites
 

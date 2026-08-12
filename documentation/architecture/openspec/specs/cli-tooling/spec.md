@@ -25,11 +25,11 @@ Priority: High
 - **AND** supports per-project targeting mode
 - **AND** supports nowhere targeting mode for validation
 
-#### Scenario: Configuration validation
-- **WHEN** validate command is executed
-- **THEN** validates configuration structure
-- **AND** provides diagnostics for issues
-- **AND** reports validation status
+#### Scenario: Configuration and distribution validation
+- **WHEN** configuration is loaded or distribution currency is checked
+- **THEN** required configuration fields and data-source structure are validated
+- **AND** `generate --check` reports stale or missing distribution artifacts
+- **AND** diagnostics describe issues without a separate `validate` command
 
 #### Scenario: Source resolution
 - **WHEN** content sources are accessed

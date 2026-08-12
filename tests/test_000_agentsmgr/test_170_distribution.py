@@ -124,13 +124,13 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
     )
     attempted, written = operations_module.generate_distribution(
         generator, tmp_path, simulate = False )
-    assert attempted == 40
-    assert written == 40
+    assert attempted == 38
+    assert written == 38
     opencode_commands = (
         tmp_path / 'per-project' / 'coders' / 'opencode' / 'commands' )
     assert opencode_commands.exists( )
     # OpenCode uses fallback to Claude content
-    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 18
+    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 17
 
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
@@ -201,17 +201,17 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     # Check should pass when distribution is current
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 40
+    assert items_checked == 38
     assert diffs == [ ]
     # Remove one artifact to simulate staleness (missing)
     stale_file = (
         tmp_path / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-architect.md' )
+        / 'cs-code-python.md' )
     if stale_file.exists( ):
         stale_file.unlink( )
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 40
+    assert items_checked == 38
     assert any( 'missing' in d for d in diffs )
     # Add an orphaned artifact to detect extra files
     orphan_dir = (
@@ -383,7 +383,7 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
         in exclude_content )
     assert (
         '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
@@ -405,13 +405,13 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     # Simulate removal: re-copy with one file missing
     stale_file = (
         location / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-architect.md' )
+        / 'cs-code-python.md' )
     stale_file.unlink( )
     _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
         not in exclude_content2 )
     # Other entries should remain
     assert (
