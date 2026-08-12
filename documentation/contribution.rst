@@ -46,12 +46,11 @@ Ways to Contribute
 Development
 ===============================================================================
 
-Architecture
+Requirements and Design
 -------------------------------------------------------------------------------
 
-* **This repository** still uses OpenSpec/OPSX for agentsmgr capability
-  contracts under ``openspec/specs/`` (symlinked from
-  ``documentation/architecture/openspec/``). Manage new capabilities,
+* Review accepted capability requirements in ``openspec/specs/`` (symlinked
+  from ``documentation/architecture/openspec/``). Manage new capabilities,
   breaking or cross-cutting changes, architectural shifts, and substantial
   performance or security work through OpenSpec changes in
   ``openspec/changes/``. Follow the project's OpenSpec workflow instructions
@@ -68,7 +67,8 @@ Architecture
   constraints in the nearest source-near README, normally
   ``sources/**/README.md`` (for this package, ``sources/agentsmgr/README.md``).
   Update the affected README when implementation structure or operational
-  patterns change rather than recreating centralized architecture trees.
+  patterns change rather than recreating centralized architecture or
+  specification mirrors under ``documentation/``.
 
 Guidance and Standards
 -------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ Guidance and Standards
   <https://emcd.github.io/python-project-common/stable/sphinx-html/common/releases.html>`_
   as appropriate.
 
-* Although unncessary for non-maintainer contributions, additional background
+* Although unnecessary for non-maintainer contributions, additional background
   can be found in the `maintenance guide
   <https://emcd.github.io/python-project-common/stable/sphinx-html/common/maintenance.html>`_.
 
@@ -130,4 +130,33 @@ Resources
 .. toctree::
    :maxdepth: 2
 
+   Code of Conduct <https://emcd.github.io/python-project-common/stable/sphinx-html/common/conduct.html>
    devapi
+   Environment Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/environment.html>
+   Practices Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/practices.html>
+   Code Style Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/style.html>
+   Testing Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/tests.html>
+   Nomenclature Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/nomenclature.html>
+   Germanic Nomenclature Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/nomenclature-germanic.html>
+   Validation Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/validation.html>
+   Release Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/releases.html>
+   Maintenance Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/maintenance.html>
+   Architecture Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/architecture.html>
+   Requirements Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/requirements.html>
+
+.. Language-specific guides stay in a hidden toctree so Sphinx includes them
+   in the site graph without adding renderer-specific navigation glue to the
+   portable common Markdown sources.
+.. toctree::
+   :hidden:
+
+   Python Environment Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/environment-python.html>
+   Python Architecture Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/architecture-python.html>
+   Python Development Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/practices-python.html>
+   Rust Development Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/practices-rust.html>
+   TOML Configuration Practices <https://emcd.github.io/python-project-common/stable/sphinx-html/common/practices-toml.html>
+   Latin-derived Verb Vocabulary <https://emcd.github.io/python-project-common/stable/sphinx-html/common/nomenclature-latin.html>
+   Python Automatic Formatting <https://emcd.github.io/python-project-common/stable/sphinx-html/common/python-autoformat.html>
+   Python Testing Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/tests-python.html>
+   Python Validation Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/validation-python.html>
+   Python Release Guide <https://emcd.github.io/python-project-common/stable/sphinx-html/common/releases-python.html>
