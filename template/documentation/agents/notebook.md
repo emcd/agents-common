@@ -63,6 +63,10 @@ Use consistent tags for discoverability:
 - For each active OpenSpec proposal, keep **exactly one** linked `nb` todo as the tracking anchor (with proposal reference), rather than duplicating full task trees in both systems.
 
 ## Handoff Hygiene
-- Keep rolling handoff notes stable and update in place, separate from OpenSpec proposal content.
-- Do not repurpose or overwrite rolling handoff notes with proposal content.
+- Use `coordination/<component>` for per-component rolling handoffs (one stable note per component, updated in place). Use `coordination/general` for coordinator-wide state and cross-component snapshots.
+- Keep rolling handoff notes separate from OpenSpec proposal content. Do not repurpose or overwrite rolling handoff notes with proposal content.
 - Handoff content should be a brief summary of recent accomplishments and the current agenda. Replace the note body rather than appending so the handoff stays one screenful; a growing checkpoint log is an anti-pattern.
+- **Updates are conditional, not routine.** Do not refresh a handoff after every task, review round, or status ping.
+- **Primary update point: before compaction (or a genuine session end).** When the conversation is about to compact or the session is ending such that the next pickup may be a cold start, rewrite the handoff so the next agent has operating state without relying on chat history. That is the default reason to touch the note.
+- **Secondary update point:** when another lane or the coordinator needs visibility into a state change that is not otherwise discoverable from git log, `nb` todo/issue status, or OpenSpec `tasks.md`.
+- In-session continuity after compaction is not a substitute for a handoff when the next actor may be a different session or seat; still prefer one pre-compaction rewrite over many mid-flight tweaks.
