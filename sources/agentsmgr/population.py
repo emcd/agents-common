@@ -193,8 +193,12 @@ def _populate_per_user_content(
         Returns tuple of (items_attempted, items_written).
     '''
     attempted, written, _ = _copy_distribution_items(
-        location, coders, __.Path.cwd( ), configuration,
-        'per-user', simulate )
+        location,
+        coders,
+        __.Path.cwd( ),
+        configuration = configuration,
+        mode = 'per-user',
+        simulate = simulate )
     return ( attempted, written )
 
 
@@ -242,6 +246,7 @@ def _copy_distribution_items(  # noqa: PLR0913
     distribution: __.Path,
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
+    *,
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     mode: _renderers.ExplicitTargetMode,
     simulate: bool,
@@ -458,9 +463,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
                 location,
                 filtered_configuration[ 'coders' ],
                 self.target,
-                filtered_configuration,
-                'per-project',
-                self.simulate ) )
+                configuration = filtered_configuration,
+                mode = 'per-project',
+                simulate = self.simulate ) )
         if items_attempted > 0:
             if self.simulate:
                 _scribe.info(

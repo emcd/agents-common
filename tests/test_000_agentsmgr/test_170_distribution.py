@@ -148,8 +148,8 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
         location,
         [ 'opencode' ],
         target,
-        configuration,
-        'per-project',
+        configuration = configuration,
+        mode = 'per-project',
         simulate = False,
     )
     assert attempted > 0
@@ -615,8 +615,8 @@ def test_500_populate_uses_explicit_target( tmp_path ):
             location,
             [ 'claude' ],
             target,
-            configuration,
-            'per-project',
+            configuration = configuration,
+            mode = 'per-project',
             simulate = False,
         ) )
     assert attempted > 0
