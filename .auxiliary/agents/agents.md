@@ -5,39 +5,7 @@
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
 - Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture and design decisions.
-
-## Purpose
-
-**emcd-agents** is a centralized, version-controlled system for managing AI
-agent configurations. It employs a hybrid distribution architecture that
-combines Copier templates for base configurations with a CLI tool (`agentsmgr`)
-for dynamic content generation. Its goal is to enable rapid iteration on agent
-configurations (slash commands, prompts, tool definitions) while ensuring
-consistency across multiple projects and users.
-
-## Tech Stack
-
-- **Language:** Python (>= 3.10)
-- **Build System:** Hatch (hatchling)
-- **Core Dependencies:**
-    - `emcd-appcore[cli]` (Application framework)
-    - `Jinja2` (Templating)
-    - `PyYAML` (Configuration parsing)
-    - `dulwich` (Git operations)
-    - `frigid`, `accretive`, `absence` (Immutable/specialized data structures)
-    - `dynadoc` (Documentation utilities)
-- **Development Tools:**
-    - `ruff` (Linting and formatting)
-    - `pyright` (Static type checking)
-    - `isort` (Import sorting)
-    - `pre-commit` (Git hooks)
-    - `pytest` (Testing)
-    - `coverage` (Test coverage)
-    - `sphinx` (Documentation)
-    - `towncrier` (Changelog management)
-    - `copier` (Project templating)
-    - `copiertv` (Template rendering validation)
-    - `pyinstaller` (Standalone executable builds)
+- Project purpose, tech stack, and other project-owned guidance: @.auxiliary/agents/project.md
 
 # Development Standards
 Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
@@ -69,6 +37,7 @@ Before implementing code changes, consult these files in `.auxiliary/agents/stan
 
 | Topic | File |
 |-------|------|
+| Project-specific guidance (project-owned) | @.auxiliary/agents/project.md |
 | `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
 | OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
 | Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
@@ -163,15 +132,7 @@ When a commit completes an OpenSpec task or requirement, update the relevant Ope
 - Routing around a designated tool (for example reading notebook files from the filesystem instead of using the nb MCP tools) is evidence of a defect — in the tool, its documentation, or the workflow. Never work around silently: state the reason in one sentence and raise it with the operator.
 - If a tool's output looks wrong, untrustworthy, or unusable, say so to the operator before falling back.
 
-# Project Notes
+# Project Guidance
 
-- Self-dogfooding procedure for template/default changes: `procedures/1`.
-
-<!-- This section accumulates project-specific knowledge, constraints, and deviations.
-     For structured items, use `nb`.
-
-     TODO: If this project uses multiple agent/worktree roles, create a stable
-     team-organization note in `nb`, modeled after one of the examples at:
-     https://raw.githubusercontent.com/emcd/agents-common/master/examples/nb-notes/team-organization/README.md
-     Then link the note here, for example:
-     - Team org, role ownership, signoff policy, and merge workflow: `coordination/general/<n>` -->
+Read and follow @.auxiliary/agents/project.md for project-specific guidance
+(purpose, tech stack, knowledge, constraints, deviations, durable links).

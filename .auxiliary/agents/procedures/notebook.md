@@ -47,7 +47,7 @@ Use consistent tags for discoverability:
 - Use `decisions/` only when the project wants optional durable rationale notes outside OpenSpec or architecture README files.
 - When an idea promotes to a formal OpenSpec proposal, delete or archive the notebook draft so the OpenSpec file is the canonical record.
 - Example component names include `engine`, `mcp`, `tui`, `web`, `handbook`, and `data-models`.
-- This project should define and document its specific component-folder conventions in the **Project Notes** section.
+- This project should define and document its specific component-folder conventions in @.auxiliary/agents/project.md.
 - For cross-component work, prefer `coordination/general` and use multiple `#component-*` tags.
 - For per-component rolling handoffs, prefer `coordination/<component>` (one stable note updated at checkpoints).
 - Keep notebook lifecycle hygiene:
