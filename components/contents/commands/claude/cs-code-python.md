@@ -21,10 +21,10 @@ Before implementing Python code, ensure:
 ### Guide Consultation Requirements
 
 Before implementing Python code, you MUST:
-1. Read @.auxiliary/instructions/practices.rst for general development principles.
-2. Read @.auxiliary/instructions/practices-python.rst for Python-specific patterns.
-3. Read @.auxiliary/instructions/style.rst for code style requirements.
-4. Read @.auxiliary/instructions/nomenclature.rst for naming conventions.
+1. Read @.auxiliary/agents/standards/practices.rst for general development principles.
+2. Read @.auxiliary/agents/standards/practices-python.rst for Python-specific patterns.
+3. Read @.auxiliary/agents/standards/style.rst for code style requirements.
+4. Read @.auxiliary/agents/standards/nomenclature.rst for naming conventions.
 5. In a step on your todo list, please attest that you have read the practices, style, and nomenclature guides and demonstrate your knowledge by writing one-sentence summaries on any three of the following topics:
 
 - the comprehensive examples showing multiple principles cohesively

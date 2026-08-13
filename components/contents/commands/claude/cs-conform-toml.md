@@ -9,10 +9,10 @@ Focus on style/practice conformance, not functionality changes.
 ## Prerequisites
 
 - Read project documentation guides first:
-  - @.auxiliary/instructions/practices.rst
-  - @.auxiliary/instructions/practices-toml.rst
-  - @.auxiliary/instructions/style.rst
-  - @.auxiliary/instructions/nomenclature.rst
+  - @.auxiliary/agents/standards/practices.rst
+  - @.auxiliary/agents/standards/practices-toml.rst
+  - @.auxiliary/agents/standards/style.rst
+  - @.auxiliary/agents/standards/nomenclature.rst
 - Understand target files to be conformed
 - Have read `CLAUDE.md` for project-specific guidance
 

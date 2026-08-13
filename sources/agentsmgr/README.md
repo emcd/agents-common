@@ -35,7 +35,7 @@ sources/agentsmgr/
 ├── generator.py        # components/ → distribution/ rendering
 ├── operations.py       # Git exclude and filesystem helpers
 ├── instructions.py     # Instruction fetch from configured git sources
-├── memorylinks.py      # Project memory file symlinks
+├── memorylinks.py      # Root AGENTS.md/CLAUDE.md → .auxiliary/agents/agents.md
 ├── userdata.py         # Per-user population helpers
 ├── exceptions.py       # Package exception hierarchy
 ├── renderers/          # Coder-specific path and format contracts

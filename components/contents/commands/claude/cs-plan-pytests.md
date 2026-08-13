@@ -13,7 +13,7 @@ Focus on analysis and planning only - do not implement tests.
 - Current branch: !`git branch --show-current`
 - Current test coverage: !`hatch --env develop run coverage report --show-missing`
 - Existing test structure: !`find tests -name "*.py" | head -20`
-- Test-writing guidelines: @.auxiliary/instructions/tests.rst
+- Test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ Ensure that you:
 - Have access to target code modules for analysis
 - Can generate current coverage reports
 - Have read any relevant `CLAUDE.md` file
-- Understand the test-writing guidelines: @.auxiliary/instructions/tests.rst
+- Understand the test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Safety Requirements
 
@@ -54,8 +54,8 @@ Execute the following steps for target: $ARGUMENTS
 Access test-writing guidelines:
 
 Read and understand the complete project guidelines:
-- Testing: @.auxiliary/instructions/tests.rst
-- Python Practices: @.auxiliary/instructions/practices-python.rst
+- Testing: @.auxiliary/agents/standards/tests.rst
+- Python Practices: @.auxiliary/agents/standards/practices-python.rst
 
 You must successfully access and understand both guides before proceeding. If any guide cannot be accessed, stop and inform the user.
 

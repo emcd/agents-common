@@ -25,10 +25,10 @@ Before providing design analysis, ensure:
 ### Project Standards
 
 Before providing design analysis, you MUST:
-1. Read @.auxiliary/instructions/practices.rst for general development principles.
-2. Read @.auxiliary/instructions/practices-python.rst for Python-specific patterns.
-3. Read @.auxiliary/instructions/style.rst for code style requirements.
-4. Read @.auxiliary/instructions/nomenclature.rst for naming conventions.
+1. Read @.auxiliary/agents/standards/practices.rst for general development principles.
+2. Read @.auxiliary/agents/standards/practices-python.rst for Python-specific patterns.
+3. Read @.auxiliary/agents/standards/style.rst for code style requirements.
+4. Read @.auxiliary/agents/standards/nomenclature.rst for naming conventions.
 5. In a step on your TODO list, please attest that you have read the practices, style, and nomenclature guides and demonstrate your knowledge by writing one-sentence summaries on any three of the following topics:
 
 - interface specification patterns from comprehensive examples

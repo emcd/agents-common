@@ -64,10 +64,12 @@ def _create_agents_answers_file( target: Path ) -> None:
             'languages:',
             '- python',
             'provide_instructions: true',
-            'instructions_target: .auxiliary/instructions',
+            'instructions_target: .auxiliary/agents/standards',
         ) ) + '\n',
         encoding = 'utf-8' )
-    ( configuration_directory / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True, exist_ok = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
 
 
@@ -486,18 +488,22 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
     # Copy instructions
     attempted, written, entries = (
         population_module._copy_instructions_from_distribution(
-            location, target, '.auxiliary/instructions', simulate = False ) )
+            location,
+            target,
+            '.auxiliary/agents/standards',
+            simulate = False,
+        ) )
     assert attempted == len( instruction_files )
     assert written == len( instruction_files )
     # Verify files were copied to target
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert target_instructions.exists( )
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert target_standards.exists( )
     for name in expected_files:
-        dest_file = target_instructions / name
+        dest_file = target_standards / name
         assert dest_file.exists( ), f"Missing instruction: {name}"
     # Verify exclude entries are file-level
     for entry in entries:
-        assert entry.startswith( '.auxiliary/instructions/' ), (
+        assert entry.startswith( '.auxiliary/agents/standards/' ), (
             f"Expected file-level entry, got: {entry}" )
         assert not entry.endswith( '/' ), (
             f"Entry should not be directory: {entry}" )
@@ -513,7 +519,9 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     target.mkdir( )
     # Create minimal git structure for _create_all_symlinks
     ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
-    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
     configuration = {
         'coders': [ 'claude' ],
@@ -523,9 +531,9 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
     # Verify no instruction files were copied
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert not target_instructions.exists( ) or \
-        len( list( target_instructions.glob( '*' ) ) ) == 0
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert not target_standards.exists( ) or \
+        len( list( target_standards.glob( '*' ) ) ) == 0
 
 
 def test_900_instructions_sources_not_consulted( tmp_path ):
@@ -537,7 +545,9 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     target.mkdir( )
     # Create minimal git structure
     ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
-    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
     # Provide instructions_sources config but populate should ignore it
     configuration = {
@@ -551,9 +561,9 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
     # Verify instructions were copied from distribution/ (local), not network
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert target_instructions.exists( )
-    copied_files = list( target_instructions.glob( '*.rst' ) )
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert target_standards.exists( )
+    copied_files = list( target_standards.glob( '*.rst' ) )
     assert len( copied_files ) > 0
     # Verify the files match the distribution corpus
     source_instructions = (

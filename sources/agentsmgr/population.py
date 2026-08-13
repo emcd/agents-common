@@ -381,7 +381,7 @@ def _manage_project_auxiliaries(
     instruction_entries: tuple[ str, ... ] = ( )
     if configuration.get( 'provide_instructions', False ):
         instructions_target = configuration.get(
-            'instructions_target', '.auxiliary/instructions' )
+            'instructions_target', '.auxiliary/agents/standards' )
         instructions_attempted, instructions_written, instruction_entries = (
             _copy_instructions_from_distribution(
                 distribution, target, instructions_target, simulate ) )
