@@ -5,12 +5,7 @@
 - Use the 'context7' MCP server to retrieve up-to-date documentation for any SDKs or APIs.
 - Use the 'nb' MCP server for project note-taking, issue tracking, and collaboration. The server provides LLM-friendly access to the `nb` note-taking system with proper escaping and project-specific notebook context.
 - Check README files in directories you're working with for insights about architecture and design decisions.
-
-## Purpose
-[Describe your project's purpose and goals]
-
-## Tech Stack
-[List your primary technologies]
+- Project purpose, tech stack, and other project-owned guidance: @.auxiliary/agents/project.md
 
 # Development Standards
 
@@ -54,6 +49,7 @@ Before implementing code changes, consult `documentation/development.md` if it e
 
 | Topic | File |
 |-------|------|
+| Project-specific guidance (project-owned) | @.auxiliary/agents/project.md |
 | `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
 | OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
 | Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
@@ -161,13 +157,7 @@ When a commit completes an OpenSpec task or requirement, update the relevant Ope
 - Routing around a designated tool (for example reading notebook files from the filesystem instead of using the nb MCP tools) is evidence of a defect — in the tool, its documentation, or the workflow. Never work around silently: state the reason in one sentence and raise it with the operator.
 - If a tool's output looks wrong, untrustworthy, or unusable, say so to the operator before falling back.
 
-# Project Notes
+# Project Guidance
 
-<!-- This section accumulates project-specific knowledge, constraints, and deviations.
-     For structured items, use `nb`.
-
-     TODO: If this project uses multiple agent/worktree roles, create a stable
-     team-organization note in `nb`, modeled after one of the examples at:
-     https://raw.githubusercontent.com/emcd/agents-common/master/examples/nb-notes/team-organization/README.md
-     Then link the note here, for example:
-     - Team org, role ownership, signoff policy, and merge workflow: `coordination/general/<n>` -->
+Read and follow @.auxiliary/agents/project.md for project-specific guidance
+(purpose, tech stack, knowledge, constraints, deviations, durable links).

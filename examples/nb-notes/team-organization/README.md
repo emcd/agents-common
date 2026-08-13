@@ -2,8 +2,8 @@
 
 These Markdown files are examples for `nb` coordination notes. Copy the shape
 that matches a project's team topology into that project's notebook, then adapt
-the placeholders and link the resulting note from the project's `AGENTS.md`
-`Project Notes` section.
+the placeholders and link the resulting note from the project's
+`.auxiliary/agents/project.md`.
 
 Suggested use:
 
