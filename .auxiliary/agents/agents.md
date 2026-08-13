@@ -40,7 +40,7 @@ consistency across multiple projects and users.
     - `pyinstaller` (Standalone executable builds)
 
 # Development Standards
-Before implementing code changes, consult these files in `.auxiliary/instructions/`:
+Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
 - `practices.rst` - General development principles (robustness, immutability, exception chaining)
 - `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
 - `nomenclature.rst` - Naming conventions for variables, functions, classes, exceptions
@@ -55,20 +55,23 @@ Before implementing code changes, consult these files in `.auxiliary/instruction
   - If a touched subsystem README is stale after your change, update it in the same batch.
 - Use relative paths rather than absolute paths when possible (relative paths are less likely to trigger tool call permission requests).
 - Do not write to paths outside the current project unless explicitly requested.
+- Do **not** run `find`, `fd`, or other unbounded recursive walks on `/`, `~`, or other home-wide roots. Scope searches to the current project/worktree or a path the operator named. Prefer harness file-search tools when available.
+- Notebook and project-note operations go through the **`nb` MCP** tools. Do not use the `nb` CLI or read/write underlying notebook files on disk unless MCP is broken — and then state why in one sentence and discuss the defect with the operator before any workaround. Selectors are not repo filesystem paths; see @.auxiliary/agents/procedures/notebook.md.
 - Use `.auxiliary/scribbles` for scratch work and one-off experiments instead of `/tmp`.
 - Use `.auxiliary/temporary` for ephemeral test state and build artifacts that are safe to delete.
 - In sandboxed environments (e.g., Codex CLI), treat file/network permission failures as escalation boundaries:
   - If an operation fails due to sandbox, file access, or network restrictions, rerun it with user escalation.
   - Do not spend time on retry loops or workaround exploration before escalating blocked operations.
 - When writing here-docs or multi-line shell strings, suppress expansions by quoting the delimiter (e.g., `'EOF'` instead of `EOF`) unless you intentionally need variable or command substitution.
+- Code comments should help a future reader understand non-obvious behavior of the code. Do **not** put transient administrative or process metadata in comments: no todo IDs, proposal/task names, "this arc", "this phase", ticket folklore, or other coordination state. Do not use comments for long discursive design or architecture narrative — that belongs in design docs, specs, or subsystem READMEs.
 
 ## Guidance Files
 
 | Topic | File |
 |-------|------|
-| `nb` MCP tools, tagging, and notebook organization | @documentation/agents/notebook.md |
-| OpenSpec proposals and workflow | @documentation/agents/openspec.md |
-| Delegated review flow and stacked commits | @documentation/agents/reviews.md |
+| `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
+| OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
+| Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
 
 ### Recommended Organization
 
@@ -135,20 +138,30 @@ When a commit completes an OpenSpec task or requirement, update the relevant Ope
 
 ## Delegated Review and Stacked Commits
 
-**Read this section before reviewing or stacking commits.** @documentation/agents/reviews.md covers the delegated review flow, review request packet format, and how to handle stacked commits with `--fixup`/`--autosquash`.
+**Read this section before reviewing or stacking commits.** @.auxiliary/agents/procedures/reviews.md covers the delegated review flow, review request packet format, and how to handle stacked commits with `--fixup`/`--autosquash`.
 
-## Review Request Packet
+## Rolling Handoffs
 
-For non-trivial delegated work, review requests should include:
+**Read this before writing or updating a handoff note.** @.auxiliary/agents/procedures/notebook.md Handoff Hygiene covers when to update (pre-compaction primary), content shape, and anti-patterns. Do not refresh handoffs routinely mid-flight.
 
-- Base branch and intended merge target.
-- Complete commit list with hashes and one-line descriptions.
-- Validation commands run and results, including skipped checks or known gaps.
-- Intended contract: what must be true after the change lands.
-- Review concerns, if any: genuine uncertainty or risky areas only.
-- Known risks, accepted tradeoffs, deferred items, or intentional branch staleness.
+# Collaboration
 
-Author-provided review concerns are supplemental context, not a limit on review scope. Independent inspection remains the reviewer responsibility.
+## Questions Are Not Stop-Orders
+
+- When the operator asks why you are doing something, **answer first**: state your actual reason in one or two sentences, even if it is unflattering, before changing course. The question is a request for information, not a rebuke. Pivoting without answering destroys the information the operator asked for.
+- Questions in review feedback are requests for discussion, not requests for changes. Answer them in the review thread; do not silently apply a change as your answer.
+- A question arriving through a tool rejection or interruption still deserves an answer before (or alongside) the course correction.
+
+## The Human Is Not Always Right
+
+- Assert your reasons. When you believe a requested course is wrong or a better one exists, argue the alternative with evidence before complying. Reasoned disagreement is a contribution; silent compliance wastes the operator's collaboration channel.
+- Concede on evidence, not on authority. Gates (merge, deploy, publish) belong to the operator; discussion upstream of gates is peer discussion.
+- However, do not manufacture dissent. When you agree, say so briefly and proceed.
+
+## Workarounds Require Stated Reasons
+
+- Routing around a designated tool (for example reading notebook files from the filesystem instead of using the nb MCP tools) is evidence of a defect — in the tool, its documentation, or the workflow. Never work around silently: state the reason in one sentence and raise it with the operator.
+- If a tool's output looks wrong, untrustworthy, or unusable, say so to the operator before falling back.
 
 # Project Notes
 

@@ -2,23 +2,35 @@
 
 Use this flow when multiple team members can access the same repository through branches or linked worktrees.
 
-## Engineer Flow
+## Roles
 
-1. Implement the scoped change and run validation.
-2. Create a local/private review commit so the diff is hash-stable and hook-checked.
-3. Rebase the review branch onto the agreed `<local-integration-base>`.
-4. Send the commit hash, changed-file summary, validation results, and any blockers/design questions.
-5. The reviewer approves the commit or requests changes.
-6. Address reviewer feedback with fixup commits or first-class follow-up commits as described below.
-7. Autosquash targeted fixups before the final review packet, unless the integrator explicitly asks to inspect the unsquashed response stack first.
+- **Author:** implements the change, produces review packets, addresses findings with fixups, and prepares the cleaned stack for merge.
+- **Reviewer:** performs the technical review (design, correctness, validation evidence, commit structure). One reviewer may cover the whole stack, or review may be split by commit/area; either way this is the technical gate.
+- **Integrator** (coordinator or tech lead): accepts the **reviewer-approved, cleaned** stack for merge. Checks that the branch is based on the current `<local-integration-base>`, that the merge can proceed without conflict, and that human merge/push policy is respected. This is **not** a second technical review of the change content.
+
+The same person may wear more than one role only when the project explicitly allows it. Do not treat "send to coordinator for merge" as another round of code review.
+
+## Review cycle
+
+1. Author implements the scoped change, runs validation, and creates local/private review commit(s) so the diff is hash-stable and hook-checked.
+2. Author rebases onto the agreed `<local-integration-base>` and sends a review packet to the **reviewer**.
+3. Reviewer approves or requests changes.
+4. If changes are requested: author addresses them with fixup commits or first-class follow-up commits (see below), then sends an **updated** review packet. Return to step 3.
+5. When the reviewer **approves**: author autosquashes targeted fixups into their targets.
+6. **Base check after approval (required distinction):**
+   - If `<local-integration-base>` is **unchanged** since the approved packet and only autosquash rewrote hashes: hand the cleaned stack to the **integrator** for merge (merge handoff with updated commit list; no repeat technical review).
+   - If the base **advanced** and the author must rebase onto the new base — especially if conflicts are resolved — the result is a **changed technical artifact**. Send an **updated technical review packet** and return to step 3. Do not send a rebased stack straight to the integrator.
+7. Integrator merges (see Integrator flow). Merge/push only after explicit human approval.
+
+Hold the unsquashed fixup stack for the entire technical review. Autosquash only after reviewer approval, as the step that produces the stack the integrator merges when the base has not moved.
 
 The agreed `<local-integration-base>` is a Git ref in the current repository, such as local `master` or a local lane integration branch. It is not a filesystem path and is not a remote-tracking ref. Do not use `origin/master`, another `origin/*` ref, a path like `/path/to/repo/master`, or a raw commit hash as the rebase base unless the coordinator explicitly names that exact ref or hash. When in doubt, ask for the local branch/ref name before rebasing. Confirm it with `git branch --list <local-integration-base>` or `git rev-parse --verify <local-integration-base>` before running `git rebase`.
 
-## Coordinator/Tech-Lead Flow
+## Integrator flow
 
-1. Review the submitted commit and any included validation evidence.
-2. If targeted fixups remain, ask the author to autosquash them and resubmit the final review packet before merge, unless you explicitly want to inspect the unsquashed response stack first.
-3. Merge approved review branches with `--no-ff` when preserving a delegated-work or lane boundary; this creates a clear integration point and avoids mutually rebasing branches into increasingly long histories.
+1. Confirm the stack is reviewer-approved and already cleaned (fixups autosquashed). If fixups are still present, send it back to the author to fold before merge — do not start a content review.
+2. Confirm the cleaned stack is based on the **current** `<local-integration-base>`. If the base has advanced (stale-base stack), **refuse the merge handoff** and route the author to rebase and return through **technical review** — do not independently assess the rebased content, and do not merge a stale-base cleaned stack.
+3. If the base is current and the merge is otherwise clear, merge approved review branches with `--no-ff` when preserving a delegated-work or lane boundary; this creates a clear integration point and avoids mutually rebasing branches into increasingly long histories.
 4. Merge/push only after explicit human approval.
 
 Prefer reviewing commits by hash. Use an explicit worktree path only for uncommitted diffs or commits in a different repository. Use patch artifacts only as a fallback when the reviewer cannot access the repository, branch, or worktree directly.
@@ -37,15 +49,19 @@ For non-trivial delegated work, review requests should include:
 
 Author-provided review concerns are supplemental context, not a limit on review scope. Independent inspection remains the reviewer responsibility.
 
+Packets to the **integrator** after approval are merge handoffs: cleaned commit list, validation status, and base/merge refs. They apply only when the base is unchanged since reviewer approval (autosquash-only hash changes are fine). They are not a second technical review packet. A rebase onto an advanced base requires a new technical review packet to the **reviewer**, not a merge handoff.
+
 # Reviewing Stacked Commits
 
 When feedback targets one specific commit in the current review stack, use `git commit --fixup <target-hash>`. This applies even when the review stack has only one commit. Do not directly amend reviewed commits while review is in progress; fixup commits preserve review visibility until the stack is ready for final cleanup.
 
 A fixup is valid only when the entire fix belongs to code introduced by one target commit in the current stack. Use a first-class follow-up commit when the fix touches code that is already merged to the base branch, when the fix spans or refactors code introduced by two or more in-stack commits, or when the operator requests a distinct design change. Name the review finding or rationale in the first-class commit message or review reply so reviewers know why it is not a fixup.
 
-The author normally autosquashes targeted fixups before the final review packet. This lets the integrator review the cleaned final stack and avoid rewriting a branch they do not own. The integrator may autosquash only when explicitly delegated or when the author is unavailable.
+The author holds targeted fixups in place until the **reviewer** approves. Each fixup stays visible on the branch in the context of its target commit, which preserves review visibility for the response. Do **not** autosquash before or during technical review — that rewrites hashes, stales the packet under review, and hides which fix addressed which finding. After reviewer approval, the author autosquashes into the target commits.
 
-After reviewer approval and before merge, coordinate with the integrator before rewriting the reviewed stack. If the stack changes, send the updated commit list and validation status before merge.
+Distinguish post-approval hash changes:
+- **Autosquash only, base unchanged:** include the new commit list and validation status on the merge handoff to the integrator. No repeat technical review.
+- **Rebase onto an advanced base** (with or without conflict resolution): send an updated technical review packet to the reviewer and obtain approval again before any merge handoff. Do not treat a base rebase as equivalent to autosquash.
 
 Fold the stack with `--autosquash`, which requires `-i` explicitly — `--autosquash` alone is a silent no-op. Use `<local-integration-base>` as the rebase base.
 
