@@ -196,7 +196,7 @@ class MemoryFileAbsence( Omnierror, FileNotFoundError ):
         lines.append( "" )
         lines.append(
             "**Suggested action**: Create "
-            "`.auxiliary/configuration/AGENTS.md` with "
+            "`.auxiliary/agents/agents.md` with "
             "project-specific conventions, or copy from a template "
             "project." )
         return tuple( lines )

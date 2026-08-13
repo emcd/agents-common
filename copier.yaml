@@ -55,7 +55,7 @@ provide_instructions:
 instructions_target:
     type: str
     help: Target directory for instruction files
-    default: ".auxiliary/instructions"
+    default: ".auxiliary/agents/standards"
     when: "{{ provide_instructions }}"
 
 instructions_sources:

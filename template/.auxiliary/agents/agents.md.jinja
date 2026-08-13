@@ -15,7 +15,7 @@
 # Development Standards
 
 {%- if provide_instructions %}
-Before implementing code changes, consult these files in `.auxiliary/instructions/`:
+Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
 - `practices.rst` - General development principles (robustness, immutability, exception chaining)
 {%- if "python" in languages %}
 - `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
@@ -41,7 +41,7 @@ Before implementing code changes, consult `documentation/development.md` if it e
 - Use relative paths rather than absolute paths when possible (relative paths are less likely to trigger tool call permission requests).
 - Do not write to paths outside the current project unless explicitly requested.
 - Do **not** run `find`, `fd`, or other unbounded recursive walks on `/`, `~`, or other home-wide roots. Scope searches to the current project/worktree or a path the operator named. Prefer harness file-search tools when available.
-- Notebook and project-note operations go through the **`nb` MCP** tools. Do not use the `nb` CLI or read/write underlying notebook files on disk unless MCP is broken — and then state why in one sentence and discuss the defect with the operator before any workaround. Selectors are not repo filesystem paths; see @documentation/agents/notebook.md.
+- Notebook and project-note operations go through the **`nb` MCP** tools. Do not use the `nb` CLI or read/write underlying notebook files on disk unless MCP is broken — and then state why in one sentence and discuss the defect with the operator before any workaround. Selectors are not repo filesystem paths; see @.auxiliary/agents/procedures/notebook.md.
 - Use `.auxiliary/scribbles` for scratch work and one-off experiments instead of `/tmp`.
 - Use `.auxiliary/temporary` for ephemeral test state and build artifacts that are safe to delete.
 - In sandboxed environments (e.g., Codex CLI), treat file/network permission failures as escalation boundaries:
@@ -54,9 +54,9 @@ Before implementing code changes, consult `documentation/development.md` if it e
 
 | Topic | File |
 |-------|------|
-| `nb` MCP tools, tagging, and notebook organization | @documentation/agents/notebook.md |
-| OpenSpec proposals and workflow | @documentation/agents/openspec.md |
-| Delegated review flow and stacked commits | @documentation/agents/reviews.md |
+| `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
+| OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
+| Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
 
 ### Recommended Organization
 
@@ -136,11 +136,11 @@ When a commit completes an OpenSpec task or requirement, update the relevant Ope
 
 ## Delegated Review and Stacked Commits
 
-**Read this section before reviewing or stacking commits.** @documentation/agents/reviews.md covers the delegated review flow, review request packet format, and how to handle stacked commits with `--fixup`/`--autosquash`.
+**Read this section before reviewing or stacking commits.** @.auxiliary/agents/procedures/reviews.md covers the delegated review flow, review request packet format, and how to handle stacked commits with `--fixup`/`--autosquash`.
 
 ## Rolling Handoffs
 
-**Read this before writing or updating a handoff note.** @documentation/agents/notebook.md Handoff Hygiene covers when to update (pre-compaction primary), content shape, and anti-patterns. Do not refresh handoffs routinely mid-flight.
+**Read this before writing or updating a handoff note.** @.auxiliary/agents/procedures/notebook.md Handoff Hygiene covers when to update (pre-compaction primary), content shape, and anti-patterns. Do not refresh handoffs routinely mid-flight.
 
 # Collaboration
 

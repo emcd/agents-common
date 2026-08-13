@@ -61,7 +61,7 @@ separate proposal.
 
 **Status:** Ratified.
 
-**Decision:** Do not rewrite `template/documentation/agents/reviews.md`
+**Decision:** Do not rewrite `template/.auxiliary/agents/procedures/reviews.md`
 autosquash inspect/apply guidance.
 
 ## D6 — OpenSpec home location unchanged (deferred)

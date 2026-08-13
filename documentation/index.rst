@@ -30,9 +30,6 @@ Table of Contents
    specifications/index
    designs/index
    decisions/index
-   agents/notebook
-   agents/openspec
-   agents/reviews
    api
    changelog
    contribution

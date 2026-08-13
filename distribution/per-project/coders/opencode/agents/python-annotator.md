@@ -42,8 +42,8 @@ decline and explain your specialization.
 ## Prerequisites
 
 - **Read project documentation guides FIRST**:
-  - @.auxiliary/instructions/practices.rst
-  - @.auxiliary/instructions/style.rst
+  - @.auxiliary/agents/standards/practices.rst
+  - @.auxiliary/agents/standards/style.rst
 - Have read `CLAUDE.md` for project-specific guidance
 
 ## EXECUTION STRUCTURE

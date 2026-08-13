@@ -197,7 +197,7 @@ those require a separate proposal.
 #### Scenario: reviews.md autosquash guidance untouched
 
 - **WHEN** the change diff is inspected
-- **THEN** `template/documentation/agents/reviews.md` autosquash
+- **THEN** `template/.auxiliary/agents/procedures/reviews.md` autosquash
   inspect/apply guidance is unchanged
 
 #### Scenario: Deferred cutover not authorized

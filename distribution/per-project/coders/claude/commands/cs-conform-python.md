@@ -13,10 +13,10 @@ Focus on style/practice conformance, not functionality changes.
 ## Prerequisites
 
 - Read project documentation guides first:
-  - @.auxiliary/instructions/practices.rst
-  - @.auxiliary/instructions/practices-python.rst
-  - @.auxiliary/instructions/style.rst
-  - @.auxiliary/instructions/nomenclature.rst
+  - @.auxiliary/agents/standards/practices.rst
+  - @.auxiliary/agents/standards/practices-python.rst
+  - @.auxiliary/agents/standards/style.rst
+  - @.auxiliary/agents/standards/nomenclature.rst
 - Understand target files to be conformed
 - Have read `CLAUDE.md` for project-specific guidance
 
@@ -36,8 +36,8 @@ Apply all identified fixes in systematic order, validating with linters after co
 ### Project Standards
 
 Before proceeding with conformance analysis, you MUST:
-1. Read @.auxiliary/instructions/practices.rst for general development principles
-2. Read @.auxiliary/instructions/practices-python.rst for Python-specific patterns
+1. Read @.auxiliary/agents/standards/practices.rst for general development principles
+2. Read @.auxiliary/agents/standards/practices-python.rst for Python-specific patterns
 3. In a step on your TODO list, please attest that you have read the general and Python-specific practices guides and demonstrate your knowledge by writing one-sentence summaries on any three of the following topics:
 
 - the wide parameter, narrow return type pattern for robust interfaces
