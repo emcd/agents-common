@@ -141,26 +141,39 @@ def generate_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, target )
-        if save_content( result.content, result.location, simulate ):
+        if save_content_text( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
 
 
-def save_content(
+def save_content_text(
     content: str, location: __.Path, simulate: bool = False
 ) -> bool:
-    ''' Saves content to location, creating parent directories as needed.
+    ''' Saves text content to location, creating parent directories as needed.
 
         Writes content to specified location, creating parent directories
         if necessary. In simulation mode, no actual writing occurs.
         Returns True if file was written, False if simulated.
+    '''
+    return save_content_bytes(
+        content.encode( 'utf-8' ), location, simulate = simulate )
+
+
+def save_content_bytes(
+    content: bytes, location: __.Path, simulate: bool = False
+) -> bool:
+    ''' Saves bytes to location, creating parent directories as needed.
+
+        Binary-safe write for skill assets and other non-text artifacts.
+        In simulation mode, no actual writing occurs. Returns True if file
+        was written, False if simulated.
     '''
     if simulate: return False
     try: location.parent.mkdir( parents = True, exist_ok = True )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             location.parent, "create directory" ) from exception
-    try: location.write_text( content, encoding = 'utf-8' )
+    try: location.write_bytes( content )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             location, "save content" ) from exception
@@ -384,7 +397,7 @@ def _generate_for_distribution(
         output_path = (
             distribution / 'per-project' / 'coders' / coder / dirname /
             f"{item_name}.{_parse_output_extension( result.location )}" )
-        if save_content( result.content, output_path, simulate ):
+        if save_content_text( result.content, output_path, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
 

@@ -242,17 +242,22 @@ class ContentGenerator( __.immut.DataclassObject ):
         raise _exceptions.ContentAbsence( item_type, item_name, coder )
 
     def _retrieve_skill_content( self, item_name: str ) -> str:
-        ''' Retrieves skill content directly from
-            distribution/per-project/general/skills/.
+        ''' Retrieves SKILL.md body from distribution skills layout.
 
-            Skills are portable across coders, so no coder-specific
-            lookup or fallback logic is needed.
+            Prefers directory packages
+            (``per-project/general/skills/<name>/SKILL.md``) over legacy
+            flat files (``per-project/general/skills/<name>.md``). Skills
+            are portable across coders; supporting files are copied by
+            populate, not returned here.
         '''
-        path = (
-            self.location / "per-project" / "general" / "skills" /
-            f"{item_name}.md" )
-        if path.exists( ):
-            return path.read_text( encoding = 'utf-8' )
+        skills_root = (
+            self.location / "per-project" / "general" / "skills" )
+        directory_skill = skills_root / item_name / "SKILL.md"
+        if directory_skill.is_file( ):
+            return directory_skill.read_text( encoding = 'utf-8' )
+        flat_skill = skills_root / f"{item_name}.md"
+        if flat_skill.is_file( ):
+            return flat_skill.read_text( encoding = 'utf-8' )
         raise _exceptions.ContentAbsence( 'skills', item_name, 'common' )
 
     def _produce_skill_location(
