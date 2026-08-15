@@ -12,7 +12,7 @@ Topic: $ARGUMENTS
 
 ## Context
 
-- Project structure: @documentation/architecture/filesystem.rst
+- Package layout: nearest subsystem README under the project source layout
 - Existing examples: !`ls -la documentation/examples/ 2>/dev/null || echo "No examples directory"`
 - Code coverage data: !`hatch --env develop run testers 2>/dev/null || echo "No coverage data available"`
 
@@ -22,7 +22,7 @@ Before creating examples documentation:
 - Understand the target audience (developers vs end users)
 - Analyze existing codebase to identify core functionality patterns
 - Review existing examples for organization, completeness, and thematic inspiration
-- Examine @.auxiliary/instructions/ for style and nomenclature requirements
+- Examine @.auxiliary/agents/standards/ for style and nomenclature requirements
 
 ## Process Summary
 
@@ -80,12 +80,12 @@ Write examples following these requirements:
 - Use doctest format for Python API examples where testable
 - Use code-block format for CLI examples with explicit command annotation
 - Keep code blocks comment-free; put explanatory text between blocks
-- Follow @.auxiliary/instructions/practices.rst for general code organization
-- Follow @.auxiliary/instructions/style.rst for formatting
-- Follow @.auxiliary/instructions/nomenclature.rst for naming
-- When documenting Python code, also follow .auxiliary/instructions/practices-python.rst for comprehensive Python standards
-- When documenting Rust code, also follow .auxiliary/instructions/practices-rust.rst for comprehensive Rust standards
-- When documenting TOML configuration, also follow .auxiliary/instructions/practices-toml.rst for comprehensive TOML standards
+- Follow @.auxiliary/agents/standards/practices.rst for general code organization
+- Follow @.auxiliary/agents/standards/style.rst for formatting
+- Follow @.auxiliary/agents/standards/nomenclature.rst for naming
+- When documenting Python code, also follow .auxiliary/agents/standards/practices-python.rst for comprehensive Python standards
+- When documenting Rust code, also follow .auxiliary/agents/standards/practices-rust.rst for comprehensive Rust standards
+- When documenting TOML configuration, also follow .auxiliary/agents/standards/practices-toml.rst for comprehensive TOML standards
 
 ### 5. Ensure Practical Relevance
 

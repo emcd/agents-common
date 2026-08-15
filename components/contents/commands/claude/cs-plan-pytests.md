@@ -13,8 +13,7 @@ Focus on analysis and planning only - do not implement tests.
 - Current branch: !`git branch --show-current`
 - Current test coverage: !`hatch --env develop run coverage report --show-missing`
 - Existing test structure: !`find tests -name "*.py" | head -20`
-- Test organization: @documentation/architecture/testplans/summary.rst
-- Test plans index: @documentation/architecture/testplans/index.rst
+- Test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Prerequisites
 
@@ -22,7 +21,7 @@ Ensure that you:
 - Have access to target code modules for analysis
 - Can generate current coverage reports
 - Have read any relevant `CLAUDE.md` file
-- Understand the test-writing guidelines: @.auxiliary/instructions/tests.rst
+- Understand the test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Safety Requirements
 
@@ -55,8 +54,8 @@ Execute the following steps for target: $ARGUMENTS
 Access test-writing guidelines:
 
 Read and understand the complete project guidelines:
-- Testing: @.auxiliary/instructions/tests.rst
-- Python Practices: @.auxiliary/instructions/practices-python.rst
+- Testing: @.auxiliary/agents/standards/tests.rst
+- Python Practices: @.auxiliary/agents/standards/practices-python.rst
 
 You must successfully access and understand both guides before proceeding. If any guide cannot be accessed, stop and inform the user.
 
@@ -162,9 +161,8 @@ Test module vs function numbering:
 - Higher-level functionality gets higher numbers (e.g., `test_500_cli.py`, `test_600_server.py`)
 - Subpackage modules: `test_<M><N>0_<subpackage>_<module>.py` where N advances by 10 within subpackage
 
-**Update test organization documentation:**
-- Update `documentation/architecture/testplans/summary.rst` with test module numbering scheme
-- Include project-specific testing conventions and new modules being planned
+**Record test organization notes when helpful:**
+- Note test module numbering scheme and project-specific conventions in the nearest `tests/**/README.md`
 - Document rationale for any pattern exceptions
 - Update during planning, not during implementation
 
@@ -172,44 +170,39 @@ Test module vs function numbering:
 
 **Create comprehensive test plan document:**
 
-Save the plan to `documentation/architecture/testplans/[sanitized-module-name].rst` and update `documentation/architecture/testplans/index.rst` to include the new test plan in the toctree.
+Save the plan in the nearest relevant `tests/**/README.md` (create the README
+beside the target test package or module tree when absent). Prefer the
+directory that owns the planned test modules rather than a detached notes
+tree.
 
 Create the test plan document with:
 
-**Plan Structure (reStructuredText format):**
-```rst
-*******************************************************************************
-Test Plan: [Module Name]
-*******************************************************************************
+**Plan Structure (Markdown):**
+```markdown
+# Test Plan: [Module Name]
 
-Coverage Analysis Summary
-===============================================================================
+## Coverage Analysis Summary
 
 - Current coverage: X%
 - Target coverage: 100%
 - Uncovered lines: [specific line numbers]
 - Missing functionality tests: [list]
 
-Test Strategy
-===============================================================================
+## Test Strategy
 
-Basic Functionality Tests (000-099)
--------------------------------------------------------------------------------
+### Basic Functionality Tests (000-099)
 
 - [List planned tests with brief descriptions]
 
-Component-Specific Tests (100+ blocks)
--------------------------------------------------------------------------------
+### Component-Specific Tests (100+ blocks)
 
-Function/Class/Method: [name] (Tests 100-199)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Function/Class/Method: [name] (Tests 100-199)
 
 - [Planned test descriptions including happy path, edge cases, and error handling]
 - [Dependencies needing injection]
 - [Special considerations]
 
-Implementation Notes
-===============================================================================
+## Implementation Notes
 
 - Dependencies requiring injection: [list]
 - Filesystem operations needing pyfakefs: [list]
@@ -221,8 +214,7 @@ Implementation Notes
 - Test module numbering for new files: [following hierarchy conventions]
 - Anti-patterns to avoid: [specific warnings including external network calls]
 
-Success Metrics
-===============================================================================
+## Success Metrics
 
 - Target line coverage: [percentage]
 - Branch coverage goals: [percentage]
@@ -257,9 +249,7 @@ Planning is complete when:
 - [ ] All testing gaps systematically identified
 - [ ] Test strategy developed for each gap
 - [ ] Test organization and numbering planned
-- [ ] `documentation/architecture/testplans/summary.rst` updated as needed
-- [ ] Comprehensive plan document created in testplans directory
-- [ ] `documentation/architecture/testplans/index.rst` updated to include new plan
+- [ ] Comprehensive plan document recorded in nearest `tests/**/README.md`
 - [ ] Plan validates against project testing principles
 - [ ] Implementation approach is clear and actionable
 

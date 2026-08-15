@@ -28,6 +28,7 @@
 
 from pathlib import Path
 
+import pytest
 import tyro
 
 from . import __
@@ -63,10 +64,12 @@ def _create_agents_answers_file( target: Path ) -> None:
             'languages:',
             '- python',
             'provide_instructions: true',
-            'instructions_target: .auxiliary/instructions',
+            'instructions_target: .auxiliary/agents/standards',
         ) ) + '\n',
         encoding = 'utf-8' )
-    ( configuration_directory / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True, exist_ok = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
 
 
@@ -123,13 +126,13 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
     )
     attempted, written = operations_module.generate_distribution(
         generator, tmp_path, simulate = False )
-    assert attempted == 42
-    assert written == 42
+    assert attempted == 38
+    assert written == 38
     opencode_commands = (
         tmp_path / 'per-project' / 'coders' / 'opencode' / 'commands' )
     assert opencode_commands.exists( )
     # OpenCode uses fallback to Claude content
-    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 19
+    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 17
 
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
@@ -147,8 +150,8 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
         location,
         [ 'opencode' ],
         target,
-        configuration,
-        'per-project',
+        configuration = configuration,
+        mode = 'per-project',
         simulate = False,
     )
     assert attempted > 0
@@ -158,6 +161,24 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
         / 'prompt' / 'nemotron-3-build.md' )
     assert prompt_resource.exists( ), (
         f"Expected prompt resource at {prompt_resource}" )
+
+
+@pytest.fixture
+def isolated_renderer_registry( monkeypatch ):
+    ''' Provides an isolated ``agentsmgr.renderers.RENDERERS`` registry.
+
+        Copies the current ``RENDERERS`` accretive dictionary and
+        replaces it with the copy via monkeypatch. Tests can register
+        custom renderers and forget about cleanup; the original
+        registry is restored on teardown via monkeypatch's undo.
+
+        Required because ``RENDERERS`` is grow-only (accretive); tests
+        that mutate the global registry leak entries otherwise.
+    '''
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+    fresh = renderers_module.RENDERERS.copy( )
+    monkeypatch.setattr( renderers_module, 'RENDERERS', fresh )
+    return fresh
 
 
 def test_400_generate_check_detects_stale_artifacts( tmp_path ):
@@ -182,17 +203,17 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     # Check should pass when distribution is current
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 42
+    assert items_checked == 38
     assert diffs == [ ]
     # Remove one artifact to simulate staleness (missing)
     stale_file = (
         tmp_path / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-architect.md' )
+        / 'cs-code-python.md' )
     if stale_file.exists( ):
         stale_file.unlink( )
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 42
+    assert items_checked == 38
     assert any( 'missing' in d for d in diffs )
     # Add an orphaned artifact to detect extra files
     orphan_dir = (
@@ -204,42 +225,110 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     assert any( 'orphaned' in d for d in diffs )
 
 
-def test_410_generate_check_detects_stale_singular_artifacts( tmp_path ):
-    ''' generate --check should detect stale legacy singular directory
-        artifacts (command/, agent/) as orphaned after plural cutover. '''
+def test_420_orphan_detection_respects_custom_directory_name(
+    tmp_path, isolated_renderer_registry,
+):
+    ''' When a renderer overrides calculate_directory_location, orphan
+        detection should use the override, not the hardcoded default.
+
+        Registers a temporary renderer whose 'commands' directory is
+        named 'custom-cmd-dir' and verifies that orphan detection
+        scans only that custom directory, not the default 'commands'.
+
+        The ``isolated_renderer_registry`` fixture copies the global
+        ``RENDERERS`` accretive dictionary so this test does not leak
+        its temporary entry into later tests.
+    '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
-    generator_module = __.cache_import_module( 'agentsmgr.generator' )
-    population_module = __.cache_import_module( 'agentsmgr.population' )
-    configuration = population_module._produce_default_configuration(
-        _components_location( ) )
-    application_configuration = {
-        'content': { 'fallbacks': { 'opencode': 'claude' } },
-    }
-    generator = generator_module.ContentGenerator(
-        location = _components_location( ),
-        configuration = configuration,
-        application_configuration = application_configuration,
-        mode = 'per-project',
-    )
-    # Generate to populate the distribution with plural dirs
-    operations_module.generate_distribution(
-        generator, tmp_path, simulate = False )
-    # Create stale legacy singular directories with artifacts
-    legacy_command_dir = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'command' )
-    legacy_command_dir.mkdir( parents = True, exist_ok = True )
-    ( legacy_command_dir / 'stale-command.md' ).write_text( 'stale' )
-    legacy_agent_dir = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'agent' )
-    legacy_agent_dir.mkdir( parents = True, exist_ok = True )
-    ( legacy_agent_dir / 'stale-agent.md' ).write_text( 'stale' )
-    items_checked, diffs = operations_module.check_distribution_staleness(
-        generator, tmp_path )
-    assert items_checked == 42
-    stale_diffs = [ d for d in diffs if 'stale legacy' in d ]
-    assert len( stale_diffs ) == 2
-    assert any( 'command/' in d for d in stale_diffs )
-    assert any( 'agent/' in d for d in stale_diffs )
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+
+    class _CustomCommandsRenderer( renderers_module.RendererBase ):
+        name = 'test-420-custom-commands'
+        modes_available = frozenset( ( 'per-project', ) )
+        mode_default = 'per-project'
+        memory_filename = 'AGENTS.md'
+        item_types_available = frozenset( ( 'commands', 'agents' ) )
+
+        def calculate_directory_location( self, item_type: str ) -> str:
+            if item_type == 'commands':
+                return 'custom-cmd-dir'
+            return item_type
+
+    custom_renderer = _CustomCommandsRenderer( )
+    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+
+    coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
+    # File in the renderer's overridden directory: must be detected.
+    custom_dir = coder_dir / 'custom-cmd-dir'
+    custom_dir.mkdir( parents = True )
+    ( custom_dir / 'zz-orphan.md' ).write_text( 'orphan', encoding = 'utf-8' )
+    # File in the default directory the renderer does NOT use: must be
+    # ignored.
+    default_dir = coder_dir / 'commands'
+    default_dir.mkdir( parents = True, exist_ok = True )
+    ( default_dir / 'should-be-ignored.md' ).write_text(
+        'orphan', encoding = 'utf-8' )
+
+    orphans = operations_module._detect_orphaned_artifacts(
+        tmp_path, ( custom_renderer.name, ), set( ) )
+    assert len( orphans ) == 1
+    assert 'orphaned artifact' in orphans[ 0 ]
+    assert 'custom-cmd-dir/zz-orphan.md' in orphans[ 0 ]
+    assert 'should-be-ignored' not in ' '.join( orphans )
+
+
+def test_430_orphan_detection_respects_custom_artifact_pattern(
+    tmp_path, isolated_renderer_registry,
+):
+    ''' When a renderer overrides calculate_artifact_pattern, orphan
+        detection should use the override, not the hardcoded '*.md'.
+
+        Regression for agentsmgr/20: a renderer that distributes
+        non-Markdown artifacts (e.g., .json) must have its files
+        detected as orphans and its directory scanned for the new
+        pattern. Markdown files in the same directory must be
+        ignored (not the renderer's artifact shape).
+
+        The ``isolated_renderer_registry`` fixture copies the global
+        ``RENDERERS`` accretive dictionary so this test does not leak
+        its temporary entry into later tests.
+    '''
+    operations_module = __.cache_import_module( 'agentsmgr.operations' )
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+
+    class _JsonCommandsRenderer( renderers_module.RendererBase ):
+        name = 'test-430-json-commands'
+        modes_available = frozenset( ( 'per-project', ) )
+        mode_default = 'per-project'
+        memory_filename = 'AGENTS.md'
+        item_types_available = frozenset( ( 'commands', 'agents' ) )
+
+        def calculate_artifact_pattern( self, item_type: str ) -> str:
+            if item_type == 'commands':
+                return '*.json'
+            return super( ).calculate_artifact_pattern( item_type )
+
+    custom_renderer = _JsonCommandsRenderer( )
+    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+
+    coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
+    commands_dir = coder_dir / 'commands'
+    commands_dir.mkdir( parents = True )
+    # File matching the renderer's pattern: must be detected.
+    ( commands_dir / 'zz-orphan.json' ).write_text(
+        '{"orphan": true}', encoding = 'utf-8' )
+    # Markdown file (NOT matching the renderer's pattern): must NOT
+    # be reported as orphaned.
+    ( commands_dir / 'should-be-ignored.md' ).write_text(
+        'ignored', encoding = 'utf-8' )
+
+    orphans = operations_module._detect_orphaned_artifacts(
+        tmp_path, ( custom_renderer.name, ), set( ) )
+    assert len( orphans ) == 1, (
+        f"Expected exactly one orphan, got {orphans}" )
+    assert 'orphaned artifact' in orphans[ 0 ]
+    assert 'commands/zz-orphan.json' in orphans[ 0 ]
+    assert 'should-be-ignored' not in ' '.join( orphans )
 
 
 def test_500_source_resolver_accepts_windows_absolute_paths( ):
@@ -296,7 +385,7 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
         in exclude_content )
     assert (
         '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
@@ -318,13 +407,13 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     # Simulate removal: re-copy with one file missing
     stale_file = (
         location / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-architect.md' )
+        / 'cs-code-python.md' )
     stale_file.unlink( )
     _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-architect.md'
+        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
         not in exclude_content2 )
     # Other entries should remain
     assert (
@@ -399,18 +488,22 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
     # Copy instructions
     attempted, written, entries = (
         population_module._copy_instructions_from_distribution(
-            location, target, '.auxiliary/instructions', simulate = False ) )
+            location,
+            target,
+            '.auxiliary/agents/standards',
+            simulate = False,
+        ) )
     assert attempted == len( instruction_files )
     assert written == len( instruction_files )
     # Verify files were copied to target
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert target_instructions.exists( )
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert target_standards.exists( )
     for name in expected_files:
-        dest_file = target_instructions / name
+        dest_file = target_standards / name
         assert dest_file.exists( ), f"Missing instruction: {name}"
     # Verify exclude entries are file-level
     for entry in entries:
-        assert entry.startswith( '.auxiliary/instructions/' ), (
+        assert entry.startswith( '.auxiliary/agents/standards/' ), (
             f"Expected file-level entry, got: {entry}" )
         assert not entry.endswith( '/' ), (
             f"Entry should not be directory: {entry}" )
@@ -426,7 +519,9 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     target.mkdir( )
     # Create minimal git structure for _create_all_symlinks
     ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
-    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
     configuration = {
         'coders': [ 'claude' ],
@@ -436,9 +531,9 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
     # Verify no instruction files were copied
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert not target_instructions.exists( ) or \
-        len( list( target_instructions.glob( '*' ) ) ) == 0
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert not target_standards.exists( ) or \
+        len( list( target_standards.glob( '*' ) ) ) == 0
 
 
 def test_900_instructions_sources_not_consulted( tmp_path ):
@@ -450,7 +545,9 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     target.mkdir( )
     # Create minimal git structure
     ( target / '.auxiliary' / 'configuration' ).mkdir( parents = True )
-    ( target / '.auxiliary' / 'configuration' / 'AGENTS.md' ).write_text(
+    agents_directory = target / '.auxiliary' / 'agents'
+    agents_directory.mkdir( parents = True )
+    ( agents_directory / 'agents.md' ).write_text(
         'test', encoding = 'utf-8' )
     # Provide instructions_sources config but populate should ignore it
     configuration = {
@@ -464,9 +561,9 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
     # Verify instructions were copied from distribution/ (local), not network
-    target_instructions = target / '.auxiliary' / 'instructions'
-    assert target_instructions.exists( )
-    copied_files = list( target_instructions.glob( '*.rst' ) )
+    target_standards = target / '.auxiliary' / 'agents' / 'standards'
+    assert target_standards.exists( )
+    copied_files = list( target_standards.glob( '*.rst' ) )
     assert len( copied_files ) > 0
     # Verify the files match the distribution corpus
     source_instructions = (
@@ -528,8 +625,8 @@ def test_500_populate_uses_explicit_target( tmp_path ):
             location,
             [ 'claude' ],
             target,
-            configuration,
-            'per-project',
+            configuration = configuration,
+            mode = 'per-project',
             simulate = False,
         ) )
     assert attempted > 0

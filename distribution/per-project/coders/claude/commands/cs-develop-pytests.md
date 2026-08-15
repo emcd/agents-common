@@ -15,8 +15,7 @@ Implement tests according to the provided test plan only.
 - Current git status: !`git status --porcelain`
 - Current branch: !`git branch --show-current`
 - Existing test structure: !`find tests -name "*.py" | head -20`
-- Test organization: @documentation/architecture/testplans/summary.rst
-- Test plans index: @documentation/architecture/testplans/index.rst
+- Test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Prerequisites
 
@@ -24,7 +23,7 @@ Ensure that you:
 - Have a valid test plan document
 - Have verified access to target code modules referenced in the plan
 - Have read any relevant `CLAUDE.md` file
-- Understand the test-writing guidelines: @.auxiliary/instructions/tests.rst
+- Understand the test-writing guidelines: @.auxiliary/agents/standards/tests.rst
 
 ## Testing Principles (from project guidelines)
 
@@ -78,10 +77,10 @@ Stop and consult the user if:
 Verify access to project guidelines:
 
 Read and confirm you can access the complete project guidelines:
-- Testing: @.auxiliary/instructions/tests.rst
-- Python Practices: @.auxiliary/instructions/practices-python.rst
-- General Practices: @.auxiliary/instructions/practices.rst
-- Style: @.auxiliary/instructions/style.rst
+- Testing: @.auxiliary/agents/standards/tests.rst
+- Python Practices: @.auxiliary/agents/standards/practices-python.rst
+- General Practices: @.auxiliary/agents/standards/practices.rst
+- Style: @.auxiliary/agents/standards/style.rst
 
 You must successfully access and read all four guides before proceeding. If any guide cannot be accessed, stop and inform the user.
 

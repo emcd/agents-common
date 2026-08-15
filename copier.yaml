@@ -2,6 +2,10 @@ _min_copier_version: "9.0"
 _answers_file: .auxiliary/configuration/copier-answers--agents.yaml
 _subdirectory: template
 
+# Project-owned; seed on first copy / when absent; never overwrite on update.
+_skip_if_exists:
+    - .auxiliary/agents/project.md
+
 project_name:
     type: str
     help: Project directory or Git repository name
@@ -55,7 +59,7 @@ provide_instructions:
 instructions_target:
     type: str
     help: Target directory for instruction files
-    default: ".auxiliary/instructions"
+    default: ".auxiliary/agents/standards"
     when: "{{ provide_instructions }}"
 
 instructions_sources:
@@ -65,7 +69,6 @@ instructions_sources:
       {%- if "rust" in languages and "python" not in languages %}
       - source: "github:emcd/python-project-common@docs-1#documentation/common"
         files:
-          "architecture.rst": {strip_header_lines: 20}
           "conduct.rst": {strip_header_lines: 20}
           "maintenance.rst": {strip_header_lines: 20}
           "nomenclature.rst": {strip_header_lines: 20}
@@ -76,6 +79,21 @@ instructions_sources:
       {%- else %}
       - source: "github:emcd/python-project-common@docs-1#documentation/common"
         files:
-          "*.rst": {strip_header_lines: 20}
+          "conduct.rst": {strip_header_lines: 20}
+          "environment.rst": {strip_header_lines: 20}
+          "maintenance.rst": {strip_header_lines: 20}
+          "nomenclature-germanic.rst": {strip_header_lines: 20}
+          "nomenclature-latin.rst": {strip_header_lines: 20}
+          "nomenclature.rst": {strip_header_lines: 20}
+          "practices-python.rst": {strip_header_lines: 20}
+          "practices.rst": {strip_header_lines: 20}
+          "practices-rust.rst": {strip_header_lines: 20}
+          "practices-toml.rst": {strip_header_lines: 20}
+          "python-autoformat.rst": {strip_header_lines: 20}
+          "releases.rst": {strip_header_lines: 20}
+          "requirements.rst": {strip_header_lines: 20}
+          "style.rst": {strip_header_lines: 20}
+          "tests.rst": {strip_header_lines: 20}
+          "validation.rst": {strip_header_lines: 20}
       {%- endif %}
     when: "{{ provide_instructions }}"

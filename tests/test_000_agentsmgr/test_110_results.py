@@ -56,19 +56,3 @@ def test_200_configuration_detection_result_render( ):
     assert " * Languages: python" in lines
     assert " * Project: myproj" in lines
     assert any( line.startswith( " * Target Directory: " ) for line in lines )
-
-
-def test_300_validation_result_render( ):
-    ''' Validation result renders with bulleted list. '''
-    result = _results.ValidationResult(
-        variant = "default",
-        temporary_directory = pathlib.Path( "tmp/foo" ),
-        items_attempted = 10,
-        items_generated = 10,
-        preserved = False
-    )
-    lines = result.render_as_markdown( )
-    assert any(
-        line.startswith( " * Temporary Directory: " ) for line in lines )
-    assert " * Items: 10/10 generated" in lines
-    assert " * 🗑️  Temporary files cleaned up" in lines

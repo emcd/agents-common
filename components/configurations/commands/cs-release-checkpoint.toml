@@ -13,6 +13,7 @@ allowed-tools = [
     { tool = 'shell', arguments = 'git tag', allow-extra-arguments = true },
     { tool = 'shell', arguments = 'git push', allow-extra-arguments = true },
     { tool = 'shell', arguments = 'gh run list', allow-extra-arguments = true },
+    { tool = 'shell', arguments = 'gh run view', allow-extra-arguments = true },
     { tool = 'shell', arguments = 'gh run watch', allow-extra-arguments = true },
     { tool = 'shell', arguments = 'hatch version', allow-extra-arguments = true },
     { tool = 'shell', arguments = 'hatch --env develop run', allow-extra-arguments = true },

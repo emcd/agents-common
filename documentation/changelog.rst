@@ -23,6 +23,82 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a13 (2026-08-15)
+=============================
+
+Enhancements
+------------
+
+- Eliminate the separate ``agentsmgr-maintain`` console script by
+  folding its remaining contract into ``agentsmgr generate``:
+
+    ``agentsmgr generate`` (default mode)
+        Renders distribution to ``distribution/`` (or ``--output PATH``).
+        Supports ``--simulate`` and ``--check``.
+
+    ``agentsmgr generate --answers-file PATH --output PATH`` (answers-file)
+        Uses the given Copier answers file as the configuration source and
+        writes to the explicit ``--output`` target. Caller owns output
+        allocation and cleanup; production CLI does not manage a temp
+        directory.
+
+  ``--answers-file`` requires ``--output``. ``--check`` and ``--simulate``
+  are valid only in default mode (not with ``--answers-file``).
+- Make renderers the authoritative source for distribution artifact file
+  patterns, mirroring the renderer-owned directory contract from
+  agentsmgr/18. Adds ``RendererBase.calculate_artifact_pattern(item_type)``
+  which returns the file glob pattern the renderer uses for artifacts of
+  that type. Default is ``*.md``; subclasses may override per renderer
+  per item type for coders whose artifacts use a different file
+  extension.
+
+  Updates ``_detect_orphaned_artifacts`` to delegate to
+  ``renderer.calculate_artifact_pattern(item_type)`` instead of
+  hardcoding ``*.md``. ``_copy_skills`` is intentionally not updated:
+  skill files conform to the Skills protocol contract (source ``*.md``
+  rendered to destination ``SKILL.md``), so the source glob pattern
+  and the destination filename are coupled and remain protocol-owned.
+  Future ``agentsmgr/11`` skill-directory support may replace the
+  flat-file scan with a skill-package abstraction.
+
+  The contract returns a single glob expression. Renderers that need
+  multiple file extensions or sets of patterns would need to widen the
+  contract (e.g., to ``tuple[str, ...]``); this is intentionally not
+  done speculatively.
+- Migrate Copier template rendering validation to copiertv, configured
+  via ``.auxiliary/configuration/copiertv/general.toml``. The
+  ``agentsmgr-maintain template`` subcommand is removed; ``agentsmgr-maintain``
+  now provides a single flat ``validate`` command (``agentsmgr-maintain
+  <variant>``) which renders the distribution tree from ``components/`` using
+  a variant answers file from ``tests/data/profiles/`` into an isolated
+  temp directory.
+- Populate complete Agent Skills packages, including ``SKILL.md`` and supporting
+  scripts, references, and binary assets. Preserve POSIX executable modes where
+  the host filesystem supports them, and continue accepting legacy flat skill
+  Markdown files.
+
+
+Removals
+--------
+
+- Remove ``agentsmgr generate --variant`` and ``--preserve``. Use
+  ``agentsmgr generate --answers-file PATH --output PATH`` for explicit
+  answers-file rendering; callers now provide the output location and lifecycle.
+- Remove the experimental ``validate-custom-slash`` command from the component
+  sources and generated Claude Code and OpenCode distributions.
+
+
+Repairs
+-------
+
+- Allow project-scoped Claude Code MCP servers to start in newly bootstrapped
+  repositories by listing the emitted ``.mcp.json`` server names in
+  ``enabledMcpjsonServers``.
+- Stop coder-local ``.gitignore`` files from hiding Agentsmgr-managed commands,
+  agents, skills, and OpenCode prompt resources. Agentsmgr records the specific
+  distributed artifacts in the repository-local Git exclude file instead.
+
+
 agentsmgr 1.0a12 (2026-07-07)
 =============================
 

@@ -27,6 +27,9 @@ Table of Contents
    :maxdepth: 2
 
    examples/index
+   specifications/index
+   designs/index
+   decisions/index
    api
    changelog
    contribution

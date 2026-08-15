@@ -20,11 +20,13 @@
 Specifications
 *******************************************************************************
 
-This section contains capability specifications managed through the Openspec workflow.
-Each specification documents requirements using scenario-based format (WHEN/THEN).
+Nbspec-managed specification documents **for this repository only**. They are
+not part of the Copier template or agentsmgr distribution. OpenSpec capability
+requirements for agentsmgr remain under ``openspec/specs/`` (symlinked from
+``documentation/architecture/openspec/``).
 
 .. toctree::
    :maxdepth: 2
    :glob:
 
-   ../architecture/openspec/specs/*/spec
+   *

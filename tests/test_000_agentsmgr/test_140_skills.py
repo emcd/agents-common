@@ -21,6 +21,8 @@
 ''' Skill generation and SKILL.md output behavior. '''
 
 
+import os as _os
+
 from pathlib import Path
 
 from . import __
@@ -90,3 +92,107 @@ def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
         tmp_path /
         '.auxiliary/configuration/coders/opencode/skills/cs-review-todos/SKILL.md'
     )
+
+
+def test_400_directory_skill_package_copies_supporting_files( tmp_path ):
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    distribution = tmp_path / 'distribution'
+    skill_root = (
+        distribution / 'per-project' / 'general' / 'skills' / 'demo-skill' )
+    ( skill_root / 'scripts' ).mkdir( parents = True )
+    ( skill_root / 'references' ).mkdir( parents = True )
+    ( skill_root / 'assets' ).mkdir( parents = True )
+    ( skill_root / 'SKILL.md' ).write_text(
+        '---\nname: demo-skill\ndescription: Demo.\n---\nBody.\n',
+        encoding = 'utf-8',
+    )
+    script_source = skill_root / 'scripts' / 'run.sh'
+    script_source.write_text( '#!/bin/sh\necho ok\n', encoding = 'utf-8' )
+    script_source.chmod( 0o755 )
+    ( skill_root / 'references' / 'notes.md' ).write_text(
+        'detail\n', encoding = 'utf-8' )
+    ( skill_root / 'assets' / 'icon.bin' ).write_bytes( b'\x00\x01\xff' )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+    manager = renderers_module.RENDERERS[ 'claude' ]
+    base_directory = manager.resolve_base_directory(
+        mode = 'per-project',
+        target = target,
+        configuration = { },
+        environment = { },
+    )
+    attempted, written, entries = population_module._copy_skills(
+        distribution, base_directory, manager, target, simulate = False )
+    dest = (
+        base_directory / 'skills' / 'demo-skill' )
+    assert attempted == 4
+    assert written == 4
+    assert ( dest / 'SKILL.md' ).is_file( )
+    script_dest = dest / 'scripts' / 'run.sh'
+    assert script_dest.read_text(
+        encoding = 'utf-8' ) == '#!/bin/sh\necho ok\n'
+    if _os.name != 'nt': assert script_dest.stat( ).st_mode & 0o111
+    assert ( dest / 'references' / 'notes.md' ).read_text(
+        encoding = 'utf-8' ) == 'detail\n'
+    assert ( dest / 'assets' / 'icon.bin' ).read_bytes( ) == b'\x00\x01\xff'
+    assert any( entry.endswith( 'skills/demo-skill/SKILL.md' )
+                for entry in entries )
+    assert any( entry.endswith( 'skills/demo-skill/scripts/run.sh' )
+                for entry in entries )
+
+
+def test_500_directory_skill_preferred_over_flat_file( tmp_path ):
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    distribution = tmp_path / 'distribution'
+    skills_dir = distribution / 'per-project' / 'general' / 'skills'
+    skills_dir.mkdir( parents = True )
+    ( skills_dir / 'demo-skill.md' ).write_text(
+        '---\nname: demo-skill\ndescription: Flat.\n---\nFlat body.\n',
+        encoding = 'utf-8',
+    )
+    package = skills_dir / 'demo-skill'
+    package.mkdir( )
+    ( package / 'SKILL.md' ).write_text(
+        '---\nname: demo-skill\ndescription: Dir.\n---\nDir body.\n',
+        encoding = 'utf-8',
+    )
+    target = tmp_path / 'project'
+    target.mkdir( )
+    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
+    manager = renderers_module.RENDERERS[ 'claude' ]
+    base_directory = manager.resolve_base_directory(
+        mode = 'per-project',
+        target = target,
+        configuration = { },
+        environment = { },
+    )
+    population_module._copy_skills(
+        distribution, base_directory, manager, target, simulate = False )
+    body = (
+        base_directory / 'skills' / 'demo-skill' / 'SKILL.md'
+    ).read_text( encoding = 'utf-8' )
+    assert 'Dir body.' in body
+    assert 'Flat body.' not in body
+
+
+def test_600_generator_reads_directory_skill_md( tmp_path ):
+    generator_module = __.cache_import_module( 'agentsmgr.generator' )
+    distribution = tmp_path / 'distribution'
+    skill_root = (
+        distribution / 'per-project' / 'general' / 'skills' / 'packaged' )
+    skill_root.mkdir( parents = True )
+    ( skill_root / 'SKILL.md' ).write_text(
+        '---\nname: packaged\ndescription: Packaged skill.\n---\nHi.\n',
+        encoding = 'utf-8',
+    )
+    generator = generator_module.ContentGenerator(
+        location = distribution,
+        configuration = { 'coders': [ 'claude' ], 'languages': [ 'python' ] },
+        application_configuration = { },
+        mode = 'per-project',
+    )
+    rendered = generator.render_single_item(
+        'skills', 'packaged', 'claude', tmp_path / 'out' )
+    assert 'Packaged skill.' in rendered.content
+    assert rendered.location.name == 'SKILL.md'

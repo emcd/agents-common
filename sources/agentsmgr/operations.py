@@ -141,26 +141,39 @@ def generate_coder_item_type(
         items_attempted += 1
         result = generator.render_single_item(
             item_type, item_name, coder, target )
-        if save_content( result.content, result.location, simulate ):
+        if save_content_text( result.content, result.location, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
 
 
-def save_content(
+def save_content_text(
     content: str, location: __.Path, simulate: bool = False
 ) -> bool:
-    ''' Saves content to location, creating parent directories as needed.
+    ''' Saves text content to location, creating parent directories as needed.
 
         Writes content to specified location, creating parent directories
         if necessary. In simulation mode, no actual writing occurs.
         Returns True if file was written, False if simulated.
+    '''
+    return save_content_bytes(
+        content.encode( 'utf-8' ), location, simulate = simulate )
+
+
+def save_content_bytes(
+    content: bytes, location: __.Path, simulate: bool = False
+) -> bool:
+    ''' Saves bytes to location, creating parent directories as needed.
+
+        Binary-safe write for skill assets and other non-text artifacts.
+        In simulation mode, no actual writing occurs. Returns True if file
+        was written, False if simulated.
     '''
     if simulate: return False
     try: location.parent.mkdir( parents = True, exist_ok = True )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             location.parent, "create directory" ) from exception
-    try: location.write_text( content, encoding = 'utf-8' )
+    try: location.write_bytes( content )
     except ( OSError, IOError ) as exception:
         raise _exceptions.FileOperationFailure(
             location, "save content" ) from exception
@@ -384,7 +397,7 @@ def _generate_for_distribution(
         output_path = (
             distribution / 'per-project' / 'coders' / coder / dirname /
             f"{item_name}.{_parse_output_extension( result.location )}" )
-        if save_content( result.content, output_path, simulate ):
+        if save_content_text( result.content, output_path, simulate ):
             items_written += 1
     return ( items_attempted, items_written )
 
@@ -490,32 +503,27 @@ def _detect_orphaned_artifacts(
 ) -> list[ str ]:
     ''' Detects orphaned artifacts in distribution/.
 
-        Scans distribution/per-project/coders/<coder>/ for generated
-        item directories (commands, agents) and reports any files not
-        in the expected_paths set. Also scans legacy singular directory
-        names (command, agent) to detect stale artifacts from before the
-        plural cutover.
+        For each coder, asks its renderer which item directory names
+        it owns (via ``calculate_directory_location``) and which file
+        glob pattern the renderer uses for artifacts of that type (via
+        ``calculate_artifact_pattern``). Reports any files matching the
+        pattern that are not in expected_paths.
     '''
     orphans: list[ str ] = [ ]
-    generated_dirs = ( 'commands', 'agents' )
-    legacy_dirs = ( 'command', 'agent' )
     for coder in coders:
+        try: renderer = _renderers.RENDERERS[ coder ]
+        except KeyError: continue
         coder_dir = distribution / 'per-project' / 'coders' / coder
         if not coder_dir.exists( ): continue
-        for dirname in generated_dirs:
+        for item_type in renderer.item_types_available:
+            if item_type == 'skills': continue
+            dirname = renderer.calculate_directory_location( item_type )
             item_dir = coder_dir / dirname
             if not item_dir.exists( ): continue
+            pattern = renderer.calculate_artifact_pattern( item_type )
             orphans.extend(
                 f"- {coder}/{dirname}/{item_file.name}: orphaned artifact"
-                for item_file in item_dir.glob( '*.md' )
+                for item_file in item_dir.glob( pattern )
                 if item_file not in expected_paths
-            )
-        for dirname in legacy_dirs:
-            item_dir = coder_dir / dirname
-            if not item_dir.exists( ): continue
-            orphans.extend(
-                f"- {coder}/{dirname}/{item_file.name}: "
-                f"stale legacy artifact (use plural '{dirname}s/' instead)"
-                for item_file in item_dir.glob( '*.md' )
             )
     return orphans

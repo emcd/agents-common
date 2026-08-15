@@ -28,11 +28,6 @@ Priority: High
 - **THEN** CLI tooling uses latest tag
 - **AND** provides predictable default behavior
 
-#### Scenario: Automated deployment
-- **WHEN** tags are created
-- **THEN** publishing workflow automatically deploys tagged releases
-- **AND** completes within 5 minutes of tag creation
-
 #### Scenario: Rollback capability
 - **WHEN** issues found with a release
 - **THEN** projects can rollback to previous tag

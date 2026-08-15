@@ -169,7 +169,7 @@ def _copy_instructions_from_distribution(
         if not source_file.is_file( ): continue
         files_attempted += 1
         dest_path = target_dir / source_file.name
-        if _operations.save_content(
+        if _operations.save_content_text(
             source_file.read_text( encoding = 'utf-8' ),
             dest_path,
             simulate,
@@ -193,8 +193,12 @@ def _populate_per_user_content(
         Returns tuple of (items_attempted, items_written).
     '''
     attempted, written, _ = _copy_distribution_items(
-        location, coders, __.Path.cwd( ), configuration,
-        'per-user', simulate )
+        location,
+        coders,
+        __.Path.cwd( ),
+        configuration = configuration,
+        mode = 'per-user',
+        simulate = simulate )
     return ( attempted, written )
 
 
@@ -242,6 +246,7 @@ def _copy_distribution_items(  # noqa: PLR0913
     distribution: __.Path,
     coders: __.cabc.Sequence[ str ],
     target: __.Path,
+    *,
     configuration: __.cabc.Mapping[ str, __.typx.Any ],
     mode: _renderers.ExplicitTargetMode,
     simulate: bool,
@@ -296,7 +301,8 @@ def _copy_tree(
 ) -> tuple[ int, int, tuple[ str, ... ] ]:
     ''' Copies directory tree from source to target.
 
-        Recursively copies all files and subdirectories.
+        Recursively copies all files and subdirectories (binary-safe) and
+        preserves each source file mode (including executable bits).
         Returns tuple of (files_attempted, files_written, exclude_entries).
     '''
     import contextlib as _contextlib
@@ -308,12 +314,13 @@ def _copy_tree(
         files_attempted += 1
         relative = source_file.relative_to( source )
         dest_path = target / relative
-        if _operations.save_content(
-            source_file.read_text( encoding = 'utf-8' ),
+        if _operations.save_content_bytes(
+            source_file.read_bytes( ),
             dest_path,
             simulate,
         ):
             files_written += 1
+            __.shutil.copymode( source_file, dest_path )
         with _contextlib.suppress( ValueError ):
             exclude_entries.append(
                 _format_exclude_path(
@@ -328,12 +335,25 @@ def _copy_skills(
     project_root: __.Path,
     simulate: bool,
 ) -> tuple[ int, int, tuple[ str, ... ] ]:
-    ''' Copies skill files directly from distribution/ to target paths.
+    ''' Copies skill packages from distribution/ to target paths.
 
-        Skills are static artifacts that require no rendering.
-        Copies from distribution/per-project/general/skills/<name>.md to
-        <base>/skills/<name>/SKILL.md. Returns tuple of (attempted,
-        written, exclude_entries).
+        Skills are static artifacts that require no rendering. Layout follows
+        the Agent Skills specification
+        (https://agentskills.io/specification.md). Source layout under
+        ``distribution/per-project/general/skills/`` may be either:
+
+        - Directory package (Agent Skills): ``<name>/SKILL.md`` plus optional
+          ``scripts/``, ``references/``, ``assets/``, and other supporting
+          files — the entire directory is copied to
+          ``<base>/skills/<name>/``.
+        - Legacy flat file: ``<name>.md`` → ``<base>/skills/<name>/SKILL.md``.
+
+        When both a directory package and a flat ``<name>.md`` exist for the
+        same name, the directory package wins. Supporting files are not
+        language-filtered; a skill is a portable package. Destination
+        ``SKILL.md`` naming follows the Skills protocol and does not use
+        ``manager.calculate_artifact_pattern``. Returns tuple of
+        (files_attempted, files_written, exclude_entries).
     '''
     import contextlib as _contextlib
     items_attempted = 0
@@ -344,17 +364,32 @@ def _copy_skills(
     if not skills_dir.exists( ):
         return ( items_attempted, items_written, tuple( exclude_entries ) )
     skills_output = manager.calculate_directory_location( 'skills' )
-    for skill_file in skills_dir.glob( '*.md' ):
+    directory_skills: dict[ str, __.Path ] = { }
+    flat_skills: dict[ str, __.Path ] = { }
+    for entry in skills_dir.iterdir( ):
+        if entry.is_dir( ) and ( entry / 'SKILL.md' ).is_file( ):
+            directory_skills[ entry.name ] = entry
+        elif entry.is_file( ) and entry.suffix == '.md':
+            flat_skills[ entry.stem ] = entry
+    for item_name, source_dir in sorted( directory_skills.items( ) ):
+        dest_root = base_directory / skills_output / item_name
+        attempted, written, entries = _copy_tree(
+            source_dir, dest_root, project_root, simulate )
+        items_attempted += attempted
+        items_written += written
+        exclude_entries.extend( entries )
+    for item_name, skill_file in sorted( flat_skills.items( ) ):
+        if item_name in directory_skills: continue
         items_attempted += 1
-        item_name = skill_file.stem
         dest_path = (
             base_directory / skills_output / item_name / 'SKILL.md' )
-        if _operations.save_content(
-            skill_file.read_text( encoding = 'utf-8' ),
+        if _operations.save_content_bytes(
+            skill_file.read_bytes( ),
             dest_path,
             simulate,
         ):
             items_written += 1
+            __.shutil.copymode( skill_file, dest_path )
         with _contextlib.suppress( ValueError ):
             exclude_entries.append(
                 _format_exclude_path(
@@ -373,7 +408,7 @@ def _manage_project_auxiliaries(
     instruction_entries: tuple[ str, ... ] = ( )
     if configuration.get( 'provide_instructions', False ):
         instructions_target = configuration.get(
-            'instructions_target', '.auxiliary/instructions' )
+            'instructions_target', '.auxiliary/agents/standards' )
         instructions_attempted, instructions_written, instruction_entries = (
             _copy_instructions_from_distribution(
                 distribution, target, instructions_target, simulate ) )
@@ -455,9 +490,9 @@ class PopulateProjectCommand( __.appcore_cli.Command ):
                 location,
                 filtered_configuration[ 'coders' ],
                 self.target,
-                filtered_configuration,
-                'per-project',
-                self.simulate ) )
+                configuration = filtered_configuration,
+                mode = 'per-project',
+                simulate = self.simulate ) )
         if items_attempted > 0:
             if self.simulate:
                 _scribe.info(
@@ -581,30 +616,45 @@ class PopulateCommand( __.appcore_cli.Command ):
 
 
 class GenerateCommand( __.appcore_cli.Command ):
-    ''' Generates pre-rendered artifacts from components/ to distribution/.
+    ''' Generates pre-rendered artifacts from components/.
 
-        Reads 3-tier pipeline source material from components/ and writes
-        rendered commands and agents to distribution/. Skills are direct
-        distribution artifacts and are not generated.
+        Two invocation shapes:
 
-        Use --check to validate that distribution/ is current without
-        writing files.
+        **Default**: ``agentsmgr generate`` reads 3-tier pipeline
+        source from ``components/`` and writes rendered commands and
+        agents to ``distribution/`` (or to ``--output PATH`` if given).
+        Skills are direct distribution artifacts and are not generated.
+        ``--check`` validates distribution/ is current without writing
+        files. ``--simulate`` shows what would be written.
+
+        **Answers-file**: ``agentsmgr generate --answers-file PATH
+        --output PATH`` uses the given Copier answers file as the
+        configuration and renders into the explicit ``--output``
+        target. The caller owns output allocation and cleanup;
+        production CLI does not manage temporary directories.
+
+        ``--check`` and ``--simulate`` are only valid in default
+        mode. ``--answers-file`` requires ``--output``.
     '''
 
     source: __.typx.Annotated[
         str,
         __.tyro.conf.arg(
-            help = "Components source path (defaults to 'components')" ),
+            help = "Components source path (defaults to 'components')",
+            prefix_name = False ),
     ] = 'components'
     output: __.typx.Annotated[
-        __.Path,
+        __.typx.Optional[ __.Path ],
         __.tyro.conf.arg(
-            help = "Distribution output path" ),
-    ] = __.Path( 'distribution' )
+            help = (
+                "Distribution output path. Default mode: defaults to "
+                "'distribution/'. Required when --answers-file is used." ),
+            prefix_name = False ),
+    ] = None
     check: __.typx.Annotated[
         bool,
         __.tyro.conf.arg(
-            help = "Check mode - fail if distribution is stale",
+            help = "Check mode - fail if distribution/ is stale",
             prefix_name = False ),
     ] = False
     simulate: __.typx.Annotated[
@@ -613,18 +663,50 @@ class GenerateCommand( __.appcore_cli.Command ):
             help = "Dry run mode - show what would be generated",
             prefix_name = False ),
     ] = False
+    answers_file: __.typx.Annotated[
+        __.typx.Optional[ __.Path ],
+        __.tyro.conf.arg(
+            help = (
+                "Answers-file mode: path to a Copier answers file to "
+                "use as the configuration source. Requires --output." ),
+            prefix_name = False ),
+    ] = None
 
     @_cmdbase.intercept_errors( )
     async def execute( self, auxdata: __.appcore.state.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         ''' Generates distribution artifacts from components. '''
         if not isinstance( auxdata, _core.Globals ):  # pragma: no cover
             raise _exceptions.ContextInvalidity
-        _scribe.info(
-            f"Generating distribution from {self.source} to {self.output}" )
+        if self.answers_file is not None and self.check:
+            raise _exceptions.ConfigurationInvalidity(
+                reason = '--check is not valid with --answers-file' )
+        if self.answers_file is not None and self.simulate:
+            raise _exceptions.ConfigurationInvalidity(
+                reason = '--simulate is not valid with --answers-file' )
+        if self.answers_file is not None and self.output is None:
+            raise _exceptions.ConfigurationInvalidity(
+                reason = '--answers-file requires --output' )
         location = _cmdbase.retrieve_data_location( self.source )
         _cmdbase.validate_data_source_structure(
             location,
             ( 'configurations', 'contents', 'templates' ) )
+        if self.answers_file is not None:
+            await self._execute_answers_file_mode(
+                auxdata, location )
+            return
+        await self._execute_default_mode( auxdata, location )
+
+    async def _execute_default_mode(
+        self,
+        auxdata: _core.Globals,
+        location: __.Path,
+    ) -> None:
+        ''' Default mode: renders distribution tree with universal config. '''
+        target = (
+            self.output if self.output is not None
+            else __.Path( 'distribution' ) )
+        _scribe.info(
+            f"Generating distribution from {self.source} to {target}" )
         configuration = _produce_default_configuration( location )
         generator = _generator.ContentGenerator(
             location = location,
@@ -635,7 +717,7 @@ class GenerateCommand( __.appcore_cli.Command ):
         if self.check:
             items_checked, diff_lines = (
                 _operations.check_distribution_staleness(
-                    generator, self.output ) )
+                    generator, target ) )
             if diff_lines:
                 _scribe.error(
                     f"Distribution is stale ({items_checked} items checked):" )
@@ -647,14 +729,47 @@ class GenerateCommand( __.appcore_cli.Command ):
             return
         items_attempted, items_generated = (
             _operations.generate_distribution(
-                generator, self.output, self.simulate ) )
+                generator, target, self.simulate ) )
         _scribe.info(
             f"Generated {items_generated}/{items_attempted} artifacts" )
         result = _results.ContentGenerationResult(
             source_location = location,
-            target_location = self.output,
+            target_location = target,
             coders = tuple( configuration.get( 'coders', ( ) ) ),
             simulated = self.simulate,
+            items_generated = items_generated,
+        )
+        await _core.render_and_print_result(
+            result, auxdata.display, auxdata.exits )
+
+    async def _execute_answers_file_mode(
+        self,
+        auxdata: _core.Globals,
+        location: __.Path,
+    ) -> None:
+        ''' Answers-file mode: renders against an explicit answers file
+            into the explicit --output target. Caller owns the target
+            directory and its cleanup.
+        '''
+        answers_file = __.typx.cast( __.Path, self.answers_file )
+        target = __.typx.cast( __.Path, self.output )
+        _scribe.info(
+            f"Generating distribution from {self.source} against "
+            f"{answers_file} to {target}" )
+        configuration = await _cmdbase.retrieve_configuration(
+            target = __.Path.cwd( ), profile = answers_file )
+        generator = _generator.ContentGenerator(
+            location = location, configuration = configuration )
+        items_attempted, items_generated = (
+            _operations.populate_directory(
+                generator, target, simulate = False ) )
+        _scribe.info(
+            f"Generated {items_generated}/{items_attempted} artifacts" )
+        result = _results.ContentGenerationResult(
+            source_location = location,
+            target_location = target,
+            coders = tuple( configuration.get( 'coders', ( ) ) ),
+            simulated = False,
             items_generated = items_generated,
         )
         await _core.render_and_print_result(

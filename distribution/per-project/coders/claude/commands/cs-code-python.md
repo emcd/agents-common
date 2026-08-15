@@ -12,9 +12,8 @@ Request from user: $ARGUMENTS
 
 ## Context
 
-- Architecture overview: @documentation/architecture/summary.rst
-- Filesystem patterns: @documentation/architecture/filesystem.rst
-- Design documents: @documentation/architecture/designs/
+- Package layout and rationale: nearest subsystem README under the project source layout
+- Capability specs and designs: @documentation/architecture/openspec/specs/
 
 ## Prerequisites
 
@@ -26,10 +25,10 @@ Before implementing Python code, ensure:
 ### Guide Consultation Requirements
 
 Before implementing Python code, you MUST:
-1. Read @.auxiliary/instructions/practices.rst for general development principles.
-2. Read @.auxiliary/instructions/practices-python.rst for Python-specific patterns.
-3. Read @.auxiliary/instructions/style.rst for code style requirements.
-4. Read @.auxiliary/instructions/nomenclature.rst for naming conventions.
+1. Read @.auxiliary/agents/standards/practices.rst for general development principles.
+2. Read @.auxiliary/agents/standards/practices-python.rst for Python-specific patterns.
+3. Read @.auxiliary/agents/standards/style.rst for code style requirements.
+4. Read @.auxiliary/agents/standards/nomenclature.rst for naming conventions.
 5. In a step on your todo list, please attest that you have read the practices, style, and nomenclature guides and demonstrate your knowledge by writing one-sentence summaries on any three of the following topics:
 
 - the comprehensive examples showing multiple principles cohesively
@@ -68,21 +67,24 @@ Execute the following steps:
 
 ### 1. Issue Analysis and Tracking Setup
 
-Determine if working with existing issue or creating new one:
+Determine if working with an existing issue or creating a new one. Prefer the
+project notebook (`nb`) `issues/` folder via nb MCP tools when available. If the
+user supplies another durable tracker path, use that instead. Do not create
+new files under `.auxiliary/notes/`.
 
-**If the request from the user contains the path to an existing issue file** (under `.auxiliary/notes/issues/`):
-- Read the existing issue file.
+**If the request references an existing notebook issue or tracker path:**
+- Read the existing issue (`nb.show` or file read as appropriate).
 - Proceed to add/update progress tracking sections.
 
-**If the request from the user references a GitHub issue** (e.g., "Fix GitHub issue #123"):
-- Create or update `.auxiliary/notes/issues/gh-123.md`.
-- Include GitHub issue URL in the file.
+**If the request references a GitHub issue** (e.g., "Fix GitHub issue #123"):
+- Create or update a notebook issue under `issues/` (title/slug including `gh-123`).
+- Include the GitHub issue URL in the body.
 
-**If the request from the user provides an issue description** (e.g., "Fix metrics export crash"):
-- Create new issue file: `.auxiliary/notes/issues/<short-descriptive-slug>.md`.
-- Example: `.auxiliary/notes/issues/fix-metrics-export-crash.md`.
+**If the request provides an issue description** (e.g., "Fix metrics export crash"):
+- Create a new notebook issue under `issues/` with a short descriptive title.
+- Example title: `Fix metrics export crash`.
 
-Once issue file is established, ensure it contains these sections (add if missing):
+Once the issue record is established, ensure it contains these sections (add if missing):
 
 ### Issue Description
 - **Title**: [Brief description of the issue/feature]
@@ -169,9 +171,9 @@ Before session end:
 ### 4. Progress Tracking Requirements
 Maintain dual tracking systems:
 - **Session Level**: Use todo list for immediate task management within current session.
-- **Cross-Session**: Update issue file in `.auxiliary/notes/issues/` for persistent tracking.
+- **Cross-Session**: Update the notebook (or other agreed) issue record for persistent tracking.
 - **Synchronization**: When todo list items align with issue checklist granularity, update corresponding issue checklist items (todo list may be more fine-grained).
-- **Context Preservation**: Record all reference files and design decisions in issue file for future session continuity.
+- **Context Preservation**: Record all reference files and design decisions in the issue record for future session continuity.
 
 ### 5. Quality Assurance
 

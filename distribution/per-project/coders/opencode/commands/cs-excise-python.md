@@ -20,8 +20,8 @@ Target files or scope: $ARGUMENTS
 Before running this analysis, ensure:
 - Understanding of project codebase and critical symbols
 - Read project documentation guides:
-  - @.auxiliary/instructions/practices.rst
-  - @.auxiliary/instructions/style.rst
+  - @.auxiliary/agents/standards/practices.rst
+  - @.auxiliary/agents/standards/style.rst
 - Vulture is installed and configured in the development environment
 - Pyright MCP server is available for symbol reference verification
 

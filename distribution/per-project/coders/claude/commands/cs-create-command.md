@@ -21,8 +21,8 @@ Your job is to interpret the user's request and create a complete, self-containe
 
 The user's request may take various forms:
 - Simple: `cs-analyze-performance`
-- Descriptive: `Named cs-inquire.md with a process outlined in .auxiliary/notes/inquire-command.md`
-- Reference-based: `Based on .auxiliary/notes/summarize-project-command.md`
+- Descriptive: `Named cs-inquire.md with a process outlined in the user message`
+- Reference-based: `Based on .auxiliary/agents/procedures/notebook.md section on inquire flow`
 - Complex: `cs-update-deps that checks package.json and updates dependencies safely`
 
 Extract from the user's input:
