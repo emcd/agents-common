@@ -21,6 +21,8 @@
 ''' Skill generation and SKILL.md output behavior. '''
 
 
+import os as _os
+
 from pathlib import Path
 
 from . import __
@@ -130,7 +132,7 @@ def test_400_directory_skill_package_copies_supporting_files( tmp_path ):
     script_dest = dest / 'scripts' / 'run.sh'
     assert script_dest.read_text(
         encoding = 'utf-8' ) == '#!/bin/sh\necho ok\n'
-    assert script_dest.stat( ).st_mode & 0o111
+    if _os.name != 'nt': assert script_dest.stat( ).st_mode & 0o111
     assert ( dest / 'references' / 'notes.md' ).read_text(
         encoding = 'utf-8' ) == 'detail\n'
     assert ( dest / 'assets' / 'icon.bin' ).read_bytes( ) == b'\x00\x01\xff'
