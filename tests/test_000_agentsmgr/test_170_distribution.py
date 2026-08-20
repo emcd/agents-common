@@ -646,4 +646,10 @@ def test_500_populate_uses_explicit_target( tmp_path ):
             'commands/' in entry
             or 'agents/' in entry
             or 'skills/' in entry
+            or entry == '.agents'
+            or entry.endswith( '/skills' )
         ), f"Exclude entry should reference distributed file: {entry}"
+    assert '.agents' in exclude_entries
+    assert any(
+        entry.endswith( 'agents/skills' ) or '/skills/' in entry
+        for entry in exclude_entries )

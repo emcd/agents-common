@@ -255,8 +255,8 @@ def _copy_distribution_items(  # noqa: PLR0913
 
         For each coder, copies the entire
         distribution/<mode>/coders/<coder>/ tree to the target.
-        Skills are copied separately from
-        distribution/per-project/general/skills/.
+        In per-project mode, skills materialize once under
+        ``.auxiliary/agents/skills/`` with discovery symlinks.
 
         The distribution tree mirrors downstream layout, so this is
         a single copy operation per coder.
@@ -283,13 +283,12 @@ def _copy_distribution_items(  # noqa: PLR0913
             items_attempted += attempted
             items_written += written
             exclude_entries.extend( entries )
-        # Copy skills from general directory.
-        if mode == 'per-project':
-            attempted, written, entries = _copy_skills(
-                distribution, base_directory, manager, target, simulate )
-            items_attempted += attempted
-            items_written += written
-            exclude_entries.extend( entries )
+    if mode == 'per-project':
+        attempted, written, entries = _copy_skills(
+            distribution, target, coders, configuration, simulate )
+        items_attempted += attempted
+        items_written += written
+        exclude_entries.extend( entries )
     return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
@@ -328,14 +327,125 @@ def _copy_tree(
     return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
+def _canonical_skills_directory( project_root: __.Path ) -> __.Path:
+    ''' Returns project-canonical skills root under .auxiliary/agents. '''
+    return project_root / '.auxiliary' / 'agents' / 'skills'
+
+
+def _ensure_directory_symlink(
+    source: __.Path,
+    link_path: __.Path,
+    *,
+    simulate: bool = False,
+    replace_existing: bool = False,
+) -> bool:
+    ''' Ensures link_path is a symlink to source.
+
+        When replace_existing is true, removes an existing non-symlink
+        directory or file at link_path so managed coder skill trees can cut
+        over to the canonical package root. When false (default), leaves an
+        existing non-symlink path in place and reports a warning — used for
+        root ``.agents``, which may belong to another tool. Returns whether
+        the symlink was created or updated.
+    '''
+    try:
+        relative_source = __.os.path.relpath(
+            source, start = link_path.parent )
+    except ValueError:
+        relative_source = str( source.resolve( ) )
+    if link_path.is_symlink( ):
+        try: current_target = __.os.readlink( link_path )
+        except OSError as exception:
+            _scribe.warning(
+                f"Cannot read symlink {link_path}: {exception}." )
+            return False
+        if current_target == relative_source:
+            return False
+        _scribe.info(
+            f"Updating symlink {link_path.name}: "
+            f"{current_target} → {relative_source}" )
+        if not simulate: link_path.unlink( )
+    elif link_path.exists( ):
+        if not replace_existing:
+            _scribe.warning(
+                f"Path already exists at {link_path}; "
+                "not replacing with symlink. Remove or relocate it to "
+                "enable agentsmgr skills discovery linking." )
+            return False
+        _scribe.info(
+            f"Replacing existing path with symlink: {link_path}" )
+        if not simulate:
+            if link_path.is_dir( ): __.shutil.rmtree( link_path )
+            else: link_path.unlink( )
+    if not simulate:
+        link_path.parent.mkdir( parents = True, exist_ok = True )
+        link_path.symlink_to( relative_source )
+        _scribe.info( f"Created directory symlink: {link_path.name}" )
+    else:
+        _scribe.info(
+            f"[SIMULATE] Would create symlink: "
+            f"{link_path} → {relative_source}" )
+    return True
+
+
+def _link_skills_discovery(
+    project_root: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
+    simulate: bool,
+) -> tuple[ str, ... ]:
+    ''' Links harness discovery paths to the canonical skills tree.
+
+        - Root ``.agents`` → ``.auxiliary/agents`` so ``.agents/skills``
+          resolves; never deletes a pre-existing non-symlink ``.agents`` path
+        - Per-coder ``<base>/skills`` → canonical skills directory
+          (destructive cutover of legacy dual-copy skill trees only)
+    '''
+    import contextlib as _contextlib
+    exclude_entries: list[ str ] = [ ]
+    agents_source = project_root / '.auxiliary' / 'agents'
+    agents_link = project_root / '.agents'
+    if not simulate:
+        agents_source.mkdir( parents = True, exist_ok = True )
+    if _ensure_directory_symlink(
+        agents_source, agents_link,
+        simulate = simulate, replace_existing = False,
+    ) or agents_link.is_symlink( ):
+        exclude_entries.append( agents_link.name )
+    canonical = _canonical_skills_directory( project_root )
+    if not simulate:
+        canonical.mkdir( parents = True, exist_ok = True )
+    for _, manager in _resolver.resolve_coders(
+        coders, mode = 'per-project'
+    ):
+        if 'skills' not in manager.item_types_available: continue
+        base_directory = manager.resolve_base_directory(
+            mode = 'per-project',
+            target = project_root,
+            configuration = configuration,
+            environment = __.os.environ,
+        )
+        skills_name = manager.calculate_directory_location( 'skills' )
+        link_path = base_directory / skills_name
+        if _ensure_directory_symlink(
+            canonical, link_path,
+            simulate = simulate, replace_existing = True,
+        ) or link_path.is_symlink( ):
+            with _contextlib.suppress( ValueError ):
+                exclude_entries.append(
+                    _format_exclude_path(
+                        link_path.relative_to( project_root ) ) )
+    return tuple( exclude_entries )
+
+
 def _copy_skills(
     distribution: __.Path,
-    base_directory: __.Path,
-    manager: _renderers.RendererBase,
     project_root: __.Path,
+    coders: __.cabc.Sequence[ str ],
+    configuration: __.cabc.Mapping[ str, __.typx.Any ],
     simulate: bool,
 ) -> tuple[ int, int, tuple[ str, ... ] ]:
-    ''' Copies skill packages from distribution/ to target paths.
+    ''' Materializes skill packages once and links harness discovery paths.
 
         Skills are static artifacts that require no rendering. Layout follows
         the Agent Skills specification
@@ -345,14 +455,15 @@ def _copy_skills(
         - Directory package (Agent Skills): ``<name>/SKILL.md`` plus optional
           ``scripts/``, ``references/``, ``assets/``, and other supporting
           files — the entire directory is copied to
-          ``<base>/skills/<name>/``.
-        - Legacy flat file: ``<name>.md`` → ``<base>/skills/<name>/SKILL.md``.
+          ``.auxiliary/agents/skills/<name>/``.
+        - Legacy flat file: ``<name>.md`` →
+          ``.auxiliary/agents/skills/<name>/SKILL.md``.
 
         When both a directory package and a flat ``<name>.md`` exist for the
         same name, the directory package wins. Supporting files are not
-        language-filtered; a skill is a portable package. Destination
-        ``SKILL.md`` naming follows the Skills protocol and does not use
-        ``manager.calculate_artifact_pattern``. Returns tuple of
+        language-filtered; a skill is a portable package. After materializing
+        the canonical tree, creates discovery symlinks (``.agents`` and
+        per-coder ``skills/``). Returns tuple of
         (files_attempted, files_written, exclude_entries).
     '''
     import contextlib as _contextlib
@@ -361,39 +472,40 @@ def _copy_skills(
     exclude_entries: list[ str ] = [ ]
     skills_dir = (
         distribution / 'per-project' / 'general' / 'skills' )
-    if not skills_dir.exists( ):
-        return ( items_attempted, items_written, tuple( exclude_entries ) )
-    skills_output = manager.calculate_directory_location( 'skills' )
-    directory_skills: dict[ str, __.Path ] = { }
-    flat_skills: dict[ str, __.Path ] = { }
-    for entry in skills_dir.iterdir( ):
-        if entry.is_dir( ) and ( entry / 'SKILL.md' ).is_file( ):
-            directory_skills[ entry.name ] = entry
-        elif entry.is_file( ) and entry.suffix == '.md':
-            flat_skills[ entry.stem ] = entry
-    for item_name, source_dir in sorted( directory_skills.items( ) ):
-        dest_root = base_directory / skills_output / item_name
-        attempted, written, entries = _copy_tree(
-            source_dir, dest_root, project_root, simulate )
-        items_attempted += attempted
-        items_written += written
-        exclude_entries.extend( entries )
-    for item_name, skill_file in sorted( flat_skills.items( ) ):
-        if item_name in directory_skills: continue
-        items_attempted += 1
-        dest_path = (
-            base_directory / skills_output / item_name / 'SKILL.md' )
-        if _operations.save_content_bytes(
-            skill_file.read_bytes( ),
-            dest_path,
-            simulate,
-        ):
-            items_written += 1
-            __.shutil.copymode( skill_file, dest_path )
-        with _contextlib.suppress( ValueError ):
-            exclude_entries.append(
-                _format_exclude_path(
-                    dest_path.relative_to( project_root ) ) )
+    canonical = _canonical_skills_directory( project_root )
+    if skills_dir.exists( ):
+        directory_skills: dict[ str, __.Path ] = { }
+        flat_skills: dict[ str, __.Path ] = { }
+        for entry in skills_dir.iterdir( ):
+            if entry.is_dir( ) and ( entry / 'SKILL.md' ).is_file( ):
+                directory_skills[ entry.name ] = entry
+            elif entry.is_file( ) and entry.suffix == '.md':
+                flat_skills[ entry.stem ] = entry
+        for item_name, source_dir in sorted( directory_skills.items( ) ):
+            dest_root = canonical / item_name
+            attempted, written, entries = _copy_tree(
+                source_dir, dest_root, project_root, simulate )
+            items_attempted += attempted
+            items_written += written
+            exclude_entries.extend( entries )
+        for item_name, skill_file in sorted( flat_skills.items( ) ):
+            if item_name in directory_skills: continue
+            items_attempted += 1
+            dest_path = canonical / item_name / 'SKILL.md'
+            if _operations.save_content_bytes(
+                skill_file.read_bytes( ),
+                dest_path,
+                simulate,
+            ):
+                items_written += 1
+                __.shutil.copymode( skill_file, dest_path )
+            with _contextlib.suppress( ValueError ):
+                exclude_entries.append(
+                    _format_exclude_path(
+                        dest_path.relative_to( project_root ) ) )
+    exclude_entries.extend(
+        _link_skills_discovery(
+            project_root, coders, configuration, simulate ) )
     return ( items_attempted, items_written, tuple( exclude_entries ) )
 
 
