@@ -269,9 +269,14 @@ class ContentGenerator( __.immut.DataclassObject ):
     ) -> __.Path:
         ''' Produces output location for a skill.
 
-            Skills always use the pattern:
-            <base>/skills/<item_name>/SKILL.md
+            Per-project skills materialize under the canonical tree
+            ``.auxiliary/agents/skills/<item_name>/SKILL.md``. Per-user
+            mode keeps the coder base ``skills/<item_name>/SKILL.md`` path.
         '''
+        if actual_mode == 'per-project':
+            return (
+                target / '.auxiliary' / 'agents' / 'skills' /
+                item_name / 'SKILL.md' )
         base_directory = renderer.resolve_base_directory(
             mode = actual_mode,
             target = target,

@@ -46,7 +46,7 @@ def test_100_skills_copy_to_skill_md_under_skill_directory( tmp_path ):
         'skills', 'cs-review-todos', 'claude', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/claude/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
     )
     assert 'name: "cs-review-todos"' in rendered.content
     assert (
@@ -69,12 +69,12 @@ def test_200_skills_are_portable_across_coders( tmp_path ):
         'skills', 'cs-review-todos', 'codex', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/codex/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
     )
     assert 'name: "cs-review-todos"' in rendered.content
 
 
-def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
+def test_300_skills_use_canonical_path_for_opencode( tmp_path ):
     generator_module = __.cache_import_module( 'agentsmgr.generator' )
     ContentGenerator = generator_module.ContentGenerator
     generator = ContentGenerator(
@@ -90,7 +90,7 @@ def test_300_skills_use_plural_directory_for_opencode( tmp_path ):
         'skills', 'cs-review-todos', 'opencode', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/configuration/coders/opencode/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
     )
 
 
@@ -114,18 +114,11 @@ def test_400_directory_skill_package_copies_supporting_files( tmp_path ):
     ( skill_root / 'assets' / 'icon.bin' ).write_bytes( b'\x00\x01\xff' )
     target = tmp_path / 'project'
     target.mkdir( )
-    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
-    manager = renderers_module.RENDERERS[ 'claude' ]
-    base_directory = manager.resolve_base_directory(
-        mode = 'per-project',
-        target = target,
-        configuration = { },
-        environment = { },
-    )
+    configuration = { 'coders': [ 'claude' ] }
     attempted, written, entries = population_module._copy_skills(
-        distribution, base_directory, manager, target, simulate = False )
-    dest = (
-        base_directory / 'skills' / 'demo-skill' )
+        distribution, target, configuration[ 'coders' ],
+        configuration, simulate = False )
+    dest = target / '.auxiliary' / 'agents' / 'skills' / 'demo-skill'
     assert attempted == 4
     assert written == 4
     assert ( dest / 'SKILL.md' ).is_file( )
@@ -136,10 +129,20 @@ def test_400_directory_skill_package_copies_supporting_files( tmp_path ):
     assert ( dest / 'references' / 'notes.md' ).read_text(
         encoding = 'utf-8' ) == 'detail\n'
     assert ( dest / 'assets' / 'icon.bin' ).read_bytes( ) == b'\x00\x01\xff'
-    assert any( entry.endswith( 'skills/demo-skill/SKILL.md' )
-                for entry in entries )
-    assert any( entry.endswith( 'skills/demo-skill/scripts/run.sh' )
-                for entry in entries )
+    assert any(
+        entry.endswith( 'agents/skills/demo-skill/SKILL.md' )
+        for entry in entries )
+    assert any(
+        entry.endswith( 'agents/skills/demo-skill/scripts/run.sh' )
+        for entry in entries )
+    agents_link = target / '.agents'
+    assert agents_link.is_symlink( )
+    assert ( agents_link / 'skills' / 'demo-skill' / 'SKILL.md' ).is_file( )
+    claude_skills = (
+        target / '.auxiliary' / 'configuration' / 'coders' /
+        'claude' / 'skills' )
+    assert claude_skills.is_symlink( )
+    assert ( claude_skills / 'demo-skill' / 'SKILL.md' ).is_file( )
 
 
 def test_500_directory_skill_preferred_over_flat_file( tmp_path ):
@@ -159,18 +162,13 @@ def test_500_directory_skill_preferred_over_flat_file( tmp_path ):
     )
     target = tmp_path / 'project'
     target.mkdir( )
-    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
-    manager = renderers_module.RENDERERS[ 'claude' ]
-    base_directory = manager.resolve_base_directory(
-        mode = 'per-project',
-        target = target,
-        configuration = { },
-        environment = { },
-    )
+    configuration = { 'coders': [ 'claude' ] }
     population_module._copy_skills(
-        distribution, base_directory, manager, target, simulate = False )
+        distribution, target, configuration[ 'coders' ],
+        configuration, simulate = False )
     body = (
-        base_directory / 'skills' / 'demo-skill' / 'SKILL.md'
+        target / '.auxiliary' / 'agents' / 'skills' /
+        'demo-skill' / 'SKILL.md'
     ).read_text( encoding = 'utf-8' )
     assert 'Dir body.' in body
     assert 'Flat body.' not in body
@@ -196,3 +194,58 @@ def test_600_generator_reads_directory_skill_md( tmp_path ):
         'skills', 'packaged', 'claude', tmp_path / 'out' )
     assert 'Packaged skill.' in rendered.content
     assert rendered.location.name == 'SKILL.md'
+    assert 'agents/skills/packaged' in str( rendered.location )
+
+
+def test_700_replaces_legacy_coder_skills_directory_with_symlink( tmp_path ):
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    distribution = tmp_path / 'distribution'
+    skills_dir = distribution / 'per-project' / 'general' / 'skills'
+    skills_dir.mkdir( parents = True )
+    ( skills_dir / 'demo.md' ).write_text(
+        '---\nname: demo\ndescription: D.\n---\nBody.\n',
+        encoding = 'utf-8',
+    )
+    target = tmp_path / 'project'
+    legacy = (
+        target / '.auxiliary' / 'configuration' / 'coders' /
+        'claude' / 'skills' / 'old' )
+    legacy.mkdir( parents = True )
+    ( legacy / 'SKILL.md' ).write_text( 'old\n', encoding = 'utf-8' )
+    configuration = { 'coders': [ 'claude', 'codex', 'opencode' ] }
+    population_module._copy_skills(
+        distribution, target, configuration[ 'coders' ],
+        configuration, simulate = False )
+    claude_skills = (
+        target / '.auxiliary' / 'configuration' / 'coders' /
+        'claude' / 'skills' )
+    assert claude_skills.is_symlink( )
+    assert not ( claude_skills / 'old' ).exists( )
+    assert ( claude_skills / 'demo' / 'SKILL.md' ).is_file( )
+
+
+def test_800_preserves_preexisting_real_agents_directory( tmp_path ):
+    population_module = __.cache_import_module( 'agentsmgr.population' )
+    distribution = tmp_path / 'distribution'
+    skills_dir = distribution / 'per-project' / 'general' / 'skills'
+    skills_dir.mkdir( parents = True )
+    ( skills_dir / 'demo.md' ).write_text(
+        '---\nname: demo\ndescription: D.\n---\nBody.\n',
+        encoding = 'utf-8',
+    )
+    target = tmp_path / 'project'
+    agents_dir = target / '.agents'
+    agents_dir.mkdir( parents = True )
+    marker = agents_dir / 'foreign.txt'
+    marker.write_text( 'keep\n', encoding = 'utf-8' )
+    configuration = { 'coders': [ 'claude' ] }
+    population_module._copy_skills(
+        distribution, target, configuration[ 'coders' ],
+        configuration, simulate = False )
+    assert agents_dir.is_dir( )
+    assert not agents_dir.is_symlink( )
+    assert marker.read_text( encoding = 'utf-8' ) == 'keep\n'
+    assert (
+        target / '.auxiliary' / 'agents' / 'skills' /
+        'demo' / 'SKILL.md'
+    ).is_file( )
