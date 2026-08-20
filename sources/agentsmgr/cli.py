@@ -30,6 +30,12 @@ from . import population as _population
 class Application( __.appcore_cli.Application ):
     ''' Agents configuration management CLI. '''
 
+    version: __.typx.Annotated[
+        bool,
+        __.tyro.conf.arg(
+            help = "Print package version and exit." ),
+        __.tyro.conf.FlagCreatePairsOff,
+    ] = False
     display: _core.DisplayOptions = __.dcls.field(
         default_factory = _core.DisplayOptions )
     command: __.typx.Union[
@@ -46,6 +52,14 @@ class Application( __.appcore_cli.Application ):
             __.tyro.conf.subcommand( 'populate', prefix_name = False ),
         ],
     ] = __.dcls.field( default_factory = _detection.DetectCommand )
+
+    async def __call__( self ) -> None:
+        ''' Reports version or prepares session and executes command. '''
+        if self.version:
+            from agentsmgr import __version__
+            print( '{0} {1}'.format( __.package_name, __version__ ) )
+            return
+        await super( ).__call__( )
 
     async def execute( self, auxdata: _core.Globals ) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         await self.command( auxdata )

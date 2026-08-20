@@ -65,6 +65,7 @@ template/               # Copier template for base coder configuration
 
 ## Commands
 
+- `agentsmgr --version` — print the running package version
 - `agentsmgr detect` — inspect project agent configuration
 - `agentsmgr generate` — render `components/` → `distribution/` (optional
   `--check`, `--answers-file`, `--output`)
