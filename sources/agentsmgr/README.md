@@ -26,8 +26,10 @@ Configuration is detected from Copier answers files, with defaults when answers
 are absent. Downstream populate records managed paths as file-level entries in
 `.git/info/exclude`.
 
-Content releases use lightweight `agents-N` git tags so consumers can pin or
-roll back configuration sets independently of package versioning.
+Content releases use lightweight `agents-*` git tags so consumers can pin or
+roll back configuration sets independently of package versioning. Notes for
+those cuts live in `documentation/configuration-changelog.rst` (not the
+package Towncrier changelog).
 
 ## Layout
 

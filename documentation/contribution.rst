@@ -102,9 +102,13 @@ Guidance and Standards
   pre-push hooks during environment setup, then they will run the validations
   for you.)
 
-* Prepare changelog fragments according to the `releases guide
+* Prepare **package** changelog fragments according to the `releases guide
   <https://emcd.github.io/python-project-common/stable/sphinx-html/common/releases.html>`_
-  as appropriate.
+  as appropriate (Towncrier under ``.auxiliary/data/towncrier/``).
+
+* For **Copier template or configuration content** changes, add bullets under
+  **Unreleased** in ``documentation/configuration-changelog.rst`` instead of
+  package Towncrier.
 
 * Although unnecessary for non-maintainer contributions, additional background
   can be found in the `maintenance guide
