@@ -32,6 +32,7 @@ Table of Contents
    decisions/index
    api
    changelog
+   configuration-changelog
    contribution
    skills
    license
