@@ -193,8 +193,9 @@ def test_600_generator_reads_directory_skill_md( tmp_path ):
     rendered = generator.render_single_item(
         'skills', 'packaged', 'claude', tmp_path / 'out' )
     assert 'Packaged skill.' in rendered.content
-    assert rendered.location.name == 'SKILL.md'
-    assert 'agents/skills/packaged' in str( rendered.location )
+    assert rendered.location == (
+        tmp_path / 'out' / '.auxiliary' / 'agents' / 'skills' /
+        'packaged' / 'SKILL.md' )
 
 
 def test_700_replaces_legacy_coder_skills_directory_with_symlink( tmp_path ):
