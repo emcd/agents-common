@@ -98,6 +98,14 @@ Enhancements
 - Codex Starlark rules allowlist (including selected git write prefixes
   such as commit/tag) and approval routing defaults suitable for trusted
   local development.
+- Rolling handoff hygiene lives in
+  ``.auxiliary/agents/procedures/notebook.md`` only (no AGENTS section).
+  Coordinators/sole owners and tech leads (for their lanes) own handoffs;
+  implementers do not. No routine post-commit handoff refreshes.
+- Delegated review: post-approval rebase onto an advanced base may use a
+  merge handoff when the stack is byte-identical and the author re-runs
+  lints/tests; non-identical stacks still require technical re-review.
+  Integrator retains merge-safety checks across lanes.
 - Language-aware instruction defaults (e.g. Rust) in Copier answers maps.
 - Template validation migrated to copiertv profiles under
   ``.auxiliary/configuration/copiertv/``.
