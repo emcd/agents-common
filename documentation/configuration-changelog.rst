@@ -54,6 +54,12 @@ Removals
 - Remove default blocking agent hooks from generated coder configuration.
 - Stop hiding managed coder resource directories behind ignore rules that
   blocked normal inspection of agentsmgr-managed trees.
+- Remove Claude ``miscellany/bash-tool-bypass`` and
+  ``miscellany/command-template.md`` from the Copier template.
+- Retire distribution commands ``cs-create-command`` and
+  ``cs-update-command``.
+- Remove obsolete Claude Code Web session setup notes
+  (``documentation/miscellany/ccw-setup.md``).
 
 Enhancements
 ------------
