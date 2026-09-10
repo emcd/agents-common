@@ -60,6 +60,9 @@ Removals
   ``cs-update-command``.
 - Remove obsolete Claude Code Web session setup notes
   (``documentation/miscellany/ccw-setup.md``).
+- Drop Copier answer ``project_bundle_name`` and stop passing
+  Agentmux ``--bundle`` in generated MCP configs; Agentmux ≥0.9
+  injects ``AGENTMUX_BUNDLE`` into MCP children (lazy upgrade).
 
 Enhancements
 ------------

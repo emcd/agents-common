@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v1.0a13-16-g84f53ef
+_commit: v1.0a13-18-g8cee1f3
 _src_path: .
 coders:
 - claude
@@ -43,7 +43,6 @@ instructions_sources:
 instructions_target: .auxiliary/agents/standards
 languages:
 - python
-project_bundle_name: infrastructure
 project_name: agents-common
 provide_instructions: true
 support_local_models: true

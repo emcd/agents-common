@@ -1,5 +1,4 @@
 project_name: agents-template-default
-project_bundle_name: agents-template-default
 coders:
 - claude
 - codex
