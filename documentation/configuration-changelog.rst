@@ -83,6 +83,10 @@ Enhancements
   (Purpose / Tech Stack / Notes) with Copier ``_skip_if_exists`` so
   ``copier update`` does not clobber local project knowledge. Generated
   entrypoint stays pointer-only.
+- Codify two-tier technical review in the template review procedure.
+  Tier-1 Reviewer is the gate. Tier-2 Reviewer, usually an Advisor,
+  is engaged only after Tier-1 approval. Authors must not dictate
+  review scope or shotgun both tiers.
 - Default OpenCode ``build`` and ``plan`` agents to
   ``meta/muse-spark-1.3-contributor`` (Meta metered API, not a
   subscription or OpenCode Zen free tier).
