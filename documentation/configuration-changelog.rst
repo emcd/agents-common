@@ -83,6 +83,9 @@ Enhancements
   (Purpose / Tech Stack / Notes) with Copier ``_skip_if_exists`` so
   ``copier update`` does not clobber local project knowledge. Generated
   entrypoint stays pointer-only.
+- Default OpenCode ``build`` and ``plan`` agents to
+  ``meta/muse-spark-1.3-contributor`` (Meta metered API, not a
+  subscription or OpenCode Zen free tier).
 - Stage ``tests.md`` and ``practices-rust.md`` from
   ``python-project-common`` ``docs-1.9``
   (``82082295a30c9ef2aa4c633bc609df70c4a0e127``) into
