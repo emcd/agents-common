@@ -38,7 +38,7 @@ Before implementing code changes, consult these files in `.auxiliary/agents/stan
 | Topic | File |
 |-------|------|
 | Project-specific guidance (project-owned) | @.auxiliary/agents/project.md |
-| `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
+| `nb` MCP tools, tagging, notebook organization, and handoff hygiene | @.auxiliary/agents/procedures/notebook.md |
 | OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
 | Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
 
@@ -72,26 +72,14 @@ Before implementing code changes, consult these files in `.auxiliary/agents/stan
   - you are handing off completed work with validation results,
   - you are reporting a material risk, failure, or scope change.
 - Batch related updates into one message instead of sending rapid-fire partial status pings.
-- Use `Cc` only for agents who need to act or review; avoid broad `Cc` by default.
+- Use `Cc` only for agents who need to act or review; avoid broad `Cc` by default. Do not use `Cc` to engage a Tier-2 Reviewer. Tier routing is in @.auxiliary/agents/procedures/reviews.md.
 - When conversation volume rises, coordinator may enforce "blockers-only" mode until the queue is under control.
 
 ## OpenSpec Instructions
 
-This project uses OpenSpec 1.x (OPSX), the action-based workflow. OPSX skills
-deliver workflow instructions through the agentsmgr distribution pipeline.
+This project uses OpenSpec 1.x (OPSX). Skills, CLI queries, and conventions: @.auxiliary/agents/procedures/openspec.md.
 
-Workflow skills: `opsx-propose`, `opsx-explore`, `opsx-apply`,
-`opsx-sync`, `opsx-archive`.
-
-Use OPSX skills when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan).
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work.
-- Sounds ambiguous and you need the authoritative spec before coding.
-
-CLI state queries: `openspec list`, `openspec list --specs`,
-`openspec status --change <id>`, `openspec validate --all --strict`.
-
-When a commit completes an OpenSpec task or requirement, update the relevant OpenSpec task status in the same commit.
+Use an OPSX skill when the request mentions a proposal, spec, or plan; introduces a new capability, breaking change, or architecture shift; or is too ambiguous to implement without the spec. When a commit completes an OpenSpec task or requirement, update that task status in the same commit.
 
 # Commits
 
