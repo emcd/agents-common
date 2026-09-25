@@ -23,7 +23,8 @@ After Tier-1 approval:
 - If Tier 2 is not engaged, that approval is **final**.
 - If Tier 2 is engaged, send a separate packet to the Tier-2 Reviewer. Hold autosquash until that reviewer approves, so the Tier-1 hashes stay visible. Tier-2 findings are not merge authorization.
 - Route a Tier-2 fix packet back to the Tier-2 Reviewer. Also route it to the Tier-1 Reviewer when the fix changes the Tier-1 contract. Routing is not a limit on what either reviewer may inspect.
-- Integrator handoff waits until every engaged tier has approved. That approval is **final** for autosquash.
+- Integrator handoff waits until every engaged tier has approved. That approval is **final** for autosquash. The handoff names every engaged tier and states that each has approved.
+- A non-identical rebase (conflict resolution, content edits, or a non-equivalent cumulative diff) returns to the Tier-1 Reviewer first. Re-engage Tier 2 only after that new approval, and only if Tier 2 had been engaged. Do not send that stack straight to the integrator.
 
 ## Review cycle
 
@@ -36,7 +37,7 @@ After Tier-1 approval:
    - If `<local-integration-base>` is **unchanged** since the approved packet and only autosquash rewrote hashes: hand the cleaned stack to the **integrator** for merge (merge handoff with updated commit list; no repeat technical review).
    - If the base **advanced** and the author rebases onto the new base:
      - **Byte-identical stack** (cumulative change equivalent to the last approved tip): **no** dedicated technical re-review. Author verifies with `git range-diff <old-base>..<approved-tip> <new-base>..<rebased-tip>` (or an equivalent check) and confirms the output reports only equivalent (`=`) commit pairs — not an empty command result. Author **re-runs lints and tests** after the rebase. The merge handoff must name both compared ranges and the identity result. Integrator still performs merge-safety checks (current base, conflicts, multi-lane interaction).
-     - **Non-identical stack** (conflict resolution, content edits, or non-equivalent cumulative diff): send an **updated technical review packet** to the Tier-1 Reviewer and return to step 3. If Tier 2 had been engaged, re-engage it only after the new Tier-1 approval. Do not send that stack straight to the integrator.
+     - **Non-identical stack:** follow the non-identical rebase rule under Review tiers. Return to step 3.
 7. Integrator merges (see Integrator flow). Merge/push only after explicit human approval.
 
 Hold the unsquashed fixup stack for the entire technical review. Autosquash only after final approval, as the step that produces the stack the integrator merges when the base has not moved.
@@ -46,7 +47,7 @@ The agreed `<local-integration-base>` is a Git ref in the current repository, su
 ## Integrator flow
 
 1. Confirm the stack is approved by every engaged tier and already cleaned (fixups autosquashed). If fixups are still present, send it back to the author to fold before merge — do not start a content review.
-2. Confirm the cleaned stack is based on the **current** `<local-integration-base>`. If the base has advanced (stale-base stack), **refuse the merge handoff** and route the author to rebase first. After rebase: byte-identical stacks may return as a merge handoff with fresh lint/test evidence; non-identical stacks must return through **technical review**. Do not merge a stale-base cleaned stack.
+2. Confirm the cleaned stack is based on the **current** `<local-integration-base>`, and that the handoff names every engaged tier and states that each has approved. If the base has advanced (stale-base stack), **refuse the merge handoff** and route the author to rebase first. After rebase: a byte-identical stack may return as a merge handoff with fresh lint/test evidence; a non-identical stack follows the non-identical rebase rule under Review tiers. Do not merge a stale-base cleaned stack.
 3. If the base is current and the merge is otherwise clear, merge approved review branches with `--no-ff` when preserving a delegated-work or lane boundary; this creates a clear integration point and avoids mutually rebasing branches into increasingly long histories.
 4. Merge/push only after explicit human approval.
 
@@ -66,7 +67,7 @@ For non-trivial delegated work, review requests should include:
 
 Author-provided review concerns are supplemental context, not a limit on review scope, and not an instruction the reviewer must follow. Independent inspection remains the reviewer responsibility.
 
-Packets to the **integrator** after final approval are merge handoffs: cleaned commit list, validation status, and base/merge refs. They apply when the base is unchanged since final approval (autosquash-only hash changes are fine), or after a post-approval rebase that leaves a **byte-identical** stack with author re-validation noted. They are not a technical review packet. A post-approval rebase that produces a **non-identical** stack requires a new technical review packet to the **Tier-1 Reviewer**, not a merge handoff. Re-engage Tier 2 only after that new Tier-1 approval, and only if Tier 2 had been engaged.
+Packets to the **integrator** after final approval are merge handoffs: cleaned commit list, validation status, base/merge refs, and every engaged tier with its approval. They apply when the base is unchanged since final approval (autosquash-only hash changes are fine), or after a post-approval rebase that leaves a **byte-identical** stack with author re-validation noted. They are not a review packet. A non-identical post-approval rebase follows the non-identical rebase rule under Review tiers, not a merge handoff.
 
 # Reviewing Stacked Commits
 
@@ -79,7 +80,7 @@ The author holds targeted fixups in place until **final** approval. Each fixup s
 Distinguish post-approval hash changes:
 - **Autosquash only, base unchanged:** include the new commit list and validation status on the merge handoff to the integrator. No repeat technical review.
 - **Rebase onto an advanced base, byte-identical stack:** merge handoff is allowed after author re-runs lints/tests and records identity verification: both `git range-diff` ranges and that the output shows only equivalent (`=`) pairs (or another specifically identified equivalent check). No dedicated technical re-review.
-- **Rebase onto an advanced base, non-identical stack:** send an updated technical review packet to the Tier-1 Reviewer and obtain approval again before any merge handoff. Re-engage Tier 2 only after that approval, and only if Tier 2 had been engaged.
+- **Rebase onto an advanced base, non-identical stack:** follow the non-identical rebase rule under Review tiers. Obtain that approval again before any merge handoff.
 
 Fold the stack with `--autosquash`, which requires `-i` explicitly — `--autosquash` alone is a silent no-op. Use `<local-integration-base>` as the rebase base.
 

@@ -30,6 +30,4 @@ deliver workflow instructions through the agentsmgr distribution pipeline.
 - When a commit completes an OpenSpec task or requirement, update the
   relevant task status in the same commit.
 
-Treat OpenSpec proposals like code: commit proposal files to a branch,
-reviewers review the commit (`git show`), author amends as needed, merge when
-settled. No notebook draft step.
+Review and merge proposal commits through @.auxiliary/agents/procedures/reviews.md. Do not amend a proposal commit while review is in progress, and do not require a pinhole `git show` review. No notebook draft step.

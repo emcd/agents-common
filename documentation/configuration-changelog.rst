@@ -86,7 +86,10 @@ Enhancements
 - Codify two-tier technical review in the template review procedure.
   Tier-1 Reviewer is the gate. Tier-2 Reviewer, usually an Advisor,
   is engaged only after Tier-1 approval. Authors must not dictate
-  review scope or shotgun both tiers.
+  review scope or shotgun both tiers. Integrator handoffs name every
+  engaged tier. OpenSpec proposal review follows that procedure.
+  Agentmux ``Cc`` is not a Tier-2 bypass. Handoff hygiene says
+  coordination levels, not review tiers.
 - Default OpenCode ``build`` and ``plan`` agents to
   ``meta/muse-spark-1.3-contributor`` (Meta metered API, not a
   subscription or OpenCode Zen free tier).
