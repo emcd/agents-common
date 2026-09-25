@@ -83,6 +83,16 @@ Enhancements
   (Purpose / Tech Stack / Notes) with Copier ``_skip_if_exists`` so
   ``copier update`` does not clobber local project knowledge. Generated
   entrypoint stays pointer-only.
+- Retire distribution commands that restate staged standards or
+  encode stale runbooks: ``cs-code-python``, ``cs-design-python``,
+  ``cs-conform-python``, ``cs-excise-python``, ``cs-conform-toml``,
+  ``cs-inquire``, ``cs-plan-pytests``, ``cs-develop-pytests``,
+  ``cs-copier-update``, ``cs-document-examples-rst``,
+  ``cs-update-readme-rst``, ``cs-annotate-release``,
+  ``cs-release-checkpoint``, ``cs-release-final``, and
+  ``cs-release-maintenance``. No distribution commands remain.
+- Retire distribution subagents ``python-annotator`` and
+  ``python-conformer``. They restated deleted command workflows.
 - Codify two-tier technical review in the template review procedure.
   Tier-1 Reviewer is the gate. Tier-2 Reviewer, usually an Advisor,
   is engaged only after Tier-1 approval. Authors must not dictate
