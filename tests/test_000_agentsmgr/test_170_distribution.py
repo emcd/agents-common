@@ -476,11 +476,13 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
     # Verify instruction files exist in distribution
     instructions_dir = location / 'per-project' / 'general' / 'instructions'
     assert instructions_dir.exists( )
-    instruction_files = list( instructions_dir.glob( '*.rst' ) )
+    instruction_files = [
+        path for path in instructions_dir.glob( '*' ) if path.is_file( ) ]
     # Verify specific expected files are present
     expected_files = {
         'practices.rst', 'practices-python.rst', 'style.rst',
         'nomenclature.rst', 'tests.rst', 'validation.rst',
+        'tests.md', 'practices-rust.md',
     }
     actual_names = { f.name for f in instruction_files }
     for name in expected_files:

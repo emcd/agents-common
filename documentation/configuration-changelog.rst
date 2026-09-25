@@ -83,6 +83,12 @@ Enhancements
   (Purpose / Tech Stack / Notes) with Copier ``_skip_if_exists`` so
   ``copier update`` does not clobber local project knowledge. Generated
   entrypoint stays pointer-only.
+- Stage ``tests.md`` and ``practices-rust.md`` from
+  ``python-project-common`` ``docs-1.9``
+  (``82082295a30c9ef2aa4c633bc609df70c4a0e127``) into
+  ``distribution/per-project/general/instructions/`` for populate.
+  No header strip. This is an ingest slice, not retirement of the
+  Copier instruction fetch.
 - Default instructions target is ``.auxiliary/agents/standards`` (replacing
   older instruction homes); instruction sync copies from distribution
   general instructions into that target.
