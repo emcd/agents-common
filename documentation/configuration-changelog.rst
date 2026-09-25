@@ -90,6 +90,10 @@ Enhancements
   engaged tier. OpenSpec proposal review follows that procedure.
   Agentmux ``Cc`` is not a Tier-2 bypass. Handoff hygiene says
   coordination levels, not review tiers.
+- OpenSpec procedure: a wording change sweeps ``design.md`` and
+  ``proposal.md``, not only the delta spec and ``tasks.md``.
+  Consulting the procedure does not authorize a proposal. Todo
+  completion is the title checkbox, not a status tag.
 - Default OpenCode ``build`` and ``plan`` agents to
   ``meta/muse-spark-1.3-contributor`` (Meta metered API, not a
   subscription or OpenCode Zen free tier).

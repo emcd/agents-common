@@ -17,7 +17,7 @@ The `nb` MCP server provides LLM-friendly access to the `nb` note-taking system 
 Use consistent tags for discoverability:
 - **Project Component**: `#component-<name>` (e.g., `#component-data-models`)
 - **Task Type**: `#task-<type>` (e.g., `#task-design`, `#task-bug`)
-- **Status**: `#status-<state>` (e.g., `#status-in-progress`, `#status-review`)
+- **Status**: `#status-<state>` (e.g., `#status-in-progress`, `#status-review`) on notes that have no checkbox. Do not put status tags on todos. The title checkbox is the completion state. Use `do` and `tasks`.
 - **Coordination**: `#handoff`, `#coordination`
 - **Assignment**: Avoid owner tags (for example `#llm-*`) for task ownership. Use lane/folder ownership and explicit owner text in the note body when needed.
 
