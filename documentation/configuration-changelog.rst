@@ -93,6 +93,9 @@ Enhancements
   ``cs-release-maintenance``. No distribution commands remain.
 - Retire distribution subagents ``python-annotator`` and
   ``python-conformer``. They restated deleted command workflows.
+- Keep empty ``components/configurations`` and ``components/contents``
+  in Git with an empty ``.gitignore``. ``generate`` requires those
+  directories.
 - Codify two-tier technical review in the template review procedure.
   Tier-1 Reviewer is the gate. Tier-2 Reviewer, usually an Advisor,
   is engaged only after Tier-1 approval. Authors must not dictate
