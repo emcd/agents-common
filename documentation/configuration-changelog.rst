@@ -137,6 +137,10 @@ Enhancements
 - Cross-harness shell allowlists expanded for common read-oriented and
   development commands; Claude, OpenCode, and Codex harness-level
   allowlists permit ``readlink`` and ``test`` (argument forms only).
+- Cross-harness shell allowlists permit ``date``, ``printf``, ``set``,
+  ``sleep``, ``stat``, and ``uname``. Bare forms are included where the
+  bare command is the common invocation (``date``, ``uname``); ``cd``
+  needs no entry since OpenCode never prompts for directory changes.
 - Codex Starlark rules allowlist (including selected git write prefixes
   such as commit/tag) and approval routing defaults suitable for trusted
   local development.
