@@ -500,6 +500,9 @@ def _detect_orphaned_artifacts(
     distribution: __.Path,
     coders: __.cabc.Sequence[ str ],
     expected_paths: set[ __.Path ],
+    renderers: __.typx.Optional[
+        __.cabc.Mapping[ str, _renderers.RendererBase ]
+    ] = None,
 ) -> list[ str ]:
     ''' Detects orphaned artifacts in distribution/.
 
@@ -508,10 +511,16 @@ def _detect_orphaned_artifacts(
         glob pattern the renderer uses for artifacts of that type (via
         ``calculate_artifact_pattern``). Reports any files matching the
         pattern that are not in expected_paths.
+
+        The renderer registry is injectable so tests can supply isolated
+        mappings without mutating the global registry; production callers
+        omit it to use the registered renderers.
     '''
+    registry = (
+        renderers if renderers is not None else _renderers.RENDERERS )
     orphans: list[ str ] = [ ]
     for coder in coders:
-        try: renderer = _renderers.RENDERERS[ coder ]
+        try: renderer = registry[ coder ]
         except KeyError: continue
         coder_dir = distribution / 'per-project' / 'coders' / coder
         if not coder_dir.exists( ): continue

@@ -28,7 +28,6 @@
 
 from pathlib import Path
 
-import pytest
 import tyro
 
 from . import __
@@ -162,24 +161,6 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
         f"Expected prompt resource at {prompt_resource}" )
 
 
-@pytest.fixture
-def isolated_renderer_registry( monkeypatch ):
-    ''' Provides an isolated ``agentsmgr.renderers.RENDERERS`` registry.
-
-        Copies the current ``RENDERERS`` accretive dictionary and
-        replaces it with the copy via monkeypatch. Tests can register
-        custom renderers and forget about cleanup; the original
-        registry is restored on teardown via monkeypatch's undo.
-
-        Required because ``RENDERERS`` is grow-only (accretive); tests
-        that mutate the global registry leak entries otherwise.
-    '''
-    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
-    fresh = renderers_module.RENDERERS.copy( )
-    monkeypatch.setattr( renderers_module, 'RENDERERS', fresh )
-    return fresh
-
-
 def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     ''' generate --check should detect stale or missing artifacts. '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
@@ -215,7 +196,7 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
 
 
 def test_420_orphan_detection_respects_custom_directory_name(
-    tmp_path, isolated_renderer_registry,
+    tmp_path,
 ):
     ''' When a renderer overrides calculate_directory_location, orphan
         detection should use the override, not the hardcoded default.
@@ -224,9 +205,8 @@ def test_420_orphan_detection_respects_custom_directory_name(
         named 'custom-cmd-dir' and verifies that orphan detection
         scans only that custom directory, not the default 'commands'.
 
-        The ``isolated_renderer_registry`` fixture copies the global
-        ``RENDERERS`` accretive dictionary so this test does not leak
-        its temporary entry into later tests.
+        The custom renderer is injected as an explicit mapping rather
+        than registered globally, so no cleanup is needed.
     '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
     renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
@@ -244,7 +224,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
             return item_type
 
     custom_renderer = _CustomCommandsRenderer( )
-    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+    renderers = { custom_renderer.name: custom_renderer }
 
     coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
     # File in the renderer's overridden directory: must be detected.
@@ -259,7 +239,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
         'orphan', encoding = 'utf-8' )
 
     orphans = operations_module._detect_orphaned_artifacts(
-        tmp_path, ( custom_renderer.name, ), set( ) )
+        tmp_path, ( custom_renderer.name, ), set( ), renderers )
     assert len( orphans ) == 1
     assert 'orphaned artifact' in orphans[ 0 ]
     assert 'custom-cmd-dir/zz-orphan.md' in orphans[ 0 ]
@@ -267,7 +247,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
 
 
 def test_430_orphan_detection_respects_custom_artifact_pattern(
-    tmp_path, isolated_renderer_registry,
+    tmp_path,
 ):
     ''' When a renderer overrides calculate_artifact_pattern, orphan
         detection should use the override, not the hardcoded '*.md'.
@@ -278,9 +258,8 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
         pattern. Markdown files in the same directory must be
         ignored (not the renderer's artifact shape).
 
-        The ``isolated_renderer_registry`` fixture copies the global
-        ``RENDERERS`` accretive dictionary so this test does not leak
-        its temporary entry into later tests.
+        The custom renderer is injected as an explicit mapping rather
+        than registered globally, so no cleanup is needed.
     '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
     renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
@@ -298,7 +277,7 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
             return super( ).calculate_artifact_pattern( item_type )
 
     custom_renderer = _JsonCommandsRenderer( )
-    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+    renderers = { custom_renderer.name: custom_renderer }
 
     coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
     commands_dir = coder_dir / 'commands'
@@ -312,7 +291,7 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
         'ignored', encoding = 'utf-8' )
 
     orphans = operations_module._detect_orphaned_artifacts(
-        tmp_path, ( custom_renderer.name, ), set( ) )
+        tmp_path, ( custom_renderer.name, ), set( ), renderers )
     assert len( orphans ) == 1, (
         f"Expected exactly one orphan, got {orphans}" )
     assert 'orphaned artifact' in orphans[ 0 ]

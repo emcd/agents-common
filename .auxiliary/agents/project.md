@@ -14,7 +14,7 @@ consistency across multiple projects and users.
 
 ## Tech Stack
 
-- **Language:** Python (>= 3.10)
+- **Language:** Python (>= 3.12)
 - **Build System:** Hatch (hatchling)
 - **Core Dependencies:**
     - `emcd-appcore[cli]` (Application framework)
@@ -39,6 +39,12 @@ consistency across multiple projects and users.
 ## Notes
 
 - Self-dogfooding procedure for template/default changes: `procedures/1`.
+- Prefer dependency injection over monkey-patching for package-owned
+  objects (which Classcore/Frigid immutability may freeze); monkeypatch
+  third-party objects, process state, and ambient environment only.
+  `_detect_orphaned_artifacts` already accepts an explicit renderer
+  registry; threading one through `resolve_coders` and the remaining
+  direct `RENDERERS` reads is tracked follow-up work.
 
 <!-- Accumulate project-specific knowledge, constraints, deviations, and durable
      links here. For structured items, use `nb`.
