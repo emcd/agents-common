@@ -23,6 +23,15 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a15 (2026-10-15)
+=============================
+
+Repairs
+-------
+
+- Fix the release workflow executable upload pin, which referenced a nonexistent action version.
+
+
 agentsmgr 1.0a14 (2026-10-15)
 =============================
 
