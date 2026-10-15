@@ -26,3 +26,17 @@ jobs:
     uses: emcd/python-project-common/.github/workflows/xrepo--reporter.yaml@gha-1
     with:
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
+
+  generate-check:
+    needs: [initialize]
+    name: Distribution Staleness Check
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Prepare Python
+        uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
+        with:
+          python-version: ${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}
+
+      - name: Check Distribution Staleness
+        run: hatch run agentsmgr generate --check
