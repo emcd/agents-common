@@ -189,7 +189,7 @@ jobs:
           shell: bash
 
         - name: Save Executable
-          uses: actions/upload-artifact@v8
+          uses: actions/upload-artifact@v7
           with:
             name: executables--${{ matrix.platform-name }}--${{ github.run_id }}
             path: .auxiliary/artifacts/pyinstaller/emcd-agents-*
