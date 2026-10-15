@@ -1,0 +1,32 @@
+name: content
+
+# Project-owned workflow (not Copier-managed): neither the
+# python-project-common template nor this repository's agents template
+# renders this file, so local edits survive template updates.
+# Guards agents content staleness: distribution/ must match components/.
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['master', 'release-*']
+  workflow_dispatch: {}
+
+jobs:
+
+  initialize:
+    uses: ./.github/workflows/core--initializer.yaml
+
+  generate-check:
+    needs: [initialize]
+    name: Distribution Staleness Check
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Prepare Python
+        uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
+        with:
+          python-version: ${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}
+
+      - name: Check Distribution Staleness
+        run: hatch run agentsmgr generate --check
