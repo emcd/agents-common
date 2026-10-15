@@ -1,0 +1,46 @@
+# Copier data file: single-source instructions migration.
+#
+# Downstream projects updating across the instructions retirement pass
+# this file to pick up renamed answers instead of keeping stale values:
+#
+#   copier update \
+#       --data-file https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml \
+#       --answers-file .auxiliary/configuration/copier-answers--agents.yaml \
+#       --skip-answered
+#
+# Replace <ref> with the agents template tag under adoption. Without
+# this file, copier preserves the recorded answers, which silently
+# keeps the retired layout (see below).
+#
+# Where things live after updating to the latest template:
+#
+# - `.auxiliary/agents/standards/` holds the 21 staged instruction
+#   guides (Markdown). This directory is populate-created from this
+#   repository's `distribution/.../instructions/`, never templated:
+#   the template tree deliberately contains zero `standards` paths.
+# - `.auxiliary/agents/skills/`, coder `prompt/` resources, and the
+#   standards above are populate-managed and git-excluded (see
+#   `.git/info/exclude`, managed block). The generated `AGENTS.md`
+#   entrypoint references the standards per language.
+# - Coder `settings.json` / `settings.jsonc` / `config.toml`, Starlark
+#   rules, and MCP server configs are template-rendered and tracked.
+#
+# What must no longer exist after the update:
+#
+# - `instructions_sources` and `provide_instructions` answers keys.
+#   Removed questions auto-drop from answers on update; no data file
+#   entry is needed (or possible) for removals.
+# - `coders/*/agents`, `coders/*/commands` (and opencode singular
+#   `agent`/`command`) directories. Commands and subagents were
+#   retired: delete leftover tracked copies outright. Do NOT add
+#   exclude entries for them — removed means absent, not excluded.
+# - `.auxiliary/instructions/`, the retired instruction home. Populate
+#   copies but never deletes, so remove the stale tree by hand after
+#   pointing `instructions_target` here.
+# - `*.rst` files under standards directories (legacy translations
+#   predating the Markdown migration).
+#
+# Rollback of the data-file answers alone is re-running the update
+# without it; rollback of populated content is deleting the managed
+# trees and re-populating.
+instructions_target: .auxiliary/agents/standards
