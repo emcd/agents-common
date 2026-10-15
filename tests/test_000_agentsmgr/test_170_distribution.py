@@ -35,13 +35,15 @@ from . import __
 
 
 def _distribution_location( ) -> Path:
-    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'distribution'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'distribution' )
 
 
 def _components_location( ) -> Path:
-    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'components'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'components' )
 
 
 def _project_root( ) -> Path:
@@ -134,7 +136,7 @@ def test_200_generate_produces_no_coder_artifacts( tmp_path ):
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
     ''' Static resource subpaths should be preserved during copy.
-        e.g., prompt/nemotron-3-build.md should not lose prompt/ prefix. '''
+        e.g., prompt/fixture-prompt.md should not lose prompt/ prefix. '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -155,7 +157,7 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
     assert written > 0
     prompt_resource = (
         target / '.auxiliary' / 'configuration' / 'coders' / 'opencode'
-        / 'prompt' / 'nemotron-3-build.md' )
+        / 'prompt' / 'fixture-prompt.md' )
     assert prompt_resource.exists( ), (
         f"Expected prompt resource at {prompt_resource}" )
 
@@ -372,10 +374,10 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
     assert (
-        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '/.auxiliary/agents/skills/fixture-skill/SKILL.md'
         in exclude_content )
     assert (
-        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        '/.auxiliary/configuration/coders/opencode/prompt/fixture-prompt.md'
         in exclude_content )
     assert '/.claude' in exclude_content
     assert '/.opencode' in exclude_content
@@ -394,17 +396,17 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     # Simulate removal: re-copy with one file missing
     stale_file = (
         location / 'per-project' / 'general' / 'skills'
-        / 'cs-review-todos.md' )
+        / 'fixture-skill.md' )
     stale_file.unlink( )
     _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
-        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '/.auxiliary/agents/skills/fixture-skill/SKILL.md'
         not in exclude_content2 )
     # Other entries should remain
     assert (
-        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        '/.auxiliary/configuration/coders/opencode/prompt/fixture-prompt.md'
         in exclude_content2 )
     assert '/.opencode' in exclude_content2
 
@@ -455,7 +457,8 @@ def test_660_git_exclude_normalizes_windows_entries( tmp_path ):
 
 def test_700_instructions_copied_from_distribution( tmp_path ):
     ''' Instructions should be copied from distribution/, not fetched
-        from network. Verifies the expected corpus is present. '''
+        from network. Verifies copy fidelity over the fixture corpus
+        (deliberately not the live corpus, which churns independently). '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -467,13 +470,7 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
         path for path in instructions_dir.glob( '*' ) if path.is_file( ) ]
     # Verify specific expected files are present
     expected_files = {
-        'conduct.md', 'contribution.md', 'environment.md',
-        'environment-python.md', 'maintenance.md', 'nomenclature.md',
-        'nomenclature-germanic.md', 'nomenclature-latin.md',
-        'practices.md', 'practices-python.md', 'practices-rust.md',
-        'practices-toml.md', 'python-autoformat.md', 'releases.md',
-        'releases-python.md', 'requirements.md', 'style.md', 'tests.md',
-        'tests-python.md', 'validation.md', 'validation-python.md',
+        'fixture-alpha.md', 'fixture-beta.md', 'fixture-gamma.md',
     }
     actual_names = { f.name for f in instruction_files }
     for name in expected_files:

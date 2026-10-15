@@ -29,8 +29,9 @@ from . import __
 
 
 def _defaults_location( ) -> Path:
-    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'distribution'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'distribution' )
 
 
 def test_100_skills_copy_to_skill_md_under_skill_directory( tmp_path ):
@@ -43,15 +44,14 @@ def test_100_skills_copy_to_skill_md_under_skill_directory( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'cs-review-todos', 'claude', tmp_path )
+        'skills', 'fixture-skill', 'claude', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/fixture-skill/SKILL.md'
     )
-    assert 'name: "cs-review-todos"' in rendered.content
+    assert 'name: "fixture-skill"' in rendered.content
     assert (
-        'description: "Review open todos and issues in the project'
-        ' notebook using the nb MCP server."'
+        'description: "Fixture skill for distribution tests."'
         in rendered.content
     )
 
@@ -66,12 +66,12 @@ def test_200_skills_are_portable_across_coders( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'cs-review-todos', 'codex', tmp_path )
+        'skills', 'fixture-skill', 'codex', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/fixture-skill/SKILL.md'
     )
-    assert 'name: "cs-review-todos"' in rendered.content
+    assert 'name: "fixture-skill"' in rendered.content
 
 
 def test_300_skills_use_canonical_path_for_opencode( tmp_path ):
@@ -87,10 +87,10 @@ def test_300_skills_use_canonical_path_for_opencode( tmp_path ):
         mode = 'per-project',
     )
     rendered = generator.render_single_item(
-        'skills', 'cs-review-todos', 'opencode', tmp_path )
+        'skills', 'fixture-skill', 'opencode', tmp_path )
     assert rendered.location == (
         tmp_path /
-        '.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '.auxiliary/agents/skills/fixture-skill/SKILL.md'
     )
 
 

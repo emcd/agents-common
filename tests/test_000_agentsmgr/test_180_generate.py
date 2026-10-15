@@ -55,7 +55,9 @@ def _run_application( args: list[ str ] ) -> None:
 
 
 def _components_location( ) -> Path:
-    return Path( __file__ ).resolve( ).parents[ 2 ] / 'components'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'components' )
 
 
 def _profile_path( name: str ) -> Path:
@@ -90,7 +92,7 @@ def test_100_generate_help_exposes_unprefixed_options( ):
 
 
 def test_200_default_mode_renders_to_explicit_output( tmp_path ):
-    ''' Default mode accepts an explicit --output. Components currently
+    ''' Default mode accepts an explicit --output. Fixture components
         define no commands or agents, so the run writes no artifacts. '''
     target = tmp_path / 'distribution'
     _run_application( [
