@@ -517,17 +517,15 @@ def _manage_project_auxiliaries(
     simulate: bool
 ) -> None:
     ''' Manages auxiliary project files (instructions, symlinks, excludes). '''
-    instruction_entries: tuple[ str, ... ] = ( )
-    if configuration.get( 'provide_instructions', False ):
-        instructions_target = configuration.get(
-            'instructions_target', '.auxiliary/agents/standards' )
-        instructions_attempted, instructions_written, instruction_entries = (
-            _copy_instructions_from_distribution(
-                distribution, target, instructions_target, simulate ) )
-        if instructions_written > 0:
-            _scribe.info(
-                f"Copied {instructions_written}/{instructions_attempted} "
-                "instruction files" )
+    instructions_target = configuration.get(
+        'instructions_target', '.auxiliary/agents/standards' )
+    instructions_attempted, instructions_written, instruction_entries = (
+        _copy_instructions_from_distribution(
+            distribution, target, instructions_target, simulate ) )
+    if instructions_written > 0:
+        _scribe.info(
+            f"Copied {instructions_written}/{instructions_attempted} "
+            "instruction files" )
     all_symlink_names: list[ str ] = list( _create_all_symlinks(
         configuration, target, 'per-project', simulate ) )
     git_exclude_entries: list[ str ] = list( distribution_entries )

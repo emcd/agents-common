@@ -141,6 +141,16 @@ Enhancements
   ``sleep``, ``stat``, and ``uname``. Bare forms are included where the
   bare command is the common invocation (``date``, ``uname``); ``cd``
   needs no entry since OpenCode never prompts for directory changes.
+- Single-source staged instructions from ``documentation-common``
+  (immutable ``v1.0.3``): ``distribution/.../instructions/`` holds 21
+  Markdown guides with license headers stripped; 16 legacy ``.rst``
+  translations intentionally deleted. The ``instructions_sources`` map
+  is removed from Copier template defaults, test profiles, and answers
+  (populate never consulted it); per-language selection lives in the
+  template entrypoint reference list. The ``provide_instructions``
+  boolean is removed: instructions are always provisioned (small,
+  git-excluded footprint), so former opt-outs receive standards on
+  their next populate.
 - Codex Starlark rules allowlist (including selected git write prefixes
   such as commit/tag) and approval routing defaults suitable for trusted
   local development.

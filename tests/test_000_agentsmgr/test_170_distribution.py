@@ -63,7 +63,6 @@ def _create_agents_answers_file( target: Path ) -> None:
             '- opencode',
             'languages:',
             '- python',
-            'provide_instructions: true',
             'instructions_target: .auxiliary/agents/standards',
         ) ) + '\n',
         encoding = 'utf-8' )
@@ -468,9 +467,13 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
         path for path in instructions_dir.glob( '*' ) if path.is_file( ) ]
     # Verify specific expected files are present
     expected_files = {
-        'practices.rst', 'practices-python.rst', 'style.rst',
-        'nomenclature.rst', 'tests.rst', 'validation.rst',
-        'tests.md', 'practices-rust.md',
+        'conduct.md', 'contribution.md', 'environment.md',
+        'environment-python.md', 'maintenance.md', 'nomenclature.md',
+        'nomenclature-germanic.md', 'nomenclature-latin.md',
+        'practices.md', 'practices-python.md', 'practices-rust.md',
+        'practices-toml.md', 'python-autoformat.md', 'releases.md',
+        'releases-python.md', 'requirements.md', 'style.md', 'tests.md',
+        'tests-python.md', 'validation.md', 'validation-python.md',
     }
     actual_names = { f.name for f in instruction_files }
     for name in expected_files:
@@ -499,10 +502,9 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
             f"Entry should not be directory: {entry}" )
 
 
-def test_800_provide_instructions_false_disables_copy( tmp_path ):
-    ''' When provide_instructions is false, _manage_project_auxiliaries
-        should not copy instruction files or produce instruction exclude
-        entries. '''
+def test_800_instructions_copied_without_flag( tmp_path ):
+    ''' Without any provide_instructions flag, _manage_project_auxiliaries
+        copies instruction files unconditionally. '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -516,14 +518,13 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     configuration = {
         'coders': [ 'claude' ],
         'languages': [ 'python' ],
-        'provide_instructions': False,
     }
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
-    # Verify no instruction files were copied
+    # Verify instruction files were copied
     target_standards = target / '.auxiliary' / 'agents' / 'standards'
-    assert not target_standards.exists( ) or \
-        len( list( target_standards.glob( '*' ) ) ) == 0
+    assert target_standards.exists( )
+    assert len( list( target_standards.glob( '*.md' ) ) ) > 0
 
 
 def test_900_instructions_sources_not_consulted( tmp_path ):
@@ -543,7 +544,6 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     configuration = {
         'coders': [ 'claude' ],
         'languages': [ 'python' ],
-        'provide_instructions': True,
         'instructions_sources': [
             { 'source': 'github:emcd/python-project-common@docs-1' }
         ],
@@ -553,12 +553,12 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     # Verify instructions were copied from distribution/ (local), not network
     target_standards = target / '.auxiliary' / 'agents' / 'standards'
     assert target_standards.exists( )
-    copied_files = list( target_standards.glob( '*.rst' ) )
+    copied_files = list( target_standards.glob( '*.md' ) )
     assert len( copied_files ) > 0
     # Verify the files match the distribution corpus
     source_instructions = (
         location / 'per-project' / 'general' / 'instructions' )
-    source_files = list( source_instructions.glob( '*.rst' ) )
+    source_files = list( source_instructions.glob( '*.md' ) )
     assert len( copied_files ) == len( source_files )
 
 

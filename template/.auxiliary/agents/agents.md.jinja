@@ -9,23 +9,21 @@
 
 # Development Standards
 
-{%- if provide_instructions %}
 Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
-- `practices.rst` - General development principles (robustness, immutability, exception chaining)
+- `practices.md` - General development principles (robustness, immutability, exception chaining)
 {%- if "python" in languages %}
-- `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
+- `practices-python.md` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
 {%- endif %}
 {%- if "rust" in languages %}
-- `practices-rust.rst` - Rust-specific patterns (error handling, trait design, module organization)
+- `practices-rust.md` - Rust-specific patterns (error handling, trait design, module organization)
 {%- endif %}
-- `nomenclature.rst` - Naming conventions for variables, functions, classes, exceptions
-- `style.rst` - Code formatting standards (spacing, line length, documentation mood)
+- `nomenclature.md` - Naming conventions for variables, functions, classes, exceptions
+- `style.md` - Code formatting standards (spacing, line length, documentation mood)
 {%- if "python" in languages %}
-- `validation.rst` - Quality assurance requirements (linters, type checkers, tests)
+- `validation.md` - Quality assurance requirements (linters, type checkers, tests)
 {%- endif %}
-{%- else %}
-Before implementing code changes, consult `documentation/development.md` if it exists.
-{%- endif %}
+- `tests.md` - Testing expectations and patterns (observable behavior through public contracts)
+- `contribution.md` - Contribution workflow (conduct, validation before submit, OpenSpec proposal flow)
 
 # Operation
 
@@ -73,7 +71,7 @@ Before implementing code changes, consult `documentation/development.md` if it e
 
 ## Tests Development
 
-Rust test layout and inline `#[cfg(test)]` rules are in `.auxiliary/agents/standards/practices-rust.rst` (testing).
+Rust test layout and inline `#[cfg(test)]` rules are in `.auxiliary/agents/standards/practices-rust.md` (testing).
 {%- endif %}
 
 ## Agentmux Message Handling Guidance

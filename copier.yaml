@@ -42,49 +42,7 @@ support_local_models:
     help: Include support local models.
     default: false
 
-provide_instructions:
-    type: bool
-    help: Download instructions for AI agents
-    default: true
-
 instructions_target:
     type: str
     help: Target directory for instruction files
     default: ".auxiliary/agents/standards"
-    when: "{{ provide_instructions }}"
-
-instructions_sources:
-    type: yaml
-    help: Git sources for documentation instructions
-    default: |
-      {%- if "rust" in languages and "python" not in languages %}
-      - source: "github:emcd/python-project-common@docs-1#documentation/common"
-        files:
-          "conduct.rst": {strip_header_lines: 20}
-          "maintenance.rst": {strip_header_lines: 20}
-          "nomenclature.rst": {strip_header_lines: 20}
-          "practices.rst": {strip_header_lines: 20}
-          "practices-rust.rst": {strip_header_lines: 20}
-          "requirements.rst": {strip_header_lines: 20}
-          "style.rst": {strip_header_lines: 20}
-      {%- else %}
-      - source: "github:emcd/python-project-common@docs-1#documentation/common"
-        files:
-          "conduct.rst": {strip_header_lines: 20}
-          "environment.rst": {strip_header_lines: 20}
-          "maintenance.rst": {strip_header_lines: 20}
-          "nomenclature-germanic.rst": {strip_header_lines: 20}
-          "nomenclature-latin.rst": {strip_header_lines: 20}
-          "nomenclature.rst": {strip_header_lines: 20}
-          "practices-python.rst": {strip_header_lines: 20}
-          "practices.rst": {strip_header_lines: 20}
-          "practices-rust.rst": {strip_header_lines: 20}
-          "practices-toml.rst": {strip_header_lines: 20}
-          "python-autoformat.rst": {strip_header_lines: 20}
-          "releases.rst": {strip_header_lines: 20}
-          "requirements.rst": {strip_header_lines: 20}
-          "style.rst": {strip_header_lines: 20}
-          "tests.rst": {strip_header_lines: 20}
-          "validation.rst": {strip_header_lines: 20}
-      {%- endif %}
-    when: "{{ provide_instructions }}"
