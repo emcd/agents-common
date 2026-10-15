@@ -109,13 +109,13 @@ of this change.
 - **THEN** they do not teach `documentation/specifications|designs|decisions`
   as the fleet replacement for OpenSpec capability homes in this change
 
-### Requirement: Instruction source selection omits architecture.rst
+### Requirement: Instruction source selection omits architecture content
 
-Stop-shipping of the upstream `architecture.rst` instruction SHALL use an
-explicit file map for `github:emcd/python-project-common@docs-1` (and
-equivalent) that omits `architecture.rst`, applied in Copier template
-defaults and default/maximum test profiles. This change SHALL NOT add a
-new instruction-exclusion API.
+Stop-shipping of upstream `architecture.*` instruction content SHALL be
+ensured by omitting it from the ingest manifest and staged distribution
+instructions. Copier template defaults and test profiles carry no
+instruction source map. This change SHALL NOT add a new
+instruction-exclusion API.
 
 Tracked `distribution/per-project/general/instructions/architecture.rst`
 SHALL be removed intentionally in this repository. Self-dogfood Copier
@@ -126,7 +126,9 @@ under `agents-common:todos/agentsmgr/10`.
 #### Scenario: Defaults and profiles omit architecture.rst
 
 - **WHEN** Copier template defaults and test profiles are inspected
-- **THEN** `architecture.rst` is absent from the explicit docs-1 map
+- **THEN** they carry no instruction source map, and `architecture.*`
+  is absent from the ingest manifest and staged distribution
+  instructions
 
 #### Scenario: Distribution artifact removed intentionally
 

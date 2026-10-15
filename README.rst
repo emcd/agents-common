@@ -175,6 +175,10 @@ Update base configuration templates:
 
     copier update --answers-file .auxiliary/configuration/copier-answers--agents.yaml
 
+Configuration and Copier template release notes (``agents-*`` tags) are in
+``documentation/configuration-changelog.rst``. Package (PyPI) notes remain in
+``documentation/changelog.rst``.
+
 Use Cases
 ===============================================================================
 

@@ -63,7 +63,6 @@ def _create_agents_answers_file( target: Path ) -> None:
             '- opencode',
             'languages:',
             '- python',
-            'provide_instructions: true',
             'instructions_target: .auxiliary/agents/standards',
         ) ) + '\n',
         encoding = 'utf-8' )
@@ -105,9 +104,9 @@ def test_100_populate_accepts_distribution_shape( tmp_path ):
         location, ( 'per-project', ) )
 
 
-def test_200_generate_produces_opencode_fallback( tmp_path ):
-    ''' generate should produce artifacts for all known coders,
-        including OpenCode via fallback to Claude content. '''
+def test_200_generate_produces_no_coder_artifacts( tmp_path ):
+    ''' generate should write no command or agent artifacts when
+        components define none. '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
     generator_module = __.cache_import_module( 'agentsmgr.generator' )
     population_module = __.cache_import_module( 'agentsmgr.population' )
@@ -126,13 +125,11 @@ def test_200_generate_produces_opencode_fallback( tmp_path ):
     )
     attempted, written = operations_module.generate_distribution(
         generator, tmp_path, simulate = False )
-    assert attempted == 38
-    assert written == 38
-    opencode_commands = (
-        tmp_path / 'per-project' / 'coders' / 'opencode' / 'commands' )
-    assert opencode_commands.exists( )
-    # OpenCode uses fallback to Claude content
-    assert len( list( opencode_commands.glob( '*.md' ) ) ) == 17
+    assert attempted == 0
+    assert written == 0
+    opencode_agents = (
+        tmp_path / 'per-project' / 'coders' / 'opencode' / 'agents' )
+    assert not opencode_agents.exists( )
 
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
@@ -203,18 +200,8 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
     # Check should pass when distribution is current
     items_checked, diffs = operations_module.check_distribution_staleness(
         generator, tmp_path )
-    assert items_checked == 38
+    assert items_checked == 0
     assert diffs == [ ]
-    # Remove one artifact to simulate staleness (missing)
-    stale_file = (
-        tmp_path / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-code-python.md' )
-    if stale_file.exists( ):
-        stale_file.unlink( )
-    items_checked, diffs = operations_module.check_distribution_staleness(
-        generator, tmp_path )
-    assert items_checked == 38
-    assert any( 'missing' in d for d in diffs )
     # Add an orphaned artifact to detect extra files
     orphan_dir = (
         tmp_path / 'per-project' / 'coders' / 'claude' / 'commands' )
@@ -385,7 +372,7 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
+        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
         in exclude_content )
     assert (
         '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
@@ -406,14 +393,14 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
         not in exclude_content )
     # Simulate removal: re-copy with one file missing
     stale_file = (
-        location / 'per-project' / 'coders' / 'claude' / 'commands'
-        / 'cs-code-python.md' )
+        location / 'per-project' / 'general' / 'skills'
+        / 'cs-review-todos.md' )
     stale_file.unlink( )
     _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
-        '/.auxiliary/configuration/coders/claude/commands/cs-code-python.md'
+        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
         not in exclude_content2 )
     # Other entries should remain
     assert (
@@ -476,11 +463,17 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
     # Verify instruction files exist in distribution
     instructions_dir = location / 'per-project' / 'general' / 'instructions'
     assert instructions_dir.exists( )
-    instruction_files = list( instructions_dir.glob( '*.rst' ) )
+    instruction_files = [
+        path for path in instructions_dir.glob( '*' ) if path.is_file( ) ]
     # Verify specific expected files are present
     expected_files = {
-        'practices.rst', 'practices-python.rst', 'style.rst',
-        'nomenclature.rst', 'tests.rst', 'validation.rst',
+        'conduct.md', 'contribution.md', 'environment.md',
+        'environment-python.md', 'maintenance.md', 'nomenclature.md',
+        'nomenclature-germanic.md', 'nomenclature-latin.md',
+        'practices.md', 'practices-python.md', 'practices-rust.md',
+        'practices-toml.md', 'python-autoformat.md', 'releases.md',
+        'releases-python.md', 'requirements.md', 'style.md', 'tests.md',
+        'tests-python.md', 'validation.md', 'validation-python.md',
     }
     actual_names = { f.name for f in instruction_files }
     for name in expected_files:
@@ -509,10 +502,9 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
             f"Entry should not be directory: {entry}" )
 
 
-def test_800_provide_instructions_false_disables_copy( tmp_path ):
-    ''' When provide_instructions is false, _manage_project_auxiliaries
-        should not copy instruction files or produce instruction exclude
-        entries. '''
+def test_800_instructions_copied_without_flag( tmp_path ):
+    ''' Without any provide_instructions flag, _manage_project_auxiliaries
+        copies instruction files unconditionally. '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -526,14 +518,13 @@ def test_800_provide_instructions_false_disables_copy( tmp_path ):
     configuration = {
         'coders': [ 'claude' ],
         'languages': [ 'python' ],
-        'provide_instructions': False,
     }
     population_module._manage_project_auxiliaries(
         configuration, location, target, ( ), simulate = False )
-    # Verify no instruction files were copied
+    # Verify instruction files were copied
     target_standards = target / '.auxiliary' / 'agents' / 'standards'
-    assert not target_standards.exists( ) or \
-        len( list( target_standards.glob( '*' ) ) ) == 0
+    assert target_standards.exists( )
+    assert len( list( target_standards.glob( '*.md' ) ) ) > 0
 
 
 def test_900_instructions_sources_not_consulted( tmp_path ):
@@ -553,7 +544,6 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     configuration = {
         'coders': [ 'claude' ],
         'languages': [ 'python' ],
-        'provide_instructions': True,
         'instructions_sources': [
             { 'source': 'github:emcd/python-project-common@docs-1' }
         ],
@@ -563,12 +553,12 @@ def test_900_instructions_sources_not_consulted( tmp_path ):
     # Verify instructions were copied from distribution/ (local), not network
     target_standards = target / '.auxiliary' / 'agents' / 'standards'
     assert target_standards.exists( )
-    copied_files = list( target_standards.glob( '*.rst' ) )
+    copied_files = list( target_standards.glob( '*.md' ) )
     assert len( copied_files ) > 0
     # Verify the files match the distribution corpus
     source_instructions = (
         location / 'per-project' / 'general' / 'instructions' )
-    source_files = list( source_instructions.glob( '*.rst' ) )
+    source_files = list( source_instructions.glob( '*.md' ) )
     assert len( copied_files ) == len( source_files )
 
 
@@ -632,11 +622,8 @@ def test_500_populate_uses_explicit_target( tmp_path ):
     assert attempted > 0
     assert written > 0
     # Verify items were copied to target, not cwd
-    claude_commands = (
-        target / '.auxiliary' / 'configuration' / 'coders' / 'claude'
-        / 'commands' )
-    assert claude_commands.exists( ), (
-        f"Expected commands at {claude_commands}" )
+    skills = target / '.auxiliary' / 'agents' / 'skills'
+    assert skills.exists( ), f"Expected skills at {skills}"
     # Verify exclude entries are file-level paths relative to project root
     assert len( exclude_entries ) > 0
     for entry in exclude_entries:
@@ -646,4 +633,10 @@ def test_500_populate_uses_explicit_target( tmp_path ):
             'commands/' in entry
             or 'agents/' in entry
             or 'skills/' in entry
+            or entry == '.agents'
+            or entry.endswith( '/skills' )
         ), f"Exclude entry should reference distributed file: {entry}"
+    assert '.agents' in exclude_entries
+    assert any(
+        entry.endswith( 'agents/skills' ) or '/skills/' in entry
+        for entry in exclude_entries )

@@ -18,13 +18,18 @@ That hybrid keeps base settings on the proven Copier path while agent commands,
 agents, skills, and instructions can iterate without full template releases.
 Skills may be flat ``*.md`` files or full Agent Skills directories
 (``SKILL.md`` plus optional ``scripts/``, ``references/``, ``assets/``) under
-``distribution/per-project/general/skills/``; populate copies packages intact.
+``distribution/per-project/general/skills/``. Populate materializes packages
+once under ``.auxiliary/agents/skills/``, links root ``.agents`` →
+``.auxiliary/agents`` (so ``.agents/skills`` resolves), and links each coder
+``skills/`` directory to that canonical tree.
 Configuration is detected from Copier answers files, with defaults when answers
 are absent. Downstream populate records managed paths as file-level entries in
 `.git/info/exclude`.
 
-Content releases use lightweight `agents-N` git tags so consumers can pin or
-roll back configuration sets independently of package versioning.
+Content releases use lightweight `agents-*` git tags so consumers can pin or
+roll back configuration sets independently of package versioning. Notes for
+those cuts live in `documentation/configuration-changelog.rst` (not the
+package Towncrier changelog).
 
 ## Layout
 
@@ -62,6 +67,7 @@ template/               # Copier template for base coder configuration
 
 ## Commands
 
+- `agentsmgr --version` — print the running package version
 - `agentsmgr detect` — inspect project agent configuration
 - `agentsmgr generate` — render `components/` → `distribution/` (optional
   `--check`, `--answers-file`, `--output`)

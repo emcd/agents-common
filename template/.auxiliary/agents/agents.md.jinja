@@ -9,23 +9,21 @@
 
 # Development Standards
 
-{%- if provide_instructions %}
 Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
-- `practices.rst` - General development principles (robustness, immutability, exception chaining)
+- `practices.md` - General development principles (robustness, immutability, exception chaining)
 {%- if "python" in languages %}
-- `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
+- `practices-python.md` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
 {%- endif %}
 {%- if "rust" in languages %}
-- `practices-rust.rst` - Rust-specific patterns (error handling, trait design, module organization)
+- `practices-rust.md` - Rust-specific patterns (error handling, trait design, module organization)
 {%- endif %}
-- `nomenclature.rst` - Naming conventions for variables, functions, classes, exceptions
-- `style.rst` - Code formatting standards (spacing, line length, documentation mood)
+- `nomenclature.md` - Naming conventions for variables, functions, classes, exceptions
+- `style.md` - Code formatting standards (spacing, line length, documentation mood)
 {%- if "python" in languages %}
-- `validation.rst` - Quality assurance requirements (linters, type checkers, tests)
+- `validation.md` - Quality assurance requirements (linters, type checkers, tests)
 {%- endif %}
-{%- else %}
-Before implementing code changes, consult `documentation/development.md` if it exists.
-{%- endif %}
+- `tests.md` - Testing expectations and patterns (observable behavior through public contracts)
+- `contribution.md` - Contribution workflow (conduct, validation before submit, OpenSpec proposal flow)
 
 # Operation
 
@@ -50,7 +48,7 @@ Before implementing code changes, consult `documentation/development.md` if it e
 | Topic | File |
 |-------|------|
 | Project-specific guidance (project-owned) | @.auxiliary/agents/project.md |
-| `nb` MCP tools, tagging, and notebook organization | @.auxiliary/agents/procedures/notebook.md |
+| `nb` MCP tools, tagging, notebook organization, and handoff hygiene | @.auxiliary/agents/procedures/notebook.md |
 | OpenSpec proposals and workflow | @.auxiliary/agents/procedures/openspec.md |
 | Delegated review flow and stacked commits | @.auxiliary/agents/procedures/reviews.md |
 
@@ -73,13 +71,7 @@ Before implementing code changes, consult `documentation/development.md` if it e
 
 ## Tests Development
 
-- Prefer tests under `tests/unit` and `tests/integration` over inline `#[cfg(test)]` modules in `src/**`.
-- Prefer tests that exercise public interfaces; avoid source-inclusion patterns used only to reach private internals.
-- Inline `#[cfg(test)]` is permitted only when ALL of the following hold:
-  1. The tested item is crate-private **by design** (not by oversight or laziness) and making it testable externally would require widening its visibility or adding a `#[doc(hidden)] pub` escape hatch that would itself become unintended API surface.
-  2. No existing public interface exercises the same code path.
-  3. The inline test block contains at most **one** `#[test]` function.
-- If a candidate inline test fails any of these conditions, move it to `tests/unit` and widen visibility or restructure as needed. Do not default to inline to avoid that conversation; the friction is intentional.
+Rust test layout and inline `#[cfg(test)]` rules are in `.auxiliary/agents/standards/practices-rust.md` (testing).
 {%- endif %}
 
 ## Agentmux Message Handling Guidance
@@ -97,26 +89,14 @@ Before implementing code changes, consult `documentation/development.md` if it e
   - you are handing off completed work with validation results,
   - you are reporting a material risk, failure, or scope change.
 - Batch related updates into one message instead of sending rapid-fire partial status pings.
-- Use `Cc` only for agents who need to act or review; avoid broad `Cc` by default.
+- Use `Cc` only for agents who need to act or review; avoid broad `Cc` by default. Do not use `Cc` to engage a Tier-2 Reviewer. Tier routing is in @.auxiliary/agents/procedures/reviews.md.
 - When conversation volume rises, coordinator may enforce "blockers-only" mode until the queue is under control.
 
 ## OpenSpec Instructions
 
-This project uses OpenSpec 1.x (OPSX), the action-based workflow. OPSX skills
-deliver workflow instructions through the agentsmgr distribution pipeline.
+This project uses OpenSpec 1.x (OPSX). Skills, CLI queries, and conventions: @.auxiliary/agents/procedures/openspec.md.
 
-Workflow skills: `opsx-propose`, `opsx-explore`, `opsx-apply`,
-`opsx-sync`, `opsx-archive`.
-
-Use OPSX skills when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan).
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work.
-- Sounds ambiguous and you need the authoritative spec before coding.
-
-CLI state queries: `openspec list`, `openspec list --specs`,
-`openspec status --change <id>`, `openspec validate --all --strict`.
-
-When a commit completes an OpenSpec task or requirement, update the relevant OpenSpec task status in the same commit.
+Use an OPSX skill when the request mentions a proposal, spec, or plan; introduces a new capability, breaking change, or architecture shift; or is too ambiguous to implement without the spec. When a commit completes an OpenSpec task or requirement, update that task status in the same commit.
 
 # Commits
 
@@ -133,10 +113,6 @@ When a commit completes an OpenSpec task or requirement, update the relevant Ope
 ## Delegated Review and Stacked Commits
 
 **Read this section before reviewing or stacking commits.** @.auxiliary/agents/procedures/reviews.md covers the delegated review flow, review request packet format, and how to handle stacked commits with `--fixup`/`--autosquash`.
-
-## Rolling Handoffs
-
-**Read this before writing or updating a handoff note.** @.auxiliary/agents/procedures/notebook.md Handoff Hygiene covers when to update (pre-compaction primary), content shape, and anti-patterns. Do not refresh handoffs routinely mid-flight.
 
 # Collaboration
 

@@ -23,6 +23,17 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a14 (2026-10-15)
+=============================
+
+Enhancements
+------------
+
+- Add ``agentsmgr --version`` to print the running package version (works for
+  editable hatch installs and ``uv tool`` installs).
+- Single-source staged instructions from documentation-common and drop the instructions map and provision flag.
+
+
 agentsmgr 1.0a13 (2026-08-15)
 =============================
 

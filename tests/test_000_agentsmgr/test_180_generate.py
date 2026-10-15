@@ -90,16 +90,14 @@ def test_100_generate_help_exposes_unprefixed_options( ):
 
 
 def test_200_default_mode_renders_to_explicit_output( tmp_path ):
-    ''' Default mode (no flags) writes to distribution/ (or a custom
-        --output). Smoke test that the new flag surface doesn't break
-        the existing path. '''
+    ''' Default mode accepts an explicit --output. Components currently
+        define no commands or agents, so the run writes no artifacts. '''
     target = tmp_path / 'distribution'
     _run_application( [
         '--source', str( _components_location( ) ),
         '--output', str( target ),
     ] )
-    assert target.exists( )
-    assert any( target.rglob( '*.md' ) )
+    assert not target.exists( ) or not any( target.rglob( '*.md' ) )
 
 
 # --- Answers-file mode ---
@@ -113,8 +111,7 @@ def test_400_answers_file_mode_with_explicit_output( tmp_path ):
         '--output', str( target ),
         '--source', str( _components_location( ) ),
     ] )
-    assert target.exists( )
-    assert any( target.rglob( '*.md' ) )
+    assert not target.exists( ) or not any( target.rglob( '*.md' ) )
 
 
 def test_410_answers_file_mode_rejects_simulate( tmp_path ):
