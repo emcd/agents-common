@@ -10,6 +10,61 @@ The project follows [semantic versioning](https://semver.org/) for releases.
 <a id="release-process"></a>
 ## Release Process
 
+<a id="alpha-checkpoint"></a>
+### Alpha Checkpoint
+
+For automated alpha checkpoint releases on the primary development branch
+(`master`):
+
+1.  **Pre-Release Quality Check**: Run local quality assurance to catch
+    issues early:
+
+        git status && git pull origin master
+        hatch --env develop run linters
+        hatch --env develop run testers
+        hatch --env develop run docsgen
+
+    Also, ensure that at least one news fragment exists under
+    `.auxiliary/data/towncrier`.
+
+2.  **Changelog Generation**: Run Towncrier to update the changelog with
+    the current version:
+
+        hatch --env develop run towncrier build --keep --version $(hatch version)
+        git commit -am "Update changelog for v$(hatch version) release."
+
+3.  **Quality Assurance Phase**: Push commits and monitor the QA workflow:
+
+        git push origin master
+
+    Wait ~10 seconds for GitHub to trigger the workflow, then identify
+    the correct run with `gh run list --workflow=qa --limit=5` —
+    compare run creation time against your push time (`date --utc`)
+    and monitor only a run created AFTER the push:
+
+        gh run watch <qa-run-id> --compact --interval 30 --exit-status
+
+    On nonzero exit, fetch failed logs (`gh run view <qa-run-id>
+    --log-failed`) and stop for human direction if the workflow failed.
+
+4.  **Alpha Release Deployment**: Only after QA passes, tag and push:
+
+        git tag -m "Alpha checkpoint v$(hatch version)." v$(hatch version)
+        git push --tags
+
+    Monitor the release workflow the same way (`gh run list
+    --workflow=release ...`, `gh run watch ... --exit-status`),
+    again verifying the run postdates the tag push.
+
+5.  **Post-Release Cleanup**: Clean up news fragments and bump to the
+    next alpha:
+
+        git rm .auxiliary/data/towncrier/*.rst
+        git commit -m "Clean up news fragments."
+        hatch version alpha
+        git commit -am "Start of development for release $(hatch version)."
+        git push origin master
+
 <a id="pre-release-quality-check"></a>
 ### Pre-Release Quality Check
 
