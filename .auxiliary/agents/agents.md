@@ -8,12 +8,15 @@
 - Project purpose, tech stack, and other project-owned guidance: @.auxiliary/agents/project.md
 
 # Development Standards
+
 Before implementing code changes, consult these files in `.auxiliary/agents/standards/`:
-- `practices.rst` - General development principles (robustness, immutability, exception chaining)
-- `practices-python.rst` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
-- `nomenclature.rst` - Naming conventions for variables, functions, classes, exceptions
-- `style.rst` - Code formatting standards (spacing, line length, documentation mood)
-- `validation.rst` - Quality assurance requirements (linters, type checkers, tests)
+- `practices.md` - General development principles (robustness, immutability, exception chaining)
+- `practices-python.md` - Python-specific patterns (module organization, type annotations, wide parameter/narrow return)
+- `nomenclature.md` - Naming conventions for variables, functions, classes, exceptions
+- `style.md` - Code formatting standards (spacing, line length, documentation mood)
+- `validation.md` - Quality assurance requirements (linters, type checkers, tests)
+- `tests.md` - Testing expectations and patterns (observable behavior through public contracts)
+- `contribution.md` - Contribution workflow (conduct, validation before submit, OpenSpec proposal flow)
 
 # Operation
 
