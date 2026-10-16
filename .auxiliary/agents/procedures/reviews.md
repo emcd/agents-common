@@ -1,6 +1,6 @@
 # Delegated Review Flow
 
-Use this flow when multiple team members can access the same repository through branches or linked worktrees.
+Use this flow when an author requests review from reviewers working in other repositories — or in other clones of the same repository.
 
 ## Roles
 
@@ -28,6 +28,7 @@ After Tier-1 approval:
 
 ## Review cycle
 
+0. Operator pre-review. The author sends the scoped proposal to the **operator** for pre-review before any Tier-1/Tier-2 dispatch. Foundational objections are cheapest here; do not spend tier review on direction the operator would reject. Proceed on operator go-ahead.
 1. Author implements the scoped change, runs validation, and creates local/private review commit(s) so the diff is hash-stable and hook-checked.
 2. Author rebases onto the agreed `<local-integration-base>` and sends a review packet to the **Tier-1 Reviewer** only.
 3. Tier-1 Reviewer approves or requests changes.
@@ -42,16 +43,17 @@ After Tier-1 approval:
 
 Hold the unsquashed fixup stack for the entire technical review. Autosquash only after final approval, as the step that produces the stack the integrator merges when the base has not moved.
 
-The agreed `<local-integration-base>` is a Git ref in the current repository, such as local `master` or a local lane integration branch. It is not a filesystem path and is not a remote-tracking ref. Do not use `origin/master`, another `origin/*` ref, a path like `/path/to/repo/master`, or a raw commit hash as the rebase base unless the coordinator explicitly names that exact ref or hash. When in doubt, ask for the local branch/ref name before rebasing. Confirm it with `git branch --list <local-integration-base>` or `git rev-parse --verify <local-integration-base>` before running `git rebase`.
+The agreed `<local-integration-base>` is a Git ref in the current repository, such as local `master` or a local lane integration branch. It is not a filesystem path and is not a remote-tracking ref. Do not use `origin/master`, another `origin/*` ref, a path like `/path/to/repo/master`, or a raw commit hash as the rebase base unless the coordinator explicitly names that exact ref or hash. The exception is lane-clone syncing, which pulls from `origin/<integration-base>` as described below; that upstream is named by the clone topology, not by per-review direction. When in doubt, ask for the local branch/ref name before rebasing. Confirm it with `git branch --list <local-integration-base>` or `git rev-parse --verify <local-integration-base>` before running `git rebase`.
 
 ## Integrator flow
 
 1. Confirm the stack is approved by every engaged tier and already cleaned (fixups autosquashed). If fixups are still present, send it back to the author to fold before merge — do not start a content review.
 2. Confirm the cleaned stack is based on the **current** `<local-integration-base>`, and that the handoff names every engaged tier and states that each has approved. If the base has advanced (stale-base stack), **refuse the merge handoff** and route the author to rebase first. After rebase: a byte-identical stack may return as a merge handoff with fresh lint/test evidence; a non-identical stack follows the non-identical rebase rule under Review tiers. Do not merge a stale-base cleaned stack.
 3. If the base is current and the merge is otherwise clear, merge approved review branches with `--no-ff` when preserving a delegated-work or lane boundary; this creates a clear integration point and avoids mutually rebasing branches into increasingly long histories.
-4. Merge/push only after explicit human approval.
+4. When the branch owner is also the project owner, the owner merges the reviewer-approved cleaned stack directly after human approval, without a coordinator handoff.
+5. Merge/push only after explicit human approval.
 
-Prefer reviewing commits by hash. Use an explicit worktree path only for uncommitted diffs or commits in a different repository. Use patch artifacts only as a fallback when the reviewer cannot access the repository, branch, or worktree directly.
+Prefer reviewing commits by hash. Always give the path to your repository as well: its objects are not shared with the reviewer's repository, so hashes alone are not reviewable until fetched. Use patch artifacts only as a fallback when the reviewer cannot access the repository directly.
 
 # Review Request Packet
 
@@ -111,6 +113,6 @@ In an interactive human terminal you may instead run `git rebase -i --autosquash
 
 If the result is wrong, recover with `git reset --hard ORIG_HEAD` — git sets `ORIG_HEAD` to the exact pre-rebase position regardless of how far back `<local-integration-base>` was.
 
-For example, run `git rebase master` from the worktree branch when the coordinator says to rebase onto local `master`. Do not write `git rebase /path/to/repo/master`; that is a filesystem path, not a Git ref.
+For example, run `git pull --rebase origin master` from the clone when the coordinator says to sync with local `master`. Do not write `git rebase /path/to/repo/master`; that is a filesystem path, not a Git ref.
 
 If `git commit` fails because a hook rejects it, assume no commit was created unless Git clearly reports otherwise. Fix the hook finding, restage the intended files, and rerun the same `git commit` command. Do not use `git commit --amend` to recover from a failed commit attempt.
