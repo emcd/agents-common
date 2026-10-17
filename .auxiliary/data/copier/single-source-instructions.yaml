@@ -40,6 +40,18 @@
 # - `*.rst` files under standards directories (legacy translations
 #   predating the Markdown migration).
 #
+# Custom (project-owned) skills live in `.auxiliary/agents/skills/<name>/`
+# (directory package with SKILL.md, or flat `<name>.md` — the same
+# shapes populate installs). Populate merges distribution skills into
+# that tree and never deletes foreign entries; only the per-coder
+# `skills/` discovery symlinks are replaced. Move any custom skills
+# out of `coders/*/skills/` before populating.
+#
+# Run `copier update` and `agentsmgr populate` together before
+# committing, so generated state and exclusions land in the same
+# changeset. Committing the update first leaves downstream clones
+# holding half-migrated trees.
+#
 # Rollback of the data-file answers alone is re-running the update
 # without it; rollback of populated content is deleting the managed
 # trees and re-populating.
