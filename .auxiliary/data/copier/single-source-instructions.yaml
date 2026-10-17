@@ -50,7 +50,9 @@
 # Run `copier update` and `agentsmgr populate` together before
 # committing, so generated state and exclusions land in the same
 # changeset. Committing the update first leaves downstream clones
-# holding half-migrated trees.
+# holding half-migrated trees. Populate from this repository's
+# `distribution/` tree (which holds `per-project/`), not the repo
+# root: `agentsmgr populate project <source>/distribution <target>`.
 #
 # Rollback of the data-file answers alone is re-running the update
 # without it; rollback of populated content is deleting the managed
