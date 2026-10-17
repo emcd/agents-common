@@ -45,7 +45,9 @@
 # shapes populate installs). Populate merges distribution skills into
 # that tree and never deletes foreign entries; only the per-coder
 # `skills/` discovery symlinks are replaced. Move any custom skills
-# out of `coders/*/skills/` before populating.
+# out of `coders/*/skills/` before populating — or delete them
+# outright if vestigial (e.g. retired directory packages populate
+# will not otherwise remove).
 #
 # Run `copier update` and `agentsmgr populate` together before
 # committing, so generated state and exclusions land in the same
