@@ -28,20 +28,21 @@
 
 from pathlib import Path
 
-import pytest
 import tyro
 
 from . import __
 
 
 def _distribution_location( ) -> Path:
-    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'distribution'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'distribution' )
 
 
 def _components_location( ) -> Path:
-    project_root = Path( __file__ ).resolve( ).parents[ 2 ]
-    return project_root / 'components'
+    return (
+        Path( __file__ ).resolve( ).parents[ 1 ]
+        / 'data' / 'agentsmgr' / 'components' )
 
 
 def _project_root( ) -> Path:
@@ -134,7 +135,7 @@ def test_200_generate_produces_no_coder_artifacts( tmp_path ):
 
 def test_300_distribution_preserves_resource_subpaths( tmp_path ):
     ''' Static resource subpaths should be preserved during copy.
-        e.g., prompt/nemotron-3-build.md should not lose prompt/ prefix. '''
+        e.g., prompt/fixture-prompt.md should not lose prompt/ prefix. '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -155,27 +156,9 @@ def test_300_distribution_preserves_resource_subpaths( tmp_path ):
     assert written > 0
     prompt_resource = (
         target / '.auxiliary' / 'configuration' / 'coders' / 'opencode'
-        / 'prompt' / 'nemotron-3-build.md' )
+        / 'prompt' / 'fixture-prompt.md' )
     assert prompt_resource.exists( ), (
         f"Expected prompt resource at {prompt_resource}" )
-
-
-@pytest.fixture
-def isolated_renderer_registry( monkeypatch ):
-    ''' Provides an isolated ``agentsmgr.renderers.RENDERERS`` registry.
-
-        Copies the current ``RENDERERS`` accretive dictionary and
-        replaces it with the copy via monkeypatch. Tests can register
-        custom renderers and forget about cleanup; the original
-        registry is restored on teardown via monkeypatch's undo.
-
-        Required because ``RENDERERS`` is grow-only (accretive); tests
-        that mutate the global registry leak entries otherwise.
-    '''
-    renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
-    fresh = renderers_module.RENDERERS.copy( )
-    monkeypatch.setattr( renderers_module, 'RENDERERS', fresh )
-    return fresh
 
 
 def test_400_generate_check_detects_stale_artifacts( tmp_path ):
@@ -213,7 +196,7 @@ def test_400_generate_check_detects_stale_artifacts( tmp_path ):
 
 
 def test_420_orphan_detection_respects_custom_directory_name(
-    tmp_path, isolated_renderer_registry,
+    tmp_path,
 ):
     ''' When a renderer overrides calculate_directory_location, orphan
         detection should use the override, not the hardcoded default.
@@ -222,9 +205,8 @@ def test_420_orphan_detection_respects_custom_directory_name(
         named 'custom-cmd-dir' and verifies that orphan detection
         scans only that custom directory, not the default 'commands'.
 
-        The ``isolated_renderer_registry`` fixture copies the global
-        ``RENDERERS`` accretive dictionary so this test does not leak
-        its temporary entry into later tests.
+        The custom renderer is injected as an explicit mapping rather
+        than registered globally, so no cleanup is needed.
     '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
     renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
@@ -242,7 +224,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
             return item_type
 
     custom_renderer = _CustomCommandsRenderer( )
-    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+    renderers = { custom_renderer.name: custom_renderer }
 
     coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
     # File in the renderer's overridden directory: must be detected.
@@ -257,7 +239,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
         'orphan', encoding = 'utf-8' )
 
     orphans = operations_module._detect_orphaned_artifacts(
-        tmp_path, ( custom_renderer.name, ), set( ) )
+        tmp_path, ( custom_renderer.name, ), set( ), renderers )
     assert len( orphans ) == 1
     assert 'orphaned artifact' in orphans[ 0 ]
     assert 'custom-cmd-dir/zz-orphan.md' in orphans[ 0 ]
@@ -265,7 +247,7 @@ def test_420_orphan_detection_respects_custom_directory_name(
 
 
 def test_430_orphan_detection_respects_custom_artifact_pattern(
-    tmp_path, isolated_renderer_registry,
+    tmp_path,
 ):
     ''' When a renderer overrides calculate_artifact_pattern, orphan
         detection should use the override, not the hardcoded '*.md'.
@@ -276,9 +258,8 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
         pattern. Markdown files in the same directory must be
         ignored (not the renderer's artifact shape).
 
-        The ``isolated_renderer_registry`` fixture copies the global
-        ``RENDERERS`` accretive dictionary so this test does not leak
-        its temporary entry into later tests.
+        The custom renderer is injected as an explicit mapping rather
+        than registered globally, so no cleanup is needed.
     '''
     operations_module = __.cache_import_module( 'agentsmgr.operations' )
     renderers_module = __.cache_import_module( 'agentsmgr.renderers' )
@@ -296,7 +277,7 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
             return super( ).calculate_artifact_pattern( item_type )
 
     custom_renderer = _JsonCommandsRenderer( )
-    isolated_renderer_registry[ custom_renderer.name ] = custom_renderer
+    renderers = { custom_renderer.name: custom_renderer }
 
     coder_dir = tmp_path / 'per-project' / 'coders' / custom_renderer.name
     commands_dir = coder_dir / 'commands'
@@ -310,7 +291,7 @@ def test_430_orphan_detection_respects_custom_artifact_pattern(
         'ignored', encoding = 'utf-8' )
 
     orphans = operations_module._detect_orphaned_artifacts(
-        tmp_path, ( custom_renderer.name, ), set( ) )
+        tmp_path, ( custom_renderer.name, ), set( ), renderers )
     assert len( orphans ) == 1, (
         f"Expected exactly one orphan, got {orphans}" )
     assert 'orphaned artifact' in orphans[ 0 ]
@@ -372,10 +353,10 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     exclude_content = exclude_file.read_text( encoding = 'utf-8' )
     # Verify file-level entries exist (not directory-level)
     assert (
-        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '/.auxiliary/agents/skills/fixture-skill/SKILL.md'
         in exclude_content )
     assert (
-        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        '/.auxiliary/configuration/coders/opencode/prompt/fixture-prompt.md'
         in exclude_content )
     assert '/.claude' in exclude_content
     assert '/.opencode' in exclude_content
@@ -394,17 +375,17 @@ def test_600_git_exclude_file_level_entries( tmp_path ):
     # Simulate removal: re-copy with one file missing
     stale_file = (
         location / 'per-project' / 'general' / 'skills'
-        / 'cs-review-todos.md' )
+        / 'fixture-skill.md' )
     stale_file.unlink( )
     _populate_project( location, target )
     exclude_content2 = exclude_file.read_text( encoding = 'utf-8' )
     # Stale entry should be removed
     assert (
-        '/.auxiliary/agents/skills/cs-review-todos/SKILL.md'
+        '/.auxiliary/agents/skills/fixture-skill/SKILL.md'
         not in exclude_content2 )
     # Other entries should remain
     assert (
-        '/.auxiliary/configuration/coders/opencode/prompt/nemotron-3-build.md'
+        '/.auxiliary/configuration/coders/opencode/prompt/fixture-prompt.md'
         in exclude_content2 )
     assert '/.opencode' in exclude_content2
 
@@ -455,7 +436,8 @@ def test_660_git_exclude_normalizes_windows_entries( tmp_path ):
 
 def test_700_instructions_copied_from_distribution( tmp_path ):
     ''' Instructions should be copied from distribution/, not fetched
-        from network. Verifies the expected corpus is present. '''
+        from network. Verifies copy fidelity over the fixture corpus
+        (deliberately not the live corpus, which churns independently). '''
     population_module = __.cache_import_module( 'agentsmgr.population' )
     location = _distribution_location( )
     target = tmp_path / 'project'
@@ -467,13 +449,7 @@ def test_700_instructions_copied_from_distribution( tmp_path ):
         path for path in instructions_dir.glob( '*' ) if path.is_file( ) ]
     # Verify specific expected files are present
     expected_files = {
-        'conduct.md', 'contribution.md', 'environment.md',
-        'environment-python.md', 'maintenance.md', 'nomenclature.md',
-        'nomenclature-germanic.md', 'nomenclature-latin.md',
-        'practices.md', 'practices-python.md', 'practices-rust.md',
-        'practices-toml.md', 'python-autoformat.md', 'releases.md',
-        'releases-python.md', 'requirements.md', 'style.md', 'tests.md',
-        'tests-python.md', 'validation.md', 'validation-python.md',
+        'fixture-alpha.md', 'fixture-beta.md', 'fixture-gamma.md',
     }
     actual_names = { f.name for f in instruction_files }
     for name in expected_files:

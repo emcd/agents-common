@@ -23,6 +23,15 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a16 (2026-10-27)
+=============================
+
+Repairs
+-------
+
+- Render unexpected CLI failures through the error presentation path instead of exiting silently.
+
+
 agentsmgr 1.0a15 (2026-10-15)
 =============================
 

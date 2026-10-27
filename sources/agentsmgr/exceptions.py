@@ -36,6 +36,33 @@ class Omnierror( Omniexception, Exception ):
         return ( f"❌ {self}", )
 
 
+class UnexpectedError( Omnierror ):
+    ''' Unexpected failure escaping command handling.
+
+        Wraps non-Omnierror exceptions reaching the CLI entrypoint so
+        they render through the standard error presentation path
+        instead of exiting silently. Carries the original exception
+        for traceback rendering; the ``SystemExit`` raised after
+        rendering keeps it as ``__context__``.
+    '''
+
+    def __init__( self, exception: BaseException ):
+        self.exception = exception
+        super( ).__init__(
+            f"Unexpected {type( exception ).__name__}: {exception}" )
+
+    def render_as_markdown( self ) -> tuple[ str, ... ]:
+        ''' Renders wrapped exception with traceback for diagnosis. '''
+        lines = [ f"❌ {self}", "" ]
+        frames = __.traceback.format_exception(
+            type( self.exception ),
+            self.exception,
+            self.exception.__traceback__ )
+        lines.extend(
+            line for chunk in frames for line in chunk.splitlines( ) )
+        return tuple( lines )
+
+
 class CoderAbsence( Omnierror, ValueError ):
     ''' Coder absence in registry. '''
 

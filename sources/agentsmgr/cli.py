@@ -24,6 +24,7 @@
 from . import __
 from . import core as _core
 from . import detection as _detection
+from . import exceptions as _exceptions
 from . import population as _population
 
 
@@ -81,6 +82,9 @@ def execute( ) -> None:
     )
     try: __.asyncio.run( __.tyro.cli( Application, config = config )( ) )
     except SystemExit: raise
-    except BaseException:
-        # TODO: Log exception.
+    except BaseException as exception:
+        for line in (
+            _exceptions.UnexpectedError( exception ).render_as_markdown( )
+        ):
+            print( line, file = __.sys.stderr )
         raise SystemExit( 1 ) from None
