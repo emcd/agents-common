@@ -96,7 +96,7 @@ jobs:
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
 
   check-if-publish:
-    needs: [package]
+    needs: [package, test, report, docsgen]
     runs-on: ubuntu-latest
     outputs:
       package-version: ${{ steps.decide.outputs.package-version }}
@@ -273,14 +273,15 @@ jobs:
         run: |
           set -eu -o pipefail
           cd ${{ env.DISTRIBUTIONS_PATH }}
-          sha256sum emcd-agents-* emcd_agents-* >SHA256SUMS.txt
+          # Hatchling normalizes both wheels and sdists to underscores
+          # (PEP 625), so the underscore form matches all artifacts.
+          sha256sum emcd_agents-* >SHA256SUMS.txt
 
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
             ${{ env.DISTRIBUTIONS_PATH }}/SHA256SUMS.txt
-            ${{ env.DISTRIBUTIONS_PATH }}/emcd-agents-*
             ${{ env.DISTRIBUTIONS_PATH }}/emcd_agents-*
 
       - name: Generate Release Notes

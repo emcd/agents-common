@@ -17,7 +17,7 @@
    +--------------------------------------------------------------------------+
 
 *******************************************************************************
-                                  emcd-agents
+                                  emcd-agents                                  
 *******************************************************************************
 
 .. image:: https://img.shields.io/pypi/v/emcd-agents
@@ -45,37 +45,7 @@
    :target: https://pypi.org/project/emcd-agents/
 
 
-🤖 **AI Agent Configuration Management** - Centralized, version-controlled
-configurations for AI development tools with hybrid distribution architecture.
-Enables rapid iteration on agent configurations while maintaining consistency
-across multiple projects through tag-based releases and dynamic content generation.
-
-Key Features ⭐
-===============================================================================
-
-🏗️ **Hybrid Distribution Architecture**
-  Combines Copier templates for base configuration with agentsmgr CLI for
-  dynamic content generation from structured data sources.
-
-⚡ **Lightning-Fast Iteration**
-  Tag-based releases enable rapid configuration updates without heavyweight
-  project releases.
-
-🔧 **Simple CLI Interface**
-  Primary populate command generates agent configurations from any compatible
-  data source with simulation mode support.
-
-📦 **Extensible Data Sources**
-  Works with any properly structured agent configuration library, enabling
-  community-driven configuration sharing and reuse.
-
-🔌 **Plugin Architecture**
-  Extensible source handlers (git, local) and renderers (Claude, Opencode,
-  Codex) with decorator-based registration system.
-
-🎯 **Multi-Target Support**
-  Per-user and per-project targeting modes with intelligent symlink management
-  for seamless AI tool integration.
+.. todo:: Provide project description and key features.
 
 
 Installation 📦
@@ -128,64 +98,7 @@ Or, install via ``pip``:
     pip install emcd-agents
 
 
-Examples 💡
-===============================================================================
-
-CLI Usage
--------------------------------------------------------------------------------
-
-**Populate Agent Content**:
-
-Generate configurations from a git source:
-
-::
-
-    agentsmgr populate --source=github:emcd/agents-common@agents-2
-
-Generate content for per-project mode:
-
-::
-
-    agentsmgr populate --mode=per-project --source=git:path/to/local/repo
-
-**Test Configuration Changes**:
-
-Preview what would be generated without making changes:
-
-::
-
-    agentsmgr populate --simulate --source=github:emcd/agents-common@agents-2
-
-Copier Template Integration
--------------------------------------------------------------------------------
-
-**Apply Base Template**:
-
-Use as a Copier template for new projects:
-
-::
-
-    copier copy gh:emcd/agents-common path/to/new-project
-
-**Update Existing Projects**:
-
-Update base configuration templates:
-
-::
-
-    copier update --answers-file .auxiliary/configuration/copier-answers--agents.yaml
-
-Configuration and Copier template release notes (``agents-*`` tags) are in
-``documentation/configuration-changelog.rst``. Package (PyPI) notes remain in
-``documentation/changelog.rst``.
-
-Use Cases
-===============================================================================
-
-* **Project Templates**: Distribute consistent AI agent configurations across multiple project templates
-* **Development Teams**: Maintain synchronized agent configurations across team members
-* **Configuration Evolution**: Rapidly iterate on slash commands and agent definitions
-* **Multi-Tool Support**: Support Claude Code, Opencode, Codex, and future AI development environments
+.. todo:: Provide usage examples and additional content.
 
 
 Contribution 🤝
@@ -245,33 +158,33 @@ Other Projects by This Author 🌟
 ===============================================================================
 
 
-* `python-absence <https://github.com/emcd/python-absence>`_ (`absence <https://pypi.org/project/absence/>`_ on PyPI)
+* `agentmux <https://github.com/emcd/agentmux>`_  (`agentmux <https://crates.io/crates/agentmux/>`_ on Crates.io)
 
-  🕳️ A Python library package which provides a **sentinel for absent values** - a falsey, immutable singleton that represents the absence of a value in contexts where ``None`` or ``False`` may be valid values.
-* `python-accretive <https://github.com/emcd/python-accretive>`_ (`accretive <https://pypi.org/project/accretive/>`_ on PyPI)
+  📡 Provides **relays for inter-agent communication** and a single pane of glass for managing multiple agent harness sessions.
+* `cistella <https://github.com/emcd/cistella>`_  (`cistella <https://crates.io/crates/cistella/>`_ on Crates.io)
+
+  🧱 A **sandboxing application** which **isolates agent sessions** via various technologies.
+* `nb-mcp-server <https://github.com/emcd/nb-mcp-server>`_  (`nb-mcp-server <https://crates.io/crates/nb-mcp-server/>`_ on Crates.io)
+
+  🗒️ An MCP server wrapping the ``nb`` CLI for **LLM-friendly note-taking**.
+* `python-accretive <https://github.com/emcd/python-accretive>`_ (`accretive <https://pypi.org/project/accretive/>`_ on PyPI) 
 
   🌌 A Python library package which provides **accretive data structures** - collections which can grow but never shrink.
-* `python-classcore <https://github.com/emcd/python-classcore>`_ (`classcore <https://pypi.org/project/classcore/>`_ on PyPI)
+* `python-classcore <https://github.com/emcd/python-classcore>`_ (`classcore <https://pypi.org/project/classcore/>`_ on PyPI) 
 
   🏭 A Python library package which provides **foundational class factories and decorators** for providing classes with attributes immutability and concealment and other custom behaviors.
-* `python-detextive <https://github.com/emcd/python-detextive>`_ (`detextive <https://pypi.org/project/detextive/>`_ on PyPI)
+* `python-detextive <https://github.com/emcd/python-detextive>`_ (`detextive <https://pypi.org/project/detextive/>`_ on PyPI) 
 
   🕵️ A Python library which provides consolidated text detection capabilities for reliable content analysis. Offers MIME type detection, character set detection, and line separator processing.
-* `python-dynadoc <https://github.com/emcd/python-dynadoc>`_ (`dynadoc <https://pypi.org/project/dynadoc/>`_ on PyPI)
+* `python-dynadoc <https://github.com/emcd/python-dynadoc>`_ (`dynadoc <https://pypi.org/project/dynadoc/>`_ on PyPI) 
 
   📝 A Python library package which bridges the gap between **rich annotations** and **automatic documentation generation** with configurable renderers and support for reusable fragments.
-* `python-falsifier <https://github.com/emcd/python-falsifier>`_ (`falsifier <https://pypi.org/project/falsifier/>`_ on PyPI)
+* `python-falsifier <https://github.com/emcd/python-falsifier>`_ (`falsifier <https://pypi.org/project/falsifier/>`_ on PyPI) 
 
   🎭 A very simple Python library package which provides a **base class for falsey objects** - objects that evaluate to ``False`` in boolean contexts.
-* `python-frigid <https://github.com/emcd/python-frigid>`_ (`frigid <https://pypi.org/project/frigid/>`_ on PyPI)
+* `python-frigid <https://github.com/emcd/python-frigid>`_ (`frigid <https://pypi.org/project/frigid/>`_ on PyPI) 
 
   🔒 A Python library package which provides **immutable data structures** - collections which cannot be modified after creation.
-* `python-icecream-truck <https://github.com/emcd/python-icecream-truck>`_ (`icecream-truck <https://pypi.org/project/icecream-truck/>`_ on PyPI)
+* `python-icecream-truck <https://github.com/emcd/python-icecream-truck>`_ (`icecream-truck <https://pypi.org/project/icecream-truck/>`_ on PyPI) 
 
   🍦 **Flavorful Debugging** - A Python library which enhances the powerful and well-known ``icecream`` package with flavored traces, configuration hierarchies, customized outputs, ready-made recipes, and more.
-* `python-librovore <https://github.com/emcd/python-librovore>`_ (`librovore <https://pypi.org/project/librovore/>`_ on PyPI)
-
-  🐲 **Documentation Search Engine** - An intelligent documentation search and extraction tool that provides both a command-line interface for humans and an MCP (Model Context Protocol) server for AI agents. Search across Sphinx and MkDocs sites with fuzzy matching, extract clean markdown content, and integrate seamlessly with AI development workflows.
-* `python-mimeogram <https://github.com/emcd/python-mimeogram>`_ (`mimeogram <https://pypi.org/project/mimeogram/>`_ on PyPI)
-
-  📨 A command-line tool for **exchanging collections of files with Large Language Models** - bundle multiple files into a single clipboard-ready document while preserving directory structure and metadata... good for code reviews, project sharing, and LLM interactions.
