@@ -23,6 +23,15 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a17 (2026-10-27)
+=============================
+
+Repairs
+-------
+
+- Load TOML configuration with the standard library tomllib module instead of the third-party tomli package.
+
+
 agentsmgr 1.0a16 (2026-10-27)
 =============================
 
