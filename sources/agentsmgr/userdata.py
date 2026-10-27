@@ -227,9 +227,9 @@ def _load_toml_file(
         raise _exceptions.GlobalsPopulationFailure(
             filepath, target_context ) from exception
     try:
-        loaded: dict[ str, __.typx.Any ] = __.tomli.loads(
+        loaded: dict[ str, __.typx.Any ] = __.tomllib.loads(
             content )
-    except __.tomli.TOMLDecodeError as exception:
+    except __.tomllib.TOMLDecodeError as exception:
         raise _exceptions.GlobalsPopulationFailure(
             filepath, target_context ) from exception
     return loaded
