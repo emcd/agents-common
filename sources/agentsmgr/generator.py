@@ -313,9 +313,9 @@ class ContentGenerator( __.immut.DataclassObject ):
         try: toml_content = configuration_file.read_bytes( )
         except ( OSError, IOError ) as exception:
             raise _exceptions.ConfigurationAbsence( ) from exception
-        try: toml_data: dict[ str, __.typx.Any ] = __.tomli.loads(
+        try: toml_data: dict[ str, __.typx.Any ] = __.tomllib.loads(
             toml_content.decode( 'utf-8' ) )
-        except __.tomli.TOMLDecodeError as exception:
+        except __.tomllib.TOMLDecodeError as exception:
             raise _exceptions.ConfigurationInvalidity(
                 exception
             ) from exception

@@ -36,6 +36,7 @@ import                      shutil
 import                      subprocess
 import                      sys
 import                      tempfile
+import                      tomllib
 import                      traceback
 import                      types
 import urllib.error as      urlerr
@@ -52,7 +53,6 @@ import accretive as         accret
 import                      appcore
 import                      appcore.exceptions
 import                      appcore.state
-import                      tomli
 import typing_extensions as typx
 # --- BEGIN: Injected by Copier ---
 import dynadoc as           ddoc
