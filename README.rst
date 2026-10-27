@@ -45,7 +45,37 @@
    :target: https://pypi.org/project/emcd-agents/
 
 
-.. todo:: Provide project description and key features.
+🤖 **AI Agent Configuration Management** - Centralized, version-controlled
+configurations for AI development tools with hybrid distribution architecture.
+Enables rapid iteration on agent configurations while maintaining consistency
+across multiple projects through tag-based releases and dynamic content generation.
+
+Key Features ⭐
+===============================================================================
+
+🏗️ **Hybrid Distribution Architecture**
+  Combines Copier templates for base configuration with agentsmgr CLI for
+  dynamic content generation from structured data sources.
+
+⚡ **Lightning-Fast Iteration**
+  Tag-based releases enable rapid configuration updates without heavyweight
+  project releases.
+
+🔧 **Simple CLI Interface**
+  Primary populate command generates agent configurations from any compatible
+  data source with simulation mode support.
+
+📦 **Extensible Data Sources**
+  Works with any properly structured agent configuration library, enabling
+  community-driven configuration sharing and reuse.
+
+🔌 **Plugin Architecture**
+  Extensible source handlers (git, local) and renderers (Claude, Opencode,
+  Codex) with decorator-based registration system.
+
+🎯 **Multi-Target Support**
+  Per-user and per-project targeting modes with intelligent symlink management
+  for seamless AI tool integration.
 
 
 Installation 📦
@@ -98,7 +128,64 @@ Or, install via ``pip``:
     pip install emcd-agents
 
 
-.. todo:: Provide usage examples and additional content.
+Examples 💡
+===============================================================================
+
+CLI Usage
+-------------------------------------------------------------------------------
+
+**Populate Agent Content**:
+
+Generate configurations from a git source:
+
+::
+
+    agentsmgr populate --source=github:emcd/agents-common@agents-2
+
+Generate content for per-project mode:
+
+::
+
+    agentsmgr populate --mode=per-project --source=git:path/to/local/repo
+
+**Test Configuration Changes**:
+
+Preview what would be generated without making changes:
+
+::
+
+    agentsmgr populate --simulate --source=github:emcd/agents-common@agents-2
+
+Copier Template Integration
+-------------------------------------------------------------------------------
+
+**Apply Base Template**:
+
+Use as a Copier template for new projects:
+
+::
+
+    copier copy gh:emcd/agents-common path/to/new-project
+
+**Update Existing Projects**:
+
+Update base configuration templates:
+
+::
+
+    copier update --answers-file .auxiliary/configuration/copier-answers--agents.yaml
+
+Configuration and Copier template release notes (``agents-*`` tags) are in
+``documentation/configuration-changelog.rst``. Package (PyPI) notes remain in
+``documentation/changelog.rst``.
+
+Use Cases
+===============================================================================
+
+* **Project Templates**: Distribute consistent AI agent configurations across multiple project templates
+* **Development Teams**: Maintain synchronized agent configurations across team members
+* **Configuration Evolution**: Rapidly iterate on slash commands and agent definitions
+* **Multi-Tool Support**: Support Claude Code, Opencode, Codex, and future AI development environments
 
 
 Contribution 🤝
