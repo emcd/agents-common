@@ -108,6 +108,12 @@ linkcheck_ignore = [
     r'https://github\.com/.*/.*/blob/.*',
     # Avoid timeouts for slow sites.
     r'http://www\.catb\.org/~esr/faqs/smart-questions\.html',
+    # crates.io serves 404s to non-browser user agents, including
+    # the sphinx linkcheck builder, for pages that exist. Ignore
+    # the three known-good crate pages.
+    r'https://crates\.io/crates/agentmux/',
+    r'https://crates\.io/crates/cistella/',
+    r'https://crates\.io/crates/nb-mcp-server/',
 ]
 
 # -- Options for HTML output -------------------------------------------------

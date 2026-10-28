@@ -26,7 +26,7 @@ dependencies = [
   'absence~=1.1',
   'dynadoc~=1.4',
   'frigid~=4.2',
-  'emcd-appcore[cli]~=1.6',
+  'emcd-appcore[cli]~=1.8',
   # --- END: Injected by Copier ---
 ]
 classifiers = [ # https://pypi.org/classifiers
@@ -149,7 +149,9 @@ module-sizes = [
 ]
 linters = [
   """ruff check --quiet sources documentation tests""",
-  """vibelinter check""",
+  # External install only (e.g. uv tool install): a develop dependency
+  # cycles for packages below emcd-vibe-linter in the stack.
+  #"""vibelinter check""",
   # --- BEGIN: Injected by Copier ---
   # --- END: Injected by Copier ---
   """isort --check-only --diff sources tests""",
