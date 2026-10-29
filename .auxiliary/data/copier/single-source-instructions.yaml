@@ -55,6 +55,10 @@
 # holding half-migrated trees. Populate from this repository's
 # `distribution/` tree (which holds `per-project/`), not the repo
 # root: `agentsmgr populate project <source>/distribution <target>`.
+# Order matters inside the combined step: update first, then
+# populate. Populate aborts with Memory File Absence when
+# `.auxiliary/agents/agents.md` does not exist yet, and that file
+# is rendered by the template update.
 #
 # Rollback of the data-file answers alone is re-running the update
 # without it; rollback of populated content is deleting the managed
