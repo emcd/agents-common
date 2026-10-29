@@ -48,6 +48,12 @@
 # out of `coders/*/skills/` before populating — or delete them
 # outright if vestigial (e.g. retired directory packages populate
 # will not otherwise remove).
+# Check whether `.claude/`, `.opencode/`, and root memory files are
+# symlinks or legacy real directories/files: populate retargets a
+# wrong symlink but only warns and skips a real path, so a legacy
+# real directory would block its managed symlink from ever
+# materializing. Remove legacy real paths by hand (after rescuing
+# anything project-owned) before populating.
 #
 # Run `copier update` and `agentsmgr populate` together before
 # committing, so generated state and exclusions land in the same
