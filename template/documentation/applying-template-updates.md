@@ -32,6 +32,20 @@ leaves the other's answers file untouched.)
 Do not pass `--quiet`: the post-update banner is suppressed in quiet
 mode, and you will miss conflict and follow-up notices.
 
+Copier update is a three-way merge, not an overwrite: it re-renders
+the old template at your recorded `_commit` and the new one, then
+merges the template's evolution against yours. Conflict markers
+surface only where both sides changed the same region. If project
+content vanishes without markers in the file, that alone does not
+identify the mechanism — possibilities include a stale merge base (a
+recorded `_commit` older than the file's true lineage), overwrite
+semantics, or a rejection conflict mode (`--conflict rej` writes
+markers to `.rej` files and leaves the upstream value in place).
+Inspect `git diff`, any `.rej` files, the recorded ref, and the
+selected conflict mode before diagnosing. Either way, back up
+project augmentations such as MCP server additions before updating
+so nothing depends on reconstructing the mechanism afterward.
+
 ## Ordering rules
 
 - **Update first, then populate.** Populate aborts when the
@@ -65,7 +79,9 @@ package with `SKILL.md`, or flat `<name>.md`). Populate merges into
 that tree and never deletes foreign entries. Only the per-coder
 `skills/` discovery symlinks are replaced on populate, so move any
 custom skills out of `coders/*/skills/` first — or delete them if
-vestigial.
+vestigial. `project-triage` in per-coder `skills/` trees is retired
+distributed content, not a custom skill: delete it outright, do not
+rescue it.
 
 ## Legacy real paths
 
