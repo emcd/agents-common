@@ -81,7 +81,10 @@ that tree and never deletes foreign entries. Only the per-coder
 custom skills out of `coders/*/skills/` first — or delete them if
 vestigial. `project-triage` in per-coder `skills/` trees is retired
 distributed content, not a custom skill: delete it outright, do not
-rescue it.
+rescue it. The same holds for retired distributed MCP servers —
+`pyright` and `librovore` entries lingering in old configurations
+are vestigial (both cut from the template in March) and should be
+deleted on sight, not restored.
 
 ## Legacy real paths
 
