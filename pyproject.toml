@@ -21,6 +21,7 @@ dependencies = [
   'dulwich',
   'packaging',
   'toml',
+  'tyro',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
   'absence~=1.1',
