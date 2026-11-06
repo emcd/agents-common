@@ -9,9 +9,16 @@ It is template-owned: corrections land here, not in per-project files.
 Run the update non-interactively with the data file, then populate
 from this repository's `distribution/` tree:
 
+Copier requires the data file as a local file, not a URL —
+download it first (replace `<ref>` with the agents template tag
+under adoption), then update, then populate:
+
 ```sh
+DATA_FILE="$(mktemp)" || exit 1
+trap 'rm -f "$DATA_FILE"' EXIT INT TERM
+python3 -c "import sys, urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml', sys.argv[1])" "$DATA_FILE"
 copier update \
-    --data-file https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml \
+    --data-file "$DATA_FILE" \
     --answers-file .auxiliary/configuration/copier-answers--agents.yaml \
     --skip-answered
 agentsmgr populate project <source>/distribution <target>

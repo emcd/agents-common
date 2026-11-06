@@ -4,9 +4,14 @@
 # (in the agents-common repository at the tag under adoption) is the
 # update + populate procedure. This file carries answers only.
 #
-# Usage:
+# Usage (Copier requires a local file, not a URL — download to a
+# unique owned temp path outside the worktree so concurrent updates
+# cannot share or clobber it, then clean up only that path):
+#   DATA_FILE="$(mktemp)" || exit 1
+#   trap 'rm -f "$DATA_FILE"' EXIT INT TERM
+#   python3 -c "import sys, urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml', sys.argv[1])" "$DATA_FILE"
 #   copier update \
-#       --data-file https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml \
+#       --data-file "$DATA_FILE" \
 #       --answers-file .auxiliary/configuration/copier-answers--agents.yaml \
 #       --skip-answered
 #
