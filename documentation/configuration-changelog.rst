@@ -23,8 +23,9 @@ Configuration and Copier Template Release Notes
 
 These notes cover **Copier template** and **configuration content** changes
 (``template/``, ``components/`` / ``distribution/``, and related harness base
-settings). They are versioned with ``agents-*`` git tags for populate pins and
-Copier template refs.
+settings). They are versioned with the shared ``v*`` release tags;
+downstream populate pins and Copier template refs (``_commit``) all
+follow ``v*``.
 
 They are **not** the emcd-agents / agentsmgr **Python package** changelog.
 Package release notes live in :doc:`changelog` and are managed with Towncrier.
@@ -33,14 +34,61 @@ Workflow (manual; no Towncrier for this file):
 
 * Authors add bullets under **Unreleased** with template or content changes
   (``template/``, ``components/`` / ``distribution/``, harness base settings).
-* Cutting an ``agents-*`` tag renames **Unreleased** to that tag and date.
+* Cutting a ``v*`` release tag renames **Unreleased** to that tag and date
+  (single tag line shared with the Python package; downstream Copier
+  ``_commit`` refs and populate pins all follow ``v*``).
 * Do not file package Towncrier fragments for template-only work.
 * Pattern follows python-project-common ``template-changelog.rst`` (manual
-  sections), but versions here are ``agents-*`` tags, not package ``v*``.
+  sections).
 
 
 Unreleased
 ==========
+
+(No entries.)
+
+
+v1.0a19 (2026-11-07)
+====================
+
+Curated consumer-facing summary of material configuration and template
+changes since ``v1.0a18``. Not a full commit history.
+
+Enhancements
+------------
+
+- Durable downstream update runbook: new
+  ``template/documentation/applying-template-updates.md`` plus
+  after-copy and after-update Copier banners pointing at it; the
+  data file carries renamed answers only. Track the latest release
+  by default; pin ``--vcs-ref`` only on explicit request. Copier
+  9.19.1 requires the data file as a local download (URL form no
+  longer accepted); the runbook shows the download-first form.
+- ``Clone Setup`` section in the OpenSpec procedure: populate must
+  run after any copy or update (creates the ``openspec`` symlink,
+  harness symlinks, and MCP discovery links); warns that validate
+  without the symlink exits 0 validating nothing.
+- Bilateral reviews clause in the review procedure: author and
+  active reviewer only, no Cc beyond the pair; integrator enters
+  only at the merge request.
+- Agentmux environment passthroughs (``AGENTMUX_BUNDLE``,
+  ``AGENTMUX_SESSION``, ``AGENTMUX_CONFIGURATION_DIRECTORY``,
+  ``AGENTMUX_STATE_DIRECTORY`` as ``${VAR:-}`` empty defaults) on
+  the template agentmux MCP entry; no ``--bundle`` flag — bundle
+  identity comes from the stamped server environment.
+- Disable the uv formatter alongside ruff and prettier in the
+  generated OpenCode settings (style-frozen repos were reformatted
+  on every edit by the shared uv backend).
+- Hook install guidance prescribes the standalone uv-tool runner
+  (per-user ``pre-commit`` outside any Hatch environment); hooks
+  keep delegating via Hatch.
+- Retired distributed content is delete-on-sight: ``project-triage``
+  in per-coder ``skills/`` trees and ``pyright`` / ``librovore``
+  MCP server entries lingering in old configurations.
+
+
+Unreleased (historical accumulation)
+====================================
 
 Curated consumer-facing summary of material configuration and template
 changes since ``agents-1.0``. Not a full commit history.
@@ -169,9 +217,13 @@ Enhancements
 Notices
 -------
 
-- Configuration pins (``@agents-*``, Copier ``_commit``) are independent of
-  emcd-agents package versions; package CLI changes are documented only in
-  :doc:`changelog`.
+- Configuration pins (Copier ``_commit`` refs) and the shared ``v*``
+  release tag line cover template, configuration, and package together;
+  installed-package versus template-pin choices remain independent.
+  (Historical note: a single ``agents-1.0`` tag was cut in 2025 for the
+  initial configuration data release; all releases since have used
+  ``v*``. Package CLI changes are documented only in
+  :doc:`changelog`.)
 - Self-dogfood of template changes uses ``copier update`` against a
   reachable template ref, then ``agentsmgr generate`` / ``populate`` as
   needed — do not hand-mirror ``template/`` into live project paths.

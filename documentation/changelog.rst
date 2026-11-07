@@ -23,6 +23,17 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a19 (2026-11-07)
+=============================
+
+Repairs
+-------
+
+- Declare ``tyro`` as a direct dependency; it was previously supplied
+  only transitively via ``emcd-appcore[cli]`` while being imported at
+  runtime.
+
+
 agentsmgr 1.0a18 (2026-10-28)
 =============================
 
