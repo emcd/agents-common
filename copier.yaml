@@ -46,3 +46,15 @@ instructions_target:
     type: str
     help: Target directory for instruction files
     default: ".auxiliary/agents/standards"
+
+_message_after_copy: |
+    Project created from the agents-common template.
+
+    Next: read documentation/applying-template-updates.md
+    for the populate step and the update procedure you will use later.
+
+_message_after_update: |
+    Template update rendered. Read
+    documentation/applying-template-updates.md before
+    populating: review conflicts first, then run agentsmgr populate,
+    and commit the update and the populate together.
