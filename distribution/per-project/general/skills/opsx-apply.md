@@ -50,6 +50,9 @@ Read every file path listed under `contextFiles` from the apply instructions out
 
 For each pending task:
 - Show which task is being worked on
+- Skip anything that is not implementation work (review-routing or
+  publish checkboxes do not belong in the change — leave them
+  unchecked and flag them, do not execute them as tasks)
 - Make the code changes required
 - Keep changes minimal and focused
 - Mark task complete in the tasks file: `- [ ]` -> `- [x]`
