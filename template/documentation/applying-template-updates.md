@@ -28,7 +28,14 @@ Track the latest release by default: a bare `copier update` selects
 the latest template tag on its own. Pin `--vcs-ref` to a tag only when
 a specific version was explicitly requested (for example, to reproduce
 an exact run); a pin that merely dodges an environment problem is a
-workaround, not a fix — fix the environment instead. Whatever ref the
+workaround, not a fix — fix the environment instead. If a bare
+update reports `No git tags found` and resolves to HEAD, the reason
+is prerelease filtering, not the source location: Copier excludes
+prerelease tags by default, and while the template tags so far are
+alphas there is no eligible release to select. Either pass
+`--prereleases` for the latest alpha or pin `--vcs-ref` to an
+explicit tag (which always works regardless of source). Whatever ref
+the
 update uses, the data-file URL must name the same tag in place of
 `<ref>`: the file carries renamed answers so the update does not
 silently keep a retired layout, and it holds no guidance beyond that.
