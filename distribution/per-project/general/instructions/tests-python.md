@@ -270,7 +270,7 @@ Example with third-party mock:
 
 Avoid patching when possible. When necessary, only patch standard library and external packages, and document the justification.
 
-Note: `importlib_metadata` is a third-party package that maintains forward compatibility with the latest `importlib.metadata` in the stdlib.
+Note: `importlib_metadata` is a third-party backport for Python versions before 3.12. On 3.12+, import from the stdlib (`importlib.metadata`) directly — patching the backport will not intercept stdlib-bound references.
 
 <a id="testing-strategy-by-code-type"></a>
 ## Testing Strategy by Code Type
@@ -398,7 +398,7 @@ Target 100% line and branch coverage systematically:
     @pytest.mark.asyncio
     async def test_development_mode_missing_package():
         ''' Prepare triggers development mode for missing package. '''
-        with patch( 'importlib_metadata.packages_distributions', return_value = {} ):
+        with patch( 'importlib.metadata.packages_distributions', return_value = {} ):
             info = await module.prepare( 'nonexistent-package' )
             assert info.editable is True  # Development mode verified
 

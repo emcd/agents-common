@@ -52,6 +52,13 @@ Then install the hooks in the repository:
 pre-commit install --config .auxiliary/configuration/pre-commit.yaml
 ```
 
+The hooks themselves delegate to Hatch environments, which are resolved
+guest-locally at hook time and never shared across the sandbox boundary.
+If a hook fails because its environment went stale, rebuild the project
+environments with `hatch env prune` from the project root
+(all environments are removed and recreated on next use) and re-run
+the hook.
+
 <a id="refreshing-environments"></a>
 ## Refreshing Environments
 
