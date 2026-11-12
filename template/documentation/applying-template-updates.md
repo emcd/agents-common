@@ -69,6 +69,15 @@ so nothing depends on reconstructing the mechanism afterward.
 - **Commit together.** Land the update and the populate in the same
   changeset. Committing the update first leaves downstream clones
   holding half-migrated trees.
+- **Reload sessions after coder-config changes.** Running sessions
+  may hold stale runtime configuration, especially where automatic
+  reload is disabled or unavailable — on-disk changes do not
+  necessarily reach them. After anything under
+  `.auxiliary/configuration/coders/` changes, request the affected
+  harness's supported reload (restart the seat session if needed)
+  before trusting the new behavior; edits made meanwhile may still
+  run under the old config. Reload only affected seat sessions —
+  this never calls for restarting shared services.
 
 ## Retired content
 
