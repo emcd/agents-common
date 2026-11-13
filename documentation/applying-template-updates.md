@@ -86,7 +86,28 @@ outright. Do not add exclude entries for retired paths: removed means
 absent, not excluded. Populate copies but never deletes, so stale
 trees (old instruction homes, retired `coders/*/agents` and
 `coders/*/commands` directories, legacy `*.rst` standards) must be
-removed by hand.
+removed by hand. Visibility is not provenance — but neither is
+absence from current producers: a newly visible file is only
+deletable as stale output once established as obsolete generated
+content (producer/history evidence, e.g. a retired distribution path
+with no local modifications). Inspect before acting, and preserve or
+migrate project-owned material first per the custom-skills, legacy
+real-path, and rollback rules below; unknown provenance means
+investigate, not blindly delete or stage.
+
+Know which of the three classes an established template/distribution
+path under `coders/` belongs to before touching it. Tracked =
+template-rendered configuration (`settings.json`, `config.toml`,
+rules, `.gitignore`): commit these. Populate-managed =
+populate-created trees that must never be committed (prompt content,
+per-coder `skills/` discovery symlinks, standards): these are
+git-excluded by the managed block populate maintains, so leave the
+exclusions alone and do not stage the trees. Retired = content
+neither the template nor the distribution produces any more
+(per-coder `agents/` and `commands/` subtrees above all): after
+rescuing any unique local content, delete outright, neither tracked
+nor excluded. These classes cover established paths only, not
+arbitrary coder-tree contents of unknown provenance.
 
 A moved or reformatted key is not a line-level change: Copier's merge
 can keep both the stale local copy and the template's new one (seen
