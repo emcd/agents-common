@@ -50,11 +50,12 @@ instructions_target:
 _message_after_copy: |
     Project created from the agents-common template.
 
-    Next: read documentation/applying-template-updates.md
+    Next: read the update runbook at
+    https://github.com/emcd/agents-common/blob/master/documentation/applying-template-updates.md
     for the populate step and the update procedure you will use later.
 
 _message_after_update: |
-    Template update rendered. Read
-    documentation/applying-template-updates.md before
-    populating: review conflicts first, then run agentsmgr populate,
+    Template update rendered. Read the update runbook at
+    https://github.com/emcd/agents-common/blob/master/documentation/applying-template-updates.md
+    before populating: review conflicts first, then run agentsmgr populate,
     and commit the update and the populate together.
