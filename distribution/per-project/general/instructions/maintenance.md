@@ -6,19 +6,13 @@
 <a id="copier"></a>
 ## Copier
 
-The project was created from a [Copier template](https://github.com/emcd/python-project-common/tree/master/template). In addition to seeding the initial project structure and code, updates from the template can be incorporated into the project, ensuring adherence to evolving practices and technologies.
+If the project infrastructure is built upon one or more Copier templates, updates from a template can be incorporated into the project, ensuring adherence to evolving practices and technologies. Follow that template's own guide to applying updates:
+
+- [Applying template updates (Python projects)](https://github.com/emcd/python-project-common/blob/master/documentation/applying-template-updates.md)
+- [Applying template updates (Rust projects)](https://github.com/emcd/rust-project-common/blob/master/documentation/applying-template-updates.md)
+- [Applying template updates (agent configurations)](https://github.com/emcd/agents-common/blob/master/documentation/applying-template-updates.md)
 
 <a id="updates"></a>
 ### Updates
 
-1.  Ensure the working directory is clean (commit or stash changes).
-
-2. Run the update command:
-
-   ```shell
-   copier update --answers-file .auxiliary/configuration/copier-answers.yaml
-   ```
-
-> **Note:** The update process preserves your answers from the previous
-> template generation. You can override specific answers using the
-> `--data` option with the update command.
+Projects may consume one or more templates. To select the right guide, check the `_src_path` recorded in each answers file under `.auxiliary/configuration/` together with the project's own maintenance guidance: `.auxiliary/configuration/copier-answers.yaml`, if present, references the Python or Rust template, and `.auxiliary/configuration/copier-answers--agents.yaml`, if present, references the Agents template. If no file carries provenance matching the intended template, check the project maintenance guidance instead of guessing or running an update — and do not run updates for every template merely because their files are present.
