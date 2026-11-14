@@ -28,7 +28,14 @@ Track the latest release by default: a bare `copier update` selects
 the latest template tag on its own. Pin `--vcs-ref` to a tag only when
 a specific version was explicitly requested (for example, to reproduce
 an exact run); a pin that merely dodges an environment problem is a
-workaround, not a fix — fix the environment instead. Whatever ref the
+workaround, not a fix — fix the environment instead. If a bare
+update reports `No git tags found` and resolves to HEAD, the reason
+is prerelease filtering, not the source location: Copier excludes
+prerelease tags by default, and while the template tags so far are
+alphas there is no eligible release to select. Either pass
+`--prereleases` for the latest alpha or pin `--vcs-ref` to an
+explicit tag (which always works regardless of source). Whatever ref
+the
 update uses, the data-file URL must name the same tag in place of
 `<ref>`: the file carries renamed answers so the update does not
 silently keep a retired layout, and it holds no guidance beyond that.
@@ -62,6 +69,15 @@ so nothing depends on reconstructing the mechanism afterward.
 - **Commit together.** Land the update and the populate in the same
   changeset. Committing the update first leaves downstream clones
   holding half-migrated trees.
+- **Reload sessions after coder-config changes.** Running sessions
+  may hold stale runtime configuration, especially where automatic
+  reload is disabled or unavailable — on-disk changes do not
+  necessarily reach them. After anything under
+  `.auxiliary/configuration/coders/` changes, request the affected
+  harness's supported reload (restart the seat session if needed)
+  before trusting the new behavior; edits made meanwhile may still
+  run under the old config. Reload only affected seat sessions —
+  this never calls for restarting shared services.
 
 ## Retired content
 
@@ -70,7 +86,28 @@ outright. Do not add exclude entries for retired paths: removed means
 absent, not excluded. Populate copies but never deletes, so stale
 trees (old instruction homes, retired `coders/*/agents` and
 `coders/*/commands` directories, legacy `*.rst` standards) must be
-removed by hand.
+removed by hand. Visibility is not provenance — but neither is
+absence from current producers: a newly visible file is only
+deletable as stale output once established as obsolete generated
+content (producer/history evidence, e.g. a retired distribution path
+with no local modifications). Inspect before acting, and preserve or
+migrate project-owned material first per the custom-skills, legacy
+real-path, and rollback rules below; unknown provenance means
+investigate, not blindly delete or stage.
+
+Know which of the three classes an established template/distribution
+path under `coders/` belongs to before touching it. Tracked =
+template-rendered configuration (`settings.json`, `config.toml`,
+rules, `.gitignore`): commit these. Populate-managed =
+populate-created trees that must never be committed (prompt content,
+per-coder `skills/` discovery symlinks, standards): these are
+git-excluded by the managed block populate maintains, so leave the
+exclusions alone and do not stage the trees. Retired = content
+neither the template nor the distribution produces any more
+(per-coder `agents/` and `commands/` subtrees above all): after
+rescuing any unique local content, delete outright, neither tracked
+nor excluded. These classes cover established paths only, not
+arbitrary coder-tree contents of unknown provenance.
 
 A moved or reformatted key is not a line-level change: Copier's merge
 can keep both the stale local copy and the template's new one (seen

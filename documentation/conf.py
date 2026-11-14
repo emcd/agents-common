@@ -60,6 +60,9 @@ exclude_patterns = [
     # OpenSpec workflow/meta (still buried under architecture/openspec until
     # the deferred home move). Not part of the Sphinx doc set.
     'architecture/openspec/**',
+    # Update runbook: owner-facing guidance read on GitHub, not part of
+    # the published doc set (and never rendered downstream).
+    'applying-template-updates.md',
 ]
 
 rst_prolog = f'''

@@ -10,7 +10,9 @@ Propose a new change - create the change and generate all artifacts in one step.
 Artifacts created:
 - proposal.md (what & why)
 - design.md (how)
-- tasks.md (implementation steps)
+- tasks.md (implementation steps only — no review-routing, push,
+  release, or publish checkboxes; those live with the reviewers and
+  the operator, not the change)
 
 When ready to implement, use `opsx-apply`.
 

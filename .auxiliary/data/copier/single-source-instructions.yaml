@@ -1,8 +1,8 @@
 # Copier data file: renamed answers for the instructions migration.
 #
-# Runbook pointer: template/documentation/applying-template-updates.md
-# (in the agents-common repository at the tag under adoption) is the
-# update + populate procedure. This file carries answers only.
+# Runbook pointer: the update + populate procedure lives at
+# https://github.com/emcd/agents-common/blob/master/documentation/applying-template-updates.md
+# This file carries answers only.
 #
 # Usage (Copier requires a local file, not a URL — download to a
 # unique owned temp path outside the worktree so concurrent updates

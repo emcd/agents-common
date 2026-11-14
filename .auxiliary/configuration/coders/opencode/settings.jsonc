@@ -180,6 +180,9 @@
     "ruff": {
       "disabled": true
     },
+    "uv": {
+      "disabled": true
+    },
     "prettier": {
       "disabled": true
     }

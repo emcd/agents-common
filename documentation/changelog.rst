@@ -23,6 +23,12 @@ Release Notes
 
 .. towncrier release notes start
 
+agentsmgr 1.0a20 (2026-11-14)
+=============================
+
+No significant changes.
+
+
 agentsmgr 1.0a19 (2026-11-07)
 =============================
 

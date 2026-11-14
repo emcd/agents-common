@@ -53,12 +53,12 @@ from json import loads as _json_loads
 
 from . import __
 
-# Type aliases for reused complex types
-Location: __.typx.TypeAlias = str | __.pathlib.Path
-ProcessorOptions: __.typx.TypeAlias = __.immut.Dictionary[ str, __.typx.Any ]
-UserRecord: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
+# Type statements for reused complex types
+type Location = str | __.pathlib.Path
+type ProcessorOptions = __.immut.Dictionary[ str, __.typx.Any ]
+type UserRecord = __.cabc.Mapping[ str, __.typx.Any ]
 
-FilterFunction: __.typx.TypeAlias = __.cabc.Callable[ [ UserRecord ], bool ]
+type FilterFunction = __.cabc.Callable[ [ UserRecord ], bool ]
 
 # Exception hierarchy (would typically be in mypackage.exceptions module)
 class UserValidationInvalidity( __.Omnierror, ValueError ):
@@ -121,7 +121,7 @@ class DataProcessor( __.immut.DataclassObject ):
 
   1.  **Imports**: See import organization section below.
 
-  2.  **Common type aliases**: `TypeAlias` declarations used throughout the module.
+  2.  **Common type statements**: `type` statements declaring reused types throughout the module.
 
   3.  **Private variables and functions**:
 
@@ -201,12 +201,12 @@ class DataProcessor( __.immut.DataclassObject ):
 <a id="type-annotations"></a>
 ## Type Annotations
 
-- Add type annotations for all function arguments, class attributes, and return values. Use Python 3.10+ union syntax with `|` for simple unions, `__.typx.Union` for complex multi-line unions, and `TypeAlias` for reused complex types.
+- Add type annotations for all function arguments, class attributes, and return values. Use Python 3.10+ union syntax with `|` for simple unions, `__.typx.Union` for complex multi-line unions, and `type` statements for reused complex types.
 
   See the comprehensive
   <a href="#comprehensive-example-data-processing">DataProcessor example</a>
   above, which demonstrates proper type annotation patterns including
-  `TypeAlias` declarations for reused types like `Location`, `UserRecord`, and
+  `type` statements for reused types like `Location`, `UserRecord`, and
   `FilterFunction`.
 
 <a id="visual-formatting-2"></a>
@@ -221,7 +221,7 @@ class DataProcessor( __.immut.DataclassObject ):
       items: __.cabc.Sequence[ __.cabc.Mapping[ str, int ] ]
   ) -> dict[ str, bool ]: pass
 
-  ComplexType: __.typx.TypeAlias = __.typx.Union[
+  type ComplexType = __.typx.Union[
       dict[ str, __.typx.Any ],
       list[ str ],
   ]
