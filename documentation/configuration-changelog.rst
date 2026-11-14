@@ -48,6 +48,38 @@ Unreleased
 (No entries.)
 
 
+v1.0a20 (2026-11-14)
+====================
+
+Curated consumer-facing summary of material configuration and template
+changes since ``v1.0a19``. Not a full commit history. No package code
+changes in this release (see :doc:`changelog`).
+
+Enhancements
+------------
+
+- Implementation-only task lists in the OpenSpec workflow: tasks.md
+  carries implementation work, not review routing or publish steps;
+  guardrail lines in the opsx-propose and opsx-apply skills.
+- Prerelease tag eligibility note in the runbook: a bare update
+  resolves to HEAD while only alpha tags exist — use ``--prereleases``
+  or pin ``--vcs-ref`` explicitly.
+- Update runbook moved out of the template tree to project
+  documentation (read on GitHub, Sphinx-excluded); banners and the
+  data-file header point at its URL instead of a tree path.
+- Session-reload rule: request operator reload of affected seats
+  after coder-config changes take effect on disk.
+- Tracked vs populate-managed vs retired guidance for
+  ``coders/`` trees: commit template-rendered config, never stage
+  managed trees or their exclusions, delete retired subtrees after
+  rescuing unique content.
+- Re-staged instructions from documentation-common (importlib
+  stdlib retarget, Hatch-env delegation paragraph, neutral
+  multi-template Copier section, ``type`` statements).
+- Dogfood render of the template into this project (Clone Setup,
+  bilateral reviews, uv formatter disable, env passthroughs).
+
+
 v1.0a19 (2026-11-07)
 ====================
 
