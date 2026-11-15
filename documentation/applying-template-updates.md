@@ -7,38 +7,64 @@ It is template-owned: corrections land here, not in per-project files.
 ## Standard update
 
 Run the update non-interactively with the data file, then populate
-from this repository's `distribution/` tree:
+from an agents-common checkout at the resolved ref:
 
-Copier requires the data file as a local file, not a URL —
-download it first (replace `<ref>` with the agents template tag
-under adoption), then update, then populate:
+Copier requires the data file as a local file, not a URL.
+Resolve the master head once to an immutable commit so the data
+file, the template, and the populate step all see the same
+snapshot, then update, then populate:
 
 ```sh
-DATA_FILE="$(mktemp)" || exit 1
-trap 'rm -f "$DATA_FILE"' EXIT INT TERM
-python3 -c "import sys, urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/emcd/agents-common/<ref>/.auxiliary/data/copier/single-source-instructions.yaml', sys.argv[1])" "$DATA_FILE"
+# Exact-run override: set REF_WANT to a tag name (e.g. v1.0a20) or a
+# full commit SHA to reproduce that run. Leave empty to track master.
+REF_WANT=${REF_WANT:-refs/heads/master}
+REF_SRC="https://github.com/emcd/agents-common.git"
+case "$REF_WANT" in
+  ????????????????????????????????????????)
+    case "$REF_WANT" in *[!0-9a-f]*) echo "bad template ref: $REF_WANT" >&2; exit 1;; esac
+    REF="$REF_WANT" ;;
+  *)
+    REF_LINES=$(git ls-remote "$REF_SRC" "$REF_WANT" "$REF_WANT^{}") || { echo "could not resolve template ref $REF_WANT; aborting" >&2; exit 1; }
+    UNPEELED=$(printf '%s\n' "$REF_LINES" | awk '$2 !~ /\^\{\}$/ {print $1}')
+    [ -n "$UNPEELED" ] || { echo "no such template ref: $REF_WANT" >&2; exit 1; }
+    [ "$(printf '%s\n' "$UNPEELED" | wc -l)" -eq 1 ] || { echo "ambiguous template ref: $REF_WANT" >&2; exit 1; }
+    REF=$(printf '%s\n' "$REF_LINES" | awk '$2 ~ /\^\{\}$/ {print $1; exit}')
+    REF=${REF:-$(printf '%s\n' "$UNPEELED")}
+    case "$REF" in ''|*[!0-9a-f]*) echo "bad template ref: $REF" >&2; exit 1;; esac
+    [ "${#REF}" -eq 40 ] || { echo "bad template ref: $REF" >&2; exit 1; } ;;
+esac
+SRC="/path/to/agents-common"
+TARGET="/path/to/project"
+cd "$TARGET" || { echo "cannot enter target $TARGET; aborting" >&2; exit 1; }
+[ -f .auxiliary/configuration/copier-answers--agents.yaml ] || { echo "not a project root (no agents answers file); aborting" >&2; exit 1; }
+unset DATA_FILE
+WORKDIR="$(mktemp -d)" || exit 1
+DATA_FILE="$WORKDIR/single-source-instructions.yaml"
+trap 'rm -rf "$WORKDIR"' EXIT INT TERM
+git -C "$SRC" archive "$REF" distribution > "$WORKDIR/distribution.tar" || { echo "cannot archive distribution at $REF (fetch it into $SRC first); aborting" >&2; exit 1; }
+[ -s "$WORKDIR/distribution.tar" ] || { echo "archive is empty; aborting" >&2; exit 1; }
+tar -x -C "$WORKDIR" -f "$WORKDIR/distribution.tar" || { echo "extraction failed; aborting" >&2; exit 1; }
+[ -d "$WORKDIR/distribution" ] || { echo "extraction produced no distribution tree; aborting" >&2; exit 1; }
+python3 -c "import sys, urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/emcd/agents-common/' + sys.argv[1] + '/.auxiliary/data/copier/single-source-instructions.yaml', sys.argv[2])" "$REF" "$DATA_FILE" || { echo "data-file download failed; aborting" >&2; exit 1; }
+[ -s "$DATA_FILE" ] || { echo "downloaded data file is empty; aborting" >&2; exit 1; }
 copier update \
+    --vcs-ref="$REF" \
     --data-file "$DATA_FILE" \
     --answers-file .auxiliary/configuration/copier-answers--agents.yaml \
-    --skip-answered
-agentsmgr populate project <source>/distribution <target>
+    --skip-answered || { echo "copier update failed; aborting before populate" >&2; exit 1; }
+agentsmgr populate project "$WORKDIR/distribution" "$TARGET"
 ```
 
-Track the latest release by default: a bare `copier update` selects
-the latest template tag on its own. Pin `--vcs-ref` to a tag only when
-a specific version was explicitly requested (for example, to reproduce
-an exact run); a pin that merely dodges an environment problem is a
-workaround, not a fix — fix the environment instead. If a bare
-update reports `No git tags found` and resolves to HEAD, the reason
-is prerelease filtering, not the source location: Copier excludes
-prerelease tags by default, and while the template tags so far are
-alphas there is no eligible release to select. Either pass
-`--prereleases` for the latest alpha or pin `--vcs-ref` to an
-explicit tag (which always works regardless of source). Whatever ref
-the
-update uses, the data-file URL must name the same tag in place of
-`<ref>`: the file carries renamed answers so the update does not
-silently keep a retired layout, and it holds no guidance beyond that.
+Track the template at HEAD by default: the block above resolves
+master once per run rather than pinning a release tag. Release tags
+remain the curation checkpoints (and the package/publication line),
+not required sync points. To reproduce an exact run instead, set
+`REF_WANT` to a tag name or full commit SHA (`REF_WANT=v1.0a20`);
+a pin that merely dodges an environment problem is a
+workaround, not a fix — fix the environment instead. Whatever ref the
+update uses, the data-file URL must name the same ref: the file
+carries renamed answers so the update does not silently keep a
+retired layout, and it holds no guidance beyond that.
 (If this project also uses the Rust template, it keeps a separate
 answers file alongside this one; each template's copy and populate
 leaves the other's answers file untouched.)
