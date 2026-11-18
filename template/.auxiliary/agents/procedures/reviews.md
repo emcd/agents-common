@@ -108,7 +108,7 @@ GIT_SEQUENCE_EDITOR="sh $show_todo" \
   git rebase -i --autosquash <local-integration-base>
 ```
 
-This aborts before rewriting history and leaves no rebase state. Prefer a script file over nested-quote one-liners in `GIT_SEQUENCE_EDITOR`; agent harnesses often break the latter.
+The preview aborts before rewriting history, but it may leave a `.git/rebase-merge` directory behind. Check `git status` after previewing; if a rebase is in progress, run `git rebase --abort` to return to the pre-preview tip before the `Apply the fold` step. Prefer a script file over nested-quote one-liners in `GIT_SEQUENCE_EDITOR`; agent harnesses often break the latter.
 
 ### Apply the fold
 
