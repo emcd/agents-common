@@ -19,7 +19,19 @@ Reviews are bilateral: the author and the active reviewer only. Do not Cc anyone
 
 The Tier-2 aim is how we spend scarce Tier-2 credits. It is not a scope limit. Either reviewer may inspect any part of the stack, including a later fix, and may take an integrative or a pinhole view. Author concerns, suggested focus, or "please only look at X" are context, not a restriction. Do not dictate what a reviewer reviews.
 
-The author may request a Tier-2 review after Tier-1 approval. The Tier-1 Reviewer and the operator may require one. Skip it for mechanical or already-patterned changes unless one of them wants it.
+### Tier-2 engagement
+
+Default: Tier-1 approval is **final**. Engage Tier-2 only on an explicit trigger — the author may request it after Tier-1 approval, and the Tier-1 Reviewer or operator may require it, but "nontrivial", "cross-repo", "public enum", "proposal", or "executable config" alone do not suffice.
+
+The Tier-2 packet must state one line: `Tier-2 needed because [specific changed boundary or unresolved architectural decision]`, or `operator-required [instruction/reference]`. Tier-1 may ask the operator to waive a standing broad policy, but must not silently override an explicit requirement.
+
+Good triggers: changed trust/privilege/credential boundary; new publishing/deployment authority; destructive/shared-state migration or rollback model; untrusted-input confinement/execution; significant new cross-subsystem API/precedence/ownership invariants; or an explicit operator/reviewer request naming a concern. A security referral must name WHAT authority changes or what invariant needs architecture judgment.
+
+Usually Tier-1-only: established-pattern command flags, pins/config defaults, local/CI parity, naming/docs-only changes, regression fixes, and schema/spec carry-forward where no substantive boundary changes. These can be important or bug-prone and still belong at Tier-1. Escalate uncertainty with a concrete question, not automatic referral.
+
+No mandatory Advisor pre-check — that moves the bottleneck. Optional one-paragraph triage (no full packet/validation duplication) only for a genuinely ambiguous trigger.
+
+Re-reviews: state changed files/contracts plus finding addressed plus evidence identity. Autosquash-only/base-unchanged cleanups use the integrator handoff rule and do not return for technical review; semantic changes or destructive spec sync need their real delta reviewed. Related packets may share one evidence attachment with separate verdicts.
 
 After Tier-1 approval:
 - If Tier 2 is not engaged, that approval is **final**.
