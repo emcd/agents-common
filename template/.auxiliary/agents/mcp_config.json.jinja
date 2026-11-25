@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "agentmux": {
+      "command": "python3",
+      "args": [
+        ".auxiliary/agents/scripts/mcp-discover-shim.py",
+        "agentmux",
+        "host",
+        "mcp"
+      ],
+      "timeoutSeconds": 900
+    },
+    "context7": {
+      "command": "npx",
+      "args": [ "-y", "@upstash/context7-mcp" ]
+    },
+    "nb": {
+      "command": "nb-mcp",
+      "args": [
+        "--notebook", "{{ project_name }}",
+        "--no-commit-signing"
+      ]
+    }
+  }
+}

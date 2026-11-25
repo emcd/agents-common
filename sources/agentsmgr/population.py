@@ -181,6 +181,132 @@ def _copy_instructions_from_distribution(
     return ( files_attempted, files_written, tuple( exclude_entries ) )
 
 
+#: Populate-managed support scripts (stable exact paths, relative to
+#: ``.auxiliary/agents/scripts/``). The git-exclude entries for these
+#: paths are retained unconditionally: the managed exclude block is
+#: rebuilt on every run, and dropping an entry on deselect would
+#: un-ignore a stale file. Deselected shims are removed by hand per the
+#: namespace note, never by guessed ownership.
+SUPPORT_SCRIPTS: tuple[ str, ... ] = ( 'mcp-discover-shim.py', )
+
+
+def _coders_include(
+    coders: __.cabc.Sequence[ __.typx.Any ],
+    name: str,
+) -> bool:
+    ''' Reports whether named coder is in a coders selection.
+
+        Supports both plain-name and mapping (``{'name': ...}``) entries.
+    '''
+    for coder in coders:
+        if isinstance( coder, str ) and coder == name: return True
+        if isinstance( coder, dict ) and coder.get( 'name' ) == name:
+            return True
+    return False
+
+
+def _support_script_excludes(
+    target: __.Path,
+) -> tuple[ str, ... ]:
+    ''' Lists stable git-exclude entries for support scripts.
+
+        Entries are exact paths, independent of distribution contents
+        or coder selection, so a deselected or upstream-removed shim
+        stays ignored instead of surfacing as untracked.
+    '''
+    return tuple(
+        _format_exclude_path(
+            ( target / '.auxiliary' / 'agents' / 'scripts' / name
+             ).relative_to( target ) )
+        for name in SUPPORT_SCRIPTS )
+
+
+def _within_project_root(
+    path: __.Path, project_root: __.Path,
+) -> bool:
+    ''' Reports whether a path resolves inside the project root.
+
+        Guards managed writes against escaping the target through
+        symlinked directories: any existing symlink component that
+        resolves outside the root fails the check.
+    '''
+    try:
+        resolved = path.resolve( )
+        root = project_root.resolve( )
+    except OSError:
+        return False
+    return resolved == root or root in resolved.parents
+
+
+def _copy_support_scripts_from_distribution(
+    distribution: __.Path,
+    target: __.Path,
+    coders: __.cabc.Sequence[ __.typx.Any ],
+    simulate: bool,
+) -> tuple[ int, int, tuple[ str, ... ] ]:
+    ''' Copies populate-managed support scripts from distribution/.
+
+        Copies each ``SUPPORT_SCRIPTS`` entry present under
+        distribution/per-project/general/scripts/ to
+        ``.auxiliary/agents/scripts/`` when the ``antigravity`` coder is
+        selected (a missing source for a selected coder warns loudly,
+        since the rendered MCP config references it). All support
+        scripts are populate-managed and git-excluded (temporary compat
+        content is never staged).
+
+        Exclude entries are stable exact paths, retained even when
+        ``antigravity`` is not selected or the distribution no longer
+        carries the file: the managed git-exclude block is rebuilt on
+        every run, and dropping an entry would un-ignore a stale file.
+        Deselected shims are removed by hand (see the namespace note),
+        never by guessed ownership. Writes never follow symlinks and
+        never escape the target tree.
+        Returns tuple of (files_attempted, files_written, exclude_entries).
+    '''
+    exclude_entries = _support_script_excludes( target )
+    if not _coders_include( coders, 'antigravity' ):
+        return ( 0, 0, exclude_entries )
+    source_dir = distribution / 'per-project' / 'general' / 'scripts'
+    target_dir = target / '.auxiliary' / 'agents' / 'scripts'
+    if not _within_project_root( target_dir, target ):
+        _scribe.warning(
+            f"Support scripts directory {target_dir} escapes the "
+            "project root through a symlink; refusing to write. Remove "
+            "or relocate it to enable support script installation." )
+        return ( 0, 0, exclude_entries )
+    files_attempted = 0
+    files_written = 0
+    for name in SUPPORT_SCRIPTS:
+        source_file = source_dir / name
+        if not source_file.is_file( ):
+            _scribe.warning(
+                f"Support script {name} selected but missing from "
+                "distribution; the rendered MCP config references it." )
+            continue
+        dest_path = target_dir / name
+        if dest_path.is_symlink( ):
+            _scribe.warning(
+                f"Support script path {dest_path} is a symlink; "
+                "not following it. Remove or relocate it to enable "
+                "support script installation." )
+            continue
+        if not _within_project_root( dest_path.parent, target ):
+            _scribe.warning(
+                f"Support script path {dest_path} escapes the project "
+                "root through a symlink; refusing to write." )
+            continue
+        files_attempted += 1
+        if _operations.save_content_bytes(
+            source_file.read_bytes( ),
+            dest_path,
+            simulate,
+        ):
+            files_written += 1
+            if not simulate:
+                __.shutil.copymode( source_file, dest_path )
+    return ( files_attempted, files_written, exclude_entries )
+
+
 def _populate_per_user_content(
     location: __.Path,
     coders: __.cabc.Sequence[ str ],
@@ -526,10 +652,19 @@ def _manage_project_auxiliaries(
         _scribe.info(
             f"Copied {instructions_written}/{instructions_attempted} "
             "instruction files" )
+    scripts_attempted, scripts_written, script_entries = (
+        _copy_support_scripts_from_distribution(
+            distribution, target,
+            configuration.get( 'coders', ( ) ), simulate ) )
+    if scripts_written > 0:
+        _scribe.info(
+            f"Copied {scripts_written}/{scripts_attempted} "
+            "support scripts" )
     all_symlink_names: list[ str ] = list( _create_all_symlinks(
         configuration, target, 'per-project', simulate ) )
     git_exclude_entries: list[ str ] = list( distribution_entries )
     git_exclude_entries.extend( instruction_entries )
+    git_exclude_entries.extend( script_entries )
     git_exclude_entries.extend( all_symlink_names )
     if git_exclude_entries:
         entries_count = _operations.update_git_exclude(

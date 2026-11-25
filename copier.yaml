@@ -1,5 +1,9 @@
 _min_copier_version: "9.0"
 _answers_file: .auxiliary/configuration/copier-answers--agents.yaml
+_exclude:
+  - '{% if "antigravity" not in coders %}.auxiliary/agents/mcp_config.json{% endif %}'
+  - '{% if "antigravity" not in coders %}.auxiliary/agents/ANTIGRAVITY-NAMESPACE-NOTE.md{% endif %}'
+
 _subdirectory: template
 
 # Project-owned; seed on first copy / when absent; never overwrite on update.
@@ -29,6 +33,7 @@ coders:
     help: AI coding tools to configure
     multiselect: true
     choices:
+        - antigravity
         - claude
         - codex
         - opencode

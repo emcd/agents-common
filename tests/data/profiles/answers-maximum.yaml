@@ -1,5 +1,6 @@
 project_name: agents-template-maximum
 coders:
+- antigravity
 - claude
 - codex
 - opencode

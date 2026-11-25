@@ -47,6 +47,7 @@ sources/agentsmgr/
 ├── userdata.py         # Per-user population helpers
 ├── exceptions.py       # Package exception hierarchy
 ├── renderers/          # Coder-specific path and format contracts
+│   ├── antigravity.py
 │   ├── base.py
 │   ├── claude.py
 │   ├── codex.py
