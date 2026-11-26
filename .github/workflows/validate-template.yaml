@@ -10,7 +10,7 @@ on:
       - 'template/**'
       - 'tests/data/profiles/**'
       - 'sources/agentsmgr/cmdbase.py'
-      - 'sources/agentsmgr/population.py'
+      - 'sources/agentsmgr/population/**'
   push:
     branches: [ 'master' ]
     paths:
@@ -20,7 +20,7 @@ on:
       - 'template/**'
       - 'tests/data/profiles/**'
       - 'sources/agentsmgr/cmdbase.py'
-      - 'sources/agentsmgr/population.py'
+      - 'sources/agentsmgr/population/**'
   workflow_dispatch: {}
 
 jobs:

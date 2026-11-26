@@ -93,8 +93,8 @@ def _assert_no_env_block( node ) -> None:
 
 def test_213_antigravity_mcp_config_renders_valid( ):
     # The rendered file is always complete: discoverability is gated
-    # at the copier _exclude level (see copier transition test), so a
-    # default render never references the shim it does not ship.
+    # at the copier _exclude level (asserted below), so a default
+    # render never references the shim it does not ship.
     config = _render_antigravity_mcp_config( 'test-proj' )
     _assert_no_env_block( config )
     agentmux = config[ 'mcpServers' ][ 'agentmux' ]
@@ -103,24 +103,6 @@ def test_213_antigravity_mcp_config_renders_valid( ):
     assert agentmux[ 'args' ][ 0 ] == (
         '.auxiliary/agents/scripts/mcp-discover-shim.py' )
     assert config[ 'mcpServers' ][ 'nb' ][ 'args' ][ 1 ] == 'test-proj'
-
-
-def _render_exclude_patterns( coders: list ) -> list:
-    import jinja2
-    import yaml
-    copier = yaml.safe_load(
-        ( _project_root( ) / 'copier.yaml' ).read_text(
-            encoding = 'utf-8' ) )
-    return [
-        jinja2.Template( pattern ).render( coders = coders )
-        for pattern in copier.get( '_exclude', [ ] ) ]
-
-
-def test_213b_copier_exclude_gates_antigravity_files( ):
-    # Render/ignore transition: without antigravity both workspace
-    # files are excluded from the Copier render (no discoverable
-    # config referencing an unshipped shim); with it, nothing
-    # antigravity-related is excluded.
     default_excludes = set( _render_exclude_patterns(
         [ 'claude', 'codex', 'opencode' ] ) )
     assert '.auxiliary/agents/mcp_config.json' in default_excludes
@@ -133,6 +115,17 @@ def test_213b_copier_exclude_gates_antigravity_files( ):
         'mcp_config' not in str( entry )
         and 'ANTIGRAVITY' not in str( entry )
         for entry in selected_excludes )
+
+
+def _render_exclude_patterns( coders: list ) -> list:
+    import jinja2
+    import yaml
+    copier = yaml.safe_load(
+        ( _project_root( ) / 'copier.yaml' ).read_text(
+            encoding = 'utf-8' ) )
+    return [
+        jinja2.Template( pattern ).render( coders = coders )
+        for pattern in copier.get( '_exclude', [ ] ) ]
 
 
 def _shim_path( ) -> Path:

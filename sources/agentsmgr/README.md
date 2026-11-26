@@ -39,7 +39,12 @@ sources/agentsmgr/
 ├── cmdbase.py          # Shared command helpers / configuration load
 ├── core.py             # Display and stream adaptation
 ├── detection.py        # Project configuration detection
-├── population.py       # populate + generate commands
+├── population/        # populate + generate commands (hub + submodules)
+│   ├── __init__.py
+│   ├── commands.py
+│   ├── configurations.py
+│   ├── copying.py
+│   └── linking.py
 ├── generator.py        # components/ → distribution/ rendering
 ├── operations.py       # Git exclude and filesystem helpers
 ├── instructions.py     # Instruction fetch from configured git sources
