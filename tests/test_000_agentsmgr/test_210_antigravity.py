@@ -241,6 +241,13 @@ def test_217_deselect_leaves_stale_shim_ignored( tmp_path ):
         '.auxiliary/agents/scripts/mcp-discover-shim.py', )
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32',
+    reason = 'POSIX open-stdin lifecycle semantics required: on '
+    'Windows runners the console-attached shim holding an open '
+    'stdin pipe is killed with STATUS_CONTROL_C_EXIT instead of '
+    'surfacing the child status; the win32 fallback path is '
+    'documented best-effort only' )
 def test_218_shim_exits_with_child_status_on_open_stdin( ):
     # Regression: early child exit while the client holds stdin open
     # must surface the child status instead of hanging on input.
@@ -267,9 +274,11 @@ def test_218_shim_exits_with_child_status_on_open_stdin( ):
 
 def test_219_shim_forwards_both_frames_with_stdin_open( ):
     # Two complete frames written together must both be forwarded
-    # before EOF: buffered readline( ) strands the second behind an
-    # empty descriptor. Stdin stays open throughout the assertion.
-    import select as _select
+    # before EOF. Observation uses a reader thread plus queue instead
+    # of select() so the pin is portable (win32 select is
+    # sockets-only); stdin stays open throughout the observation.
+    import queue as _frame_queue
+    import threading as _frame_reader
     upstream = (
         "import sys\n"
         "for _line in sys.stdin:\n"
@@ -291,22 +300,35 @@ def test_219_shim_forwards_both_frames_with_stdin_open( ):
     ) as process:
         assert process.stdin is not None
         assert process.stdout is not None
+        lines: _frame_queue.Queue[ bytes ] = _frame_queue.Queue( )
+        def _pump( ) -> None:
+            try:
+                while True:
+                    line = process.stdout.readline( )
+                    if not line:
+                        break
+                    lines.put( line )
+            except ValueError:
+                pass
+        reader = _frame_reader.Thread( target = _pump, daemon = True )
+        reader.start( )
         process.stdin.write( frame_one + frame_two )
         process.stdin.flush( )
-        replies = [ ]
-        deadline = _time.monotonic( ) + 20
-        while len( replies ) < 2 and _time.monotonic( ) < deadline:
-            ready, _, _ = _select.select(
-                [ process.stdout ], [ ], [ ],
-                max( 0, deadline - _time.monotonic( ) ) )
-            if not ready:
-                break
-            line = process.stdout.readline( )
-            if not line:
-                break
-            replies.append( json.loads( line ) )
+        try:
+            first = lines.get( timeout = 20 )
+            second = lines.get( timeout = 20 )
+        except _frame_queue.Empty as error:
+            process.kill( )
+            raise AssertionError(
+                "second frame was not forwarded before EOF" ) from error
+        replies = [ json.loads( first ), json.loads( second ) ]
         process.stdin.close( )
-        returncode = process.wait( timeout = 20 )
+        try:
+            returncode = process.wait( timeout = 20 )
+        except subprocess.TimeoutExpired as error:
+            process.kill( )
+            raise AssertionError(
+                "shim hung after forwarding both frames" ) from error
     assert returncode == 0
     by_id = { reply.get( 'id' ): reply for reply in replies }
     assert by_id[ 1 ][ 'error' ][ 'code' ] == -32601
@@ -393,21 +415,24 @@ def test_221_shim_term_under_backpressure( ):
 
 
 def test_222_shim_delivers_complete_reply_after_exit( ):
-    # Truncation regression: child writes one 65,578-byte reply and
-    # exits while the client delays reading. The shim must drain
-    # unread + queued output under the wall-clock bound and deliver
-    # the complete frame before exiting 0 — not cut off at child
-    # death with a partial line.
+    # Truncation regression: child writes one reply over the 64 KiB
+    # pipe capacity and exits while the client delays reading. The
+    # shim must drain unread + queued output under the wall-clock
+    # bound and deliver the complete frame before exiting 0 — not
+    # cut off at child death with a partial line. The payload is
+    # generated inside the child (short launch command): embedding
+    # it in -c would exceed Windows' 32,767-char command line limit.
     import time as _time_backpressure
-    payload = 'z' * 65500
-    line = (
-        '{"jsonrpc":"2.0","id":7,"result":"' + payload + '"}\n' ).encode(
-            'utf-8' )
-    assert len( line ) > 65536
     child_code = (
         "import sys; "
-        "sys.stdout.write(%r); sys.stdout.flush()" % (
-            line.decode( 'utf-8' ), ) )
+        "sys.stdout.buffer.write("
+        "b'{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":\"' + "
+        "b'z' * 65600 + b'\"}\\n'); "
+        "sys.stdout.flush()" )
+    expected = (
+        b'{"jsonrpc":"2.0","id":7,"result":"' + b'z' * 65600
+        + b'"}\n' )
+    assert len( expected ) > 65536
     start = _time_backpressure.monotonic( )
     with subprocess.Popen(  # noqa: S603
         [ sys.executable, str( _shim_path( ) ),
@@ -426,22 +451,27 @@ def test_222_shim_delivers_complete_reply_after_exit( ):
     elapsed = _time_backpressure.monotonic( ) - start
     assert returncode == 0
     assert elapsed < 60
-    assert received == line
+    assert received == expected
     assert json.loads( received )[ 'id' ] == 7
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32',
+    reason = 'bounded drain-and-report is POSIX-only' )
 def test_223_shim_reports_truncated_drain_as_failure( ):
     # Stalled client: child exits 0 after a big reply nobody reads.
     # The bounded drain must give up on schedule, and the shim must
     # NOT report successful passthrough for a known-incomplete drain:
     # a clean child status becomes 124, while a meaningful nonzero
-    # child status would be preserved.
-    payload = 'z' * 65500
-    line = (
-        '{"jsonrpc":"2.0","id":7,"result":"' + payload + '"}\n' )
+    # child status would be preserved. The payload is generated
+    # inside the child (short launch command): embedding it in -c
+    # would exceed Windows' 32,767-char command line limit.
     child_code = (
-        "import sys; sys.stdout.write(%r); sys.stdout.flush()" % (
-            line, ) )
+        "import sys; "
+        "sys.stdout.buffer.write("
+        "b'{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":\"' + "
+        "b'z' * 65600 + b'\"}\\n'); "
+        "sys.stdout.flush()" )
     with subprocess.Popen(  # noqa: S603
         [ sys.executable, str( _shim_path( ) ),
           sys.executable, '-c', child_code ],
@@ -466,7 +496,8 @@ def test_223_shim_reports_truncated_drain_as_failure( ):
 
 @pytest.mark.skipif(
     sys.platform == 'win32',
-    reason = 'POSIX pipe semantics required' )
+    reason = 'bounded reap with abandon-report is POSIX-only: the '
+    'win32 fallback has no bounded wait/terminate/kill chain' )
 def test_224_shim_broken_stdout_abandons_and_reaps( ):
     # Abrupt client disconnect with stdin held open: the client closes
     # only the read end, submits one request, and the child replies
