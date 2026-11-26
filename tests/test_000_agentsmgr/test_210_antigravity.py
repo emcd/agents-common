@@ -26,9 +26,9 @@ import subprocess
 import sys
 import time as _time
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from . import __
 

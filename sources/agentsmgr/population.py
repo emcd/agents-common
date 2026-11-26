@@ -200,8 +200,9 @@ def _coders_include(
     '''
     for coder in coders:
         if isinstance( coder, str ) and coder == name: return True
-        if isinstance( coder, dict ) and coder.get( 'name' ) == name:
-            return True
+        if isinstance( coder, dict ):
+            candidate = __.typx.cast( dict[ str, __.typx.Any ], coder )
+            if candidate.get( 'name' ) == name: return True
     return False
 
 
